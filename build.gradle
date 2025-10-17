@@ -1,0 +1,19 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+plugins {
+    alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.spotless)
+}
+
+spotless {
+    java {
+        target("**/*.java")
+        targetExclude("**/build/**", "**/.gradle/**")
+        googleJavaFormat("1.28.0").aosp()
+    }
+    format("misc") {
+        target("**/*.md", "**/.gitignore", "**/*.gradle", "**/*.gradle.kts")
+        targetExclude("**/build/**", "**/.gradle/**")
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}

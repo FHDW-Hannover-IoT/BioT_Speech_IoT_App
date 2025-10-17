@@ -1,0 +1,176 @@
+image: ghcr.io/cirruslabs/android-sdk:35
+
+stages: [ format, lint, build, test, package ]
+
+variables:
+  GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx2g"
+  JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true"
+
+cache:
+  key: "android35-gradle-cache"
+  paths:
+    - .gradle/caches/
+    - .gradle/wrapper/
+
+.before_gradle: &before_gradle |
+  set -euxo pipefail
+
+  # Ensure gradlew is executable and LF-only (if committed from Windows)
+  if grep -q $'\r' gradlew; then tr -d '\r' < gradlew > gradlew.new && mv gradlew.new gradlew; fi
+  chmod +x gradlew
+
+  # --- Locate SDK directory present in the Cirrus image ---
+  SDK_DIR=""
+  for d in /opt/android-sdk /opt/android-sdk-linux /opt/android-sdk/current; do
+    if [ -d "$d" ]; then SDK_DIR="$d"; break; fi
+  done
+  if [ -z "$SDK_DIR" ]; then
+    echo "Android SDK not found in expected locations."; ls -la /opt || true; exit 1
+  fi
+
+  export ANDROID_SDK_ROOT="$SDK_DIR"
+  export ANDROID_HOME="$SDK_DIR"
+
+  # Make Gradle double-sure by writing local.properties
+  echo "sdk.dir=$SDK_DIR" > local.properties
+  echo "Using SDK at: $SDK_DIR"
+  ls -la "$SDK_DIR" | head -n 50 || true
+
+  # Optional: if the image somehow lacks API 35 pieces, fetch them quickly
+  # (Runs only if missing; normally the tag :35 already includes them)
+  PATH="$SDK_DIR/cmdline-tools/latest/bin:$SDK_DIR/platform-tools:$PATH"
+  if [ ! -d "$SDK_DIR/platforms/android-35" ] || [ ! -d "$SDK_DIR/build-tools/35.0.0" ]; then
+    yes | sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+  fi
+
+  ./gradlew --version
+
+format_check:
+  stage: format
+  image: eclipse-temurin:17-jdk
+  cache:
+    key: "gradle-cache"
+    paths: [ ".gradle/wrapper/", ".gradle/caches/" ]
+  before_script:
+    - set -euxo pipefail
+    - if grep -q $'\r' gradlew; then tr -d '\r' < gradlew > gradlew.new && mv gradlew.new gradlew; fi
+    - chmod +x gradlew
+    - ./gradlew --version
+  script:
+    - ./gradlew --no-daemon --stacktrace spotlessCheck
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event"'
+
+lint:android:
+  stage: lint
+  image: ghcr.io/cirruslabs/android-sdk:35
+  timeout: 20m
+  variables:
+    GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
+    GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx2g"
+    JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true"
+  cache:
+    key: "android35-gradle-cache"
+    paths:
+      - .gradle/caches/
+      - .gradle/wrapper/
+  before_script:
+    - set -euxo pipefail
+    # Locate SDK in the Cirrus image and wire Gradle to it
+    - |
+      SDK_DIR=""
+      for d in /opt/android-sdk /opt/android-sdk-linux /opt/android-sdk/current; do
+        [ -d "$d" ] && SDK_DIR="$d" && break
+      done
+      [ -n "$SDK_DIR" ] || (echo "Android SDK not found under /opt"; exit 1)
+      echo "Using SDK: $SDK_DIR"
+      export ANDROID_SDK_ROOT="$SDK_DIR"
+      export ANDROID_HOME="$SDK_DIR"
+      echo "sdk.dir=$SDK_DIR" > local.properties
+
+    # Ensure API 35 bits exist (idempotent)
+    - export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH"
+    - yes | sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0" || true
+
+    # gradlew fixups (Windows commits etc.)
+    - if grep -q $'\r' gradlew; then tr -d '\r' < gradlew > gradlew.new && mv gradlew.new gradlew; fi
+    - chmod +x gradlew
+    - ./gradlew --version
+  script:
+    # Run lint for the Debug variant (fast). Use `lint` to scan all variants.
+    - ./gradlew --stacktrace --no-daemon lintDebug
+
+    # Collect reports to stable paths for artifacts
+    - mkdir -p ci-lint
+    - |
+      FOUND=0
+      for f in \
+        app/build/reports/lint-results*.html \
+        app/build/reports/lint-results*.xml \
+        app/build/reports/lint-results*.sarif \
+        app/build/reports/lint-results*.txt
+      do
+        if [ -f "$f" ]; then
+          cp "$f" ci-lint/
+          FOUND=$((FOUND+1))
+        fi
+      done
+      echo "Collected $FOUND lint report file(s)."
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths:
+      - ci-lint/*
+  rules:
+    # Run on pushes & MRs; skip tags by default
+    - if: '$CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_TAG'
+      when: never
+
+build:debug:
+  stage: build
+  before_script:
+    - *before_gradle
+  script:
+    - ./gradlew --stacktrace --no-daemon clean assembleDebug
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths:
+      - app/build/outputs/apk/debug/*.apk
+      - app/build/outputs/mapping/debug/
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event"'
+
+test:unit:
+  stage: test
+  before_script:
+    - *before_gradle
+  script:
+    - ./gradlew --stacktrace --no-daemon testDebugUnitTest
+  artifacts:
+    when: always
+    expire_in: 1 week
+    reports:
+      junit:
+        - app/build/test-results/testDebugUnitTest/*.xml
+    paths:
+      - app/build/reports/tests/testDebugUnitTest/
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event"'
+
+package:release:
+  stage: package
+  before_script:
+    - *before_gradle
+  rules:
+    - if: '$BUILD_RELEASE == "true"'
+  script:
+    - ./gradlew --stacktrace --no-daemon assembleRelease
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    paths:
+      - app/build/outputs/apk/release/*.apk
+      - app/build/outputs/mapping/release/
