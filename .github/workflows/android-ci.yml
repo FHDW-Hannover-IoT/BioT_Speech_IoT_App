@@ -3,13 +3,21 @@ name: Android CI (API 35)
 on:
   push:
     branches: [ '**' ]
-    tags-ignore: [ '**' ]           # match GitLab: skip tags for regular jobs
+    tags-ignore: [ '**' ]   # skip tag pushes (mirrors your GitLab rules)
   pull_request:
+  workflow_dispatch:
+    inputs:
+      build_release:
+        description: 'Build release APK'
+        type: choice
+        options: [ 'false','true' ]
+        default: 'false'
 
 concurrency:
   group: android-ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Shared env from your GitLab variables
 env:
   GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
   GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx2g
@@ -23,7 +31,7 @@ jobs:
     name: spotlessCheck
     runs-on: ubuntu-latest
     container: eclipse-temurin:17-jdk
-    if: github.ref_type != 'tag'
+    if: ${{ github.ref_type != 'tag' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -54,7 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     container: ghcr.io/cirruslabs/android-sdk:35
     timeout-minutes: 20
-    if: github.ref_type != 'tag'
+    if: ${{ github.ref_type != 'tag' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -72,7 +80,7 @@ jobs:
         run: |
           set -euxo pipefail
 
-          # gradlew fixups (Windows commits etc.)
+          # gradlew fixups
           if grep -q $'\r' gradlew; then tr -d '\r' < gradlew > gradlew.new && mv gradlew.new gradlew; fi
           chmod +x gradlew
 
@@ -103,13 +111,10 @@ jobs:
         run: |
           set -euxo pipefail
           mkdir -p ci-lint
-          FOUND=0
           shopt -s nullglob
           for f in app/build/reports/lint-results*.{html,xml,sarif,txt}; do
             cp "$f" ci-lint/
-            FOUND=$((FOUND+1))
           done
-          echo "found=$FOUND" >> "$GITHUB_OUTPUT"
 
       - name: Upload lint artifacts
         if: always()
@@ -122,7 +127,7 @@ jobs:
     name: Build Debug APK
     runs-on: ubuntu-latest
     container: ghcr.io/cirruslabs/android-sdk:35
-    if: github.ref_type != 'tag'
+    if: ${{ github.ref_type != 'tag' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -170,7 +175,7 @@ jobs:
     name: Unit Tests (debug)
     runs-on: ubuntu-latest
     container: ghcr.io/cirruslabs/android-sdk:35
-    if: github.ref_type != 'tag'
+    if: ${{ github.ref_type != 'tag' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -218,7 +223,10 @@ jobs:
     name: Package Release APK
     runs-on: ubuntu-latest
     container: ghcr.io/cirruslabs/android-sdk:35
-    if: ${{ env.BUILD_RELEASE == 'true' }}
+    # Run when:
+    # - manual dispatch input build_release == 'true' OR
+    # - repo/org Actions Variable BUILD_RELEASE == 'true'
+    if: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.build_release == 'true') || vars.BUILD_RELEASE == 'true' }}
     steps:
       - uses: actions/checkout@v4
 
