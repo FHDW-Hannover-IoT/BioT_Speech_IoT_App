@@ -1,15 +1,22 @@
+# Ignore all IntelliJ/Android Studio project files…
+.idea/
+# …but keep the shareable ones:
+!.idea/codeStyles/
+!.idea/inspectionProfiles/
+!.idea/runConfigurations/   # optional
+!.idea/.name                # optional (project display name)
+
+# Also ignore these common IDE files
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/dictionaries
+.idea/shelf/
+
+.cxx
 .DS_Store
+.externalNativeBuild
+.gradle
+local.properties
 /build
 /captures
-.externalNativeBuild
-.cxx
-local.properties
