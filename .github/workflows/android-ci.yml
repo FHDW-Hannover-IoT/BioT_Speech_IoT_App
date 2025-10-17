@@ -2,8 +2,8 @@ name: Android CI (API 35)
 
 on:
   push:
-    branches: ['**']
-    tags-ignore: ['**']           # match GitLab: skip tags for regular jobs
+    branches: [ '**' ]
+    tags-ignore: [ '**' ]           # match GitLab: skip tags for regular jobs
   pull_request:
 
 concurrency:
@@ -218,8 +218,7 @@ jobs:
     name: Package Release APK
     runs-on: ubuntu-latest
     container: ghcr.io/cirruslabs/android-sdk:35
-    # only when env BUILD_RELEASE == "true" (e.g., set in the workflow dispatch or org/repo env)
-    if: env.BUILD_RELEASE == 'true'
+    if: ${{ env.BUILD_RELEASE == 'true' }}
     steps:
       - uses: actions/checkout@v4
 
