@@ -1,0 +1,264 @@
+name: Android CI (API 35)
+
+on:
+  push:
+    branches: ['**']
+    tags-ignore: ['**']           # match GitLab: skip tags for regular jobs
+  pull_request:
+
+concurrency:
+  group: android-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
+  GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx2g
+  JAVA_TOOL_OPTIONS: -Djava.net.preferIPv4Stack=true
+
+permissions:
+  contents: read
+
+jobs:
+  format_check:
+    name: spotlessCheck
+    runs-on: ubuntu-latest
+    container: eclipse-temurin:17-jdk
+    if: github.ref_type != 'tag'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prep gradlew
+        shell: bash
+        run: |
+          set -euxo pipefail
+          if grep -q $'\r' gradlew; then tr -d '\r' < gradlew > gradlew.new && mv gradlew.new gradlew; fi
+          chmod +x gradlew
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            .gradle/wrapper/
+            .gradle/caches/
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Gradle version
+        run: ./gradlew --version
+
+      - name: Run Spotless
+        run: ./gradlew --no-daemon --stacktrace spotlessCheck
+
+  lint_android:
+    name: Android Lint (debug)
+    runs-on: ubuntu-latest
+    container: ghcr.io/cirruslabs/android-sdk:35
+    timeout-minutes: 20
+    if: github.ref_type != 'tag'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            .gradle/wrapper/
+            .gradle/caches/
+          key: android35-gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: android35-gradle-${{ runner.os }}-
+
+      - name: Before Gradle (SDK wiring)
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          # gradlew fixups (Windows commits etc.)
+          if grep -q $'\r' gradlew; then tr -d '\r' < gradlew > gradlew.new && mv gradlew.new gradlew; fi
+          chmod +x gradlew
+
+          # Locate SDK in Cirrus image
+          SDK_DIR=""
+          for d in /opt/android-sdk /opt/android-sdk-linux /opt/android-sdk/current; do
+            [ -d "$d" ] && SDK_DIR="$d" && break
+          done
+          [ -n "$SDK_DIR" ] || (echo "Android SDK not found under /opt"; ls -la /opt || true; exit 1)
+          echo "Using SDK: $SDK_DIR"
+          echo "sdk.dir=$SDK_DIR" > local.properties
+          echo "ANDROID_SDK_ROOT=$SDK_DIR" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$SDK_DIR" >> $GITHUB_ENV
+          echo "$SDK_DIR/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$SDK_DIR/platform-tools" >> $GITHUB_PATH
+
+          # Ensure API 35 pieces (idempotent)
+          yes | sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0" || true
+
+          ./gradlew --version
+
+      - name: Run Lint (debug)
+        run: ./gradlew --stacktrace --no-daemon lintDebug
+
+      - name: Collect lint reports
+        id: collect
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p ci-lint
+          FOUND=0
+          shopt -s nullglob
+          for f in app/build/reports/lint-results*.{html,xml,sarif,txt}; do
+            cp "$f" ci-lint/
+            FOUND=$((FOUND+1))
+          done
+          echo "found=$FOUND" >> "$GITHUB_OUTPUT"
+
+      - name: Upload lint artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-reports
+          path: ci-lint/*
+
+  build_debug:
+    name: Build Debug APK
+    runs-on: ubuntu-latest
+    container: ghcr.io/cirruslabs/android-sdk:35
+    if: github.ref_type != 'tag'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            .gradle/wrapper/
+            .gradle/caches/
+          key: android35-gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: android35-gradle-${{ runner.os }}-
+
+      - name: Before Gradle
+        shell: bash
+        run: |
+          set -euxo pipefail
+          if grep -q $'\r' gradlew; then tr -d '\r' < gradlew > gradlew.new && mv gradlew.new gradlew; fi
+          chmod +x gradlew
+          SDK_DIR=""
+          for d in /opt/android-sdk /opt/android-sdk-linux /opt/android-sdk/current; do
+            [ -d "$d" ] && SDK_DIR="$d" && break
+          done
+          [ -n "$SDK_DIR" ] || (echo "Android SDK not found"; exit 1)
+          echo "sdk.dir=$SDK_DIR" > local.properties
+          echo "ANDROID_SDK_ROOT=$SDK_DIR" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$SDK_DIR" >> $GITHUB_ENV
+          echo "$SDK_DIR/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$SDK_DIR/platform-tools" >> $GITHUB_PATH
+          yes | sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0" || true
+          ./gradlew --version
+
+      - name: Clean & assembleDebug
+        run: ./gradlew --stacktrace --no-daemon clean assembleDebug
+
+      - name: Upload debug APK + mapping
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk-and-mapping
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/mapping/debug/
+
+  test_unit:
+    name: Unit Tests (debug)
+    runs-on: ubuntu-latest
+    container: ghcr.io/cirruslabs/android-sdk:35
+    if: github.ref_type != 'tag'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            .gradle/wrapper/
+            .gradle/caches/
+          key: android35-gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: android35-gradle-${{ runner.os }}-
+
+      - name: Before Gradle
+        shell: bash
+        run: |
+          set -euxo pipefail
+          if grep -q $'\r' gradlew; then tr -d '\r' < gradlew > gradlew.new && mv gradlew.new gradlew; fi
+          chmod +x gradlew
+          SDK_DIR=""
+          for d in /opt/android-sdk /opt/android-sdk-linux /opt/android-sdk/current; do
+            [ -d "$d" ] && SDK_DIR="$d" && break
+          done
+          [ -n "$SDK_DIR" ] || (echo "Android SDK not found"; exit 1)
+          echo "sdk.dir=$SDK_DIR" > local.properties
+          echo "ANDROID_SDK_ROOT=$SDK_DIR" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$SDK_DIR" >> $GITHUB_ENV
+          echo "$SDK_DIR/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$SDK_DIR/platform-tools" >> $GITHUB_PATH
+          yes | sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0" || true
+          ./gradlew --version
+
+      - name: Run unit tests
+        run: ./gradlew --stacktrace --no-daemon testDebugUnitTest
+
+      - name: Upload JUnit XML + HTML reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-reports
+          path: |
+            app/build/test-results/testDebugUnitTest/*.xml
+            app/build/reports/tests/testDebugUnitTest/
+
+  package_release:
+    name: Package Release APK
+    runs-on: ubuntu-latest
+    container: ghcr.io/cirruslabs/android-sdk:35
+    # only when env BUILD_RELEASE == "true" (e.g., set in the workflow dispatch or org/repo env)
+    if: env.BUILD_RELEASE == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            .gradle/wrapper/
+            .gradle/caches/
+          key: android35-gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: android35-gradle-${{ runner.os }}-
+
+      - name: Before Gradle
+        shell: bash
+        run: |
+          set -euxo pipefail
+          if grep -q $'\r' gradlew; then tr -d '\r' < gradlew > gradlew.new && mv gradlew.new gradlew; fi
+          chmod +x gradlew
+          SDK_DIR=""
+          for d in /opt/android-sdk /opt/android-sdk-linux /opt/android-sdk/current; do
+            [ -d "$d" ] && SDK_DIR="$d" && break
+          done
+          [ -n "$SDK_DIR" ] || (echo "Android SDK not found"; exit 1)
+          echo "sdk.dir=$SDK_DIR" > local.properties
+          echo "ANDROID_SDK_ROOT=$SDK_DIR" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$SDK_DIR" >> $GITHUB_ENV
+          echo "$SDK_DIR/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$SDK_DIR/platform-tools" >> $GITHUB_PATH
+          yes | sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0" || true
+          ./gradlew --version
+
+      - name: Assemble Release
+        run: ./gradlew --stacktrace --no-daemon assembleRelease
+
+      - name: Upload release APK + mapping
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk-and-mapping
+          path: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/mapping/release/
