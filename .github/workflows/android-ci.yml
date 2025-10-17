@@ -3,7 +3,7 @@ name: Android CI (API 35)
 on:
   push:
     branches: [ '**' ]
-    tags-ignore: [ '**' ]   # skip tag pushes (mirrors your GitLab rules)
+    tags-ignore: [ '**' ]   # skip tag pushes for regular jobs
   pull_request:
   workflow_dispatch:
     inputs:
@@ -17,7 +17,7 @@ concurrency:
   group: android-ci-${{ github.ref }}
   cancel-in-progress: true
 
-# Shared env from your GitLab variables
+# Shared env
 env:
   GRADLE_USER_HOME: ${{ github.workspace }}/.gradle
   GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx2g
@@ -35,21 +35,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Gradle action handles wrapper setup & caching
+      - uses: gradle/actions/setup-gradle@v4
+
       - name: Prep gradlew
         shell: bash
         run: |
           set -euxo pipefail
           if grep -q $'\r' gradlew; then tr -d '\r' < gradlew > gradlew.new && mv gradlew.new gradlew; fi
           chmod +x gradlew
-
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            .gradle/wrapper/
-            .gradle/caches/
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: gradle-${{ runner.os }}-
 
       - name: Gradle version
         run: ./gradlew --version
@@ -65,15 +59,7 @@ jobs:
     if: ${{ github.ref_type != 'tag' }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            .gradle/wrapper/
-            .gradle/caches/
-          key: android35-gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: android35-gradle-${{ runner.os }}-
+      - uses: gradle/actions/setup-gradle@v4
 
       - name: Before Gradle (SDK wiring)
         shell: bash
@@ -130,15 +116,7 @@ jobs:
     if: ${{ github.ref_type != 'tag' }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            .gradle/wrapper/
-            .gradle/caches/
-          key: android35-gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: android35-gradle-${{ runner.os }}-
+      - uses: gradle/actions/setup-gradle@v4
 
       - name: Before Gradle
         shell: bash
@@ -178,15 +156,7 @@ jobs:
     if: ${{ github.ref_type != 'tag' }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            .gradle/wrapper/
-            .gradle/caches/
-          key: android35-gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: android35-gradle-${{ runner.os }}-
+      - uses: gradle/actions/setup-gradle@v4
 
       - name: Before Gradle
         shell: bash
@@ -229,15 +199,7 @@ jobs:
     if: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.build_release == 'true') || vars.BUILD_RELEASE == 'true' }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            .gradle/wrapper/
-            .gradle/caches/
-          key: android35-gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: android35-gradle-${{ runner.os }}-
+      - uses: gradle/actions/setup-gradle@v4
 
       - name: Before Gradle
         shell: bash
