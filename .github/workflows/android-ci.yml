@@ -203,6 +203,14 @@ jobs:
           cache-overwrite-existing: true
           gradle-home-cache-cleanup: true
 
+      - name: Prepare Gradle wrapper
+        shell: bash
+        run: |
+          set -euxo pipefail
+          if grep -q $'\r' gradlew; then tr -d '\r' < gradlew > gradlew.new && mv gradlew.new gradlew; fi
+          chmod +x gradlew
+          ./gradlew --version
+
       # Enable KVM (hardware acceleration) on Ubuntu runner
       - name: Enable KVM
         run: |
