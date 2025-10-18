@@ -8,7 +8,7 @@ spotless {
     java {
         target("**/*.java")
         targetExclude("**/build/**", "**/.gradle/**")
-        googleJavaFormat("1.30.0").aosp()
+        googleJavaFormat("1.28.0").aosp()
     }
     format("misc") {
         target("**/*.md", "**/.gitignore", "**/*.gradle", "**/*.gradle.kts")
