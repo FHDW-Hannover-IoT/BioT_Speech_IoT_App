@@ -228,7 +228,7 @@ jobs:
           arch: x86_64
           target: google_apis
           profile: pixel_6
-          emulator-options: -no-window -no-snapshot -no-boot-anim -gpu swiftshader_indirect -camera-back none -camera-front none
+          emulator-options: -no-window -no-boot-anim -gpu swiftshader_indirect -camera-back none -camera-front none
           emulator-boot-timeout: 600
           disable-animations: true
           # change task if your module isn't :app
