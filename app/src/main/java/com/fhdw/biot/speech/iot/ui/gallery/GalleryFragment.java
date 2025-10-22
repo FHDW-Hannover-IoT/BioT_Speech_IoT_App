@@ -11,15 +11,16 @@ import androidx.lifecycle.ViewModelProvider;
 import com.fhdw.biot.speech.iot.databinding.FragmentGalleryBinding;
 
 public class GalleryFragment extends Fragment {
-
     private FragmentGalleryBinding binding;
 
+    @Override
     public View onCreateView(
             @NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        GalleryViewModel galleryViewModel = new ViewModelProvider(this).get(GalleryViewModel.class);
+        final GalleryViewModel galleryViewModel =
+                new ViewModelProvider(this).get(GalleryViewModel.class);
 
         binding = FragmentGalleryBinding.inflate(inflater, container, false);
-        View root = binding.getRoot();
+        final View root = binding.getRoot();
 
         final TextView textView = binding.textGallery;
         galleryViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);

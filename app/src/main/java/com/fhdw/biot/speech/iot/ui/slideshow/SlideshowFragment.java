@@ -11,16 +11,16 @@ import androidx.lifecycle.ViewModelProvider;
 import com.fhdw.biot.speech.iot.databinding.FragmentSlideshowBinding;
 
 public class SlideshowFragment extends Fragment {
-
     private FragmentSlideshowBinding binding;
 
+    @Override
     public View onCreateView(
             @NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        SlideshowViewModel slideshowViewModel =
+        final SlideshowViewModel slideshowViewModel =
                 new ViewModelProvider(this).get(SlideshowViewModel.class);
 
         binding = FragmentSlideshowBinding.inflate(inflater, container, false);
-        View root = binding.getRoot();
+        final View root = binding.getRoot();
 
         final TextView textView = binding.textSlideshow;
         slideshowViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);

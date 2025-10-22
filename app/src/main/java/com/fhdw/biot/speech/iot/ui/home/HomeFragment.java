@@ -11,15 +11,15 @@ import androidx.lifecycle.ViewModelProvider;
 import com.fhdw.biot.speech.iot.databinding.FragmentHomeBinding;
 
 public class HomeFragment extends Fragment {
-
     private FragmentHomeBinding binding;
 
+    @Override
     public View onCreateView(
             @NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        HomeViewModel homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
+        final HomeViewModel homeViewModel = new ViewModelProvider(this).get(HomeViewModel.class);
 
         binding = FragmentHomeBinding.inflate(inflater, container, false);
-        View root = binding.getRoot();
+        final View root = binding.getRoot();
 
         final TextView textView = binding.textHome;
         homeViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
