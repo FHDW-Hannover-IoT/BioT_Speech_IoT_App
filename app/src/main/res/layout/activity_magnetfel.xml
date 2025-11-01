@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:id="@+id/main"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/background"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:id="@+id/headerText"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:background="@color/header"
+        android:gravity="center_vertical|center_horizontal"
+        android:padding="8dp"
+        android:text="Magnetfeld"
+        android:textColor="@color/text"
+        android:textSize="30sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:layout_weight="1">
+
+        <com.github.mikephil.charting.charts.LineChart
+            android:id="@+id/lineChartMagnetX"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_margin="16dp"/>
+
+        <com.github.mikephil.charting.charts.LineChart
+            android:id="@+id/lineChartMagnetY"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_margin="16dp" />
+
+        <com.github.mikephil.charting.charts.LineChart
+            android:id="@+id/lineChartMagnetZ"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_margin="16dp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/footerBar"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:background="@color/header">
+
+        <TextView
+            android:id="@+id/gyroDescription"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Gyroskop"
+            android:textColor="@color/text"
+            android:layout_margin="10dp"
+            android:gravity="center"
+            android:textSize="15sp"/>
+
+        <Button
+            android:id="@+id/btnAccel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="<"
+            android:textColor="@color/background"
+            android:layout_marginEnd="20dp"
+            android:backgroundTint="@color/button"
+            android:textSize="20sp" />
+
+        <Button
+            android:id="@+id/btnMagnet"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text=">"
+            android:textColor="@color/background"
+            android:layout_marginStart="20dp"
+            android:backgroundTint="@color/button"
+            android:textSize="20sp"/>
+
+        <TextView
+            android:id="@+id/btnGyro"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Beschleunigung"
+            android:textColor="@color/text"
+            android:layout_margin="10dp"
+            android:gravity="center"
+            android:textSize="11sp"/>
+    </LinearLayout>
+</LinearLayout>
