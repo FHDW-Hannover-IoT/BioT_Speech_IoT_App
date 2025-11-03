@@ -191,7 +191,7 @@
                 android:textColor="@color/background"
                 android:layout_margin="4dp"
                 android:backgroundTint="@color/button"
-                android:textSize="11sp" />
+                android:textSize="10sp" />
 
             <Button
                 android:id="@+id/btnGyro"
@@ -202,7 +202,7 @@
                 android:textColor="@color/background"
                 android:layout_margin="4dp"
                 android:backgroundTint="@color/button"
-                android:textSize="11sp"/>
+                android:textSize="10sp"/>
 
             <Button
                 android:id="@+id/btnMagnet"
@@ -213,6 +213,6 @@
                 android:textColor="@color/background"
                 android:layout_margin="4dp"
                 android:backgroundTint="@color/button"
-                android:textSize="11sp"/>
+                android:textSize="10sp"/>
         </LinearLayout>
     </LinearLayout>

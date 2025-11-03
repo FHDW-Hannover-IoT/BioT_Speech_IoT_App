@@ -11,15 +11,14 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-public class MainActivity extends AppCompatActivity {
-
+public class MagnetActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_magnetfeld);
         ViewCompat.setOnApplyWindowInsetsListener(
-                findViewById(R.id.main),
+                findViewById(R.id.magnet),
                 (v, insets) -> {
                     Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
                     v.setPadding(
@@ -27,29 +26,20 @@ public class MainActivity extends AppCompatActivity {
                     return insets;
                 });
 
-        Button buttonGyro = findViewById(R.id.btnGyro);
+        Button buttonGyro = findViewById(R.id.btnPrevGyro);
         buttonGyro.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, GyroActivity.class);
+                Intent intent = new Intent(MagnetActivity.this, GyroActivity.class);
                 startActivity(intent);
             }
         });
 
-        Button buttonAccel = findViewById(R.id.btnAccel);
+        Button buttonAccel = findViewById(R.id.btnNextAccel);
         buttonAccel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, AccelActivity.class);
-                startActivity(intent);
-            }
-        });
-
-        Button buttonMagnet = findViewById(R.id.btnMagnet);
-        buttonMagnet.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, MagnetActivity.class);
+                Intent intent = new Intent(MagnetActivity.this, AccelActivity.class);
                 startActivity(intent);
             }
         });

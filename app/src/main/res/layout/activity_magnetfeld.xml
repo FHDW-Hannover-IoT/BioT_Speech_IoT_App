@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:id="@+id/main"
+    android:id="@+id/magnet"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@color/background"
@@ -68,7 +68,7 @@
             android:textSize="15sp"/>
 
         <Button
-            android:id="@+id/btnAccel"
+            android:id="@+id/btnPrevGyro"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -79,7 +79,7 @@
             android:textSize="20sp" />
 
         <Button
-            android:id="@+id/btnMagnet"
+            android:id="@+id/btnNextAccel"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
