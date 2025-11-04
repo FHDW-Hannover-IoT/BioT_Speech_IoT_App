@@ -12,36 +12,37 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 public class GyroActivity extends AppCompatActivity {
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_gyroskop);
-        ViewCompat.setOnApplyWindowInsetsListener(
-                findViewById(R.id.gyro),
-                (v, insets) -> {
-                    Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                    v.setPadding(
-                            systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-                    return insets;
-                });
-
-        Button buttonAccel = findViewById(R.id.btnPrevAccel);
-        buttonAccel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(GyroActivity.this, AccelActivity.class);
-                startActivity(intent);
-            }
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    EdgeToEdge.enable(this);
+    setContentView(R.layout.activity_gyroskop);
+    ViewCompat.setOnApplyWindowInsetsListener(
+        findViewById(R.id.gyro),
+        (v, insets) -> {
+          Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+          v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+          return insets;
         });
 
-        Button buttonMagnet = findViewById(R.id.btnNextMagnet);
-        buttonMagnet.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(GyroActivity.this, MagnetActivity.class);
-                startActivity(intent);
-            }
+    Button buttonAccel = findViewById(R.id.btnPrevAccel);
+    buttonAccel.setOnClickListener(
+        new View.OnClickListener() {
+          @Override
+          public void onClick(View view) {
+            Intent intent = new Intent(GyroActivity.this, AccelActivity.class);
+            startActivity(intent);
+          }
         });
-    }
+
+    Button buttonMagnet = findViewById(R.id.btnNextMagnet);
+    buttonMagnet.setOnClickListener(
+        new View.OnClickListener() {
+          @Override
+          public void onClick(View view) {
+            Intent intent = new Intent(GyroActivity.this, MagnetActivity.class);
+            startActivity(intent);
+          }
+        });
+  }
 }
