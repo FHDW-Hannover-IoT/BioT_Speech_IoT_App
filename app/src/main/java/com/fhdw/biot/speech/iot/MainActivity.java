@@ -13,10 +13,10 @@ import androidx.core.view.WindowInsetsCompat;
 
 public class MainActivity extends AppCompatActivity {
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    EdgeToEdge.enable(this);
     //    setContentView(R.layout.activity_main);
     ViewCompat.setOnApplyWindowInsetsListener(
         findViewById(R.id.main),
@@ -26,31 +26,34 @@ public class MainActivity extends AppCompatActivity {
           return insets;
         });
 
-        Button buttonGyro = findViewById(R.id.btnGyro);
-        buttonGyro.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, GyroActivity.class);
-                startActivity(intent);
-            }
+    Button buttonGyro = findViewById(R.id.btnGyro);
+    buttonGyro.setOnClickListener(
+        new View.OnClickListener() {
+          @Override
+          public void onClick(View view) {
+            Intent intent = new Intent(MainActivity.this, GyroActivity.class);
+            startActivity(intent);
+          }
         });
 
-        Button buttonAccel = findViewById(R.id.btnAccel);
-        buttonAccel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, AccelActivity.class);
-                startActivity(intent);
-            }
+    Button buttonAccel = findViewById(R.id.btnAccel);
+    buttonAccel.setOnClickListener(
+        new View.OnClickListener() {
+          @Override
+          public void onClick(View view) {
+            Intent intent = new Intent(MainActivity.this, AccelActivity.class);
+            startActivity(intent);
+          }
         });
 
-        Button buttonMagnet = findViewById(R.id.btnMagnet);
-        buttonMagnet.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, MagnetActivity.class);
-                startActivity(intent);
-            }
+    Button buttonMagnet = findViewById(R.id.btnMagnet);
+    buttonMagnet.setOnClickListener(
+        new View.OnClickListener() {
+          @Override
+          public void onClick(View view) {
+            Intent intent = new Intent(MainActivity.this, MagnetActivity.class);
+            startActivity(intent);
+          }
         });
-    }
+  }
 }
