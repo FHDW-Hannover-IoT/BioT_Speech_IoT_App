@@ -1,22 +1,39 @@
 package com.fhdw.biot.speech.iot;
 
+import android.annotation.SuppressLint;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements SensorEventListener {
+
+    private SensorDao sensorDao;
+
+    private SensorManager sensorManager;
+    private Sensor accelerometer;
+    private Sensor gyroscope;
+    private Sensor magnetometer;
+
+    private TextView accelXValue, accelYValue, accelZValue;
+    private TextView gyroXValue, gyroYValue, gyroZValue;
+    private TextView magXValue, magYValue, magZValue;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
-        //    setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main);
         ViewCompat.setOnApplyWindowInsetsListener(
                 findViewById(R.id.main),
                 (v, insets) -> {
@@ -55,5 +72,95 @@ public class MainActivity extends AppCompatActivity {
                         startActivity(intent);
                     }
                 });
+
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+
+        accelXValue = findViewById(R.id.accelXValue);
+        accelYValue = findViewById(R.id.accelYValue);
+        accelZValue = findViewById(R.id.accelZValue);
+
+        gyroXValue = findViewById(R.id.gyroXValue);
+        gyroYValue = findViewById(R.id.gyroYValue);
+        gyroZValue = findViewById(R.id.gyroZValue);
+
+        magXValue = findViewById(R.id.magXValue);
+        magYValue = findViewById(R.id.magYValue);
+        magZValue = findViewById(R.id.magZValue);
+
+        DB db= DB.getDatabase(this);
+        sensorDao = db.sensorDao();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, gyroscope, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, magnetometer, SensorManager.SENSOR_DELAY_NORMAL);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        sensorManager.unregisterListener(this);
+    }
+
+    @SuppressLint("StringFormatInvalid")
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        switch (event.sensor.getType()) {
+            case Sensor.TYPE_ACCELEROMETER:
+                accelXValue.setText(getString(R.string.beschleunigung_x, event.values[0]));
+                accelYValue.setText(getString(R.string.beschleunigung_y, event.values[1]));
+                accelZValue.setText(getString(R.string.beschleunigung_z, event.values[2]));
+
+                AccelData accelData = new AccelData();
+                accelData.accelX = event.values[0];
+                accelData.accelY = event.values[1];
+                accelData.accelZ = event.values[2];
+                accelData.timestamp = System.currentTimeMillis();
+
+                DB.databaseWriteExecutor.execute(()->{
+                    sensorDao.insert(accelData);
+                });
+
+                break;
+            case Sensor.TYPE_GYROSCOPE:
+                gyroXValue.setText(getString(R.string.gyro_x, event.values[0]));
+                gyroYValue.setText(getString(R.string.gyro_y, event.values[1]));
+                gyroZValue.setText(getString(R.string.gyro_z, event.values[2]));
+                GyroData gyroData = new GyroData();
+                gyroData.gyroX = event.values[0];
+                gyroData.gyroY = event.values[1];
+                gyroData.gyroZ = event.values[2];
+                gyroData.timestamp = System.currentTimeMillis();
+
+                DB.databaseWriteExecutor.execute(() -> {
+                    sensorDao.insert(gyroData);
+                });
+                break;
+            case Sensor.TYPE_MAGNETIC_FIELD:
+                magXValue.setText(getString(R.string.magnet_x, event.values[0]));
+                magYValue.setText(getString(R.string.magnet_y, event.values[1]));
+                magZValue.setText(getString(R.string.magnet_z, event.values[2]));
+                MagnetData magnetData = new MagnetData();
+                magnetData.magnetX = event.values[0];
+                magnetData.magnetY = event.values[1];
+                magnetData.magnetZ = event.values[2];
+                magnetData.timestamp = System.currentTimeMillis();
+
+                DB.databaseWriteExecutor.execute(() -> {
+                    sensorDao.insert(magnetData);
+                });
+                break;
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        // Do something here if sensor accuracy changes.
     }
 }

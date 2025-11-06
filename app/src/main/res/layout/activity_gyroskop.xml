@@ -27,7 +27,7 @@
         android:layout_weight="1">
 
         <com.github.mikephil.charting.charts.LineChart
-            android:id="@+id/lineChartGyroYX"
+            android:id="@+id/lineChartGyroX"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
