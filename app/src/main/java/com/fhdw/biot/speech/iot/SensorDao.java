@@ -3,8 +3,8 @@ package com.fhdw.biot.speech.iot;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
-
 import java.util.List;
+
 // DAta Access Object
 @Dao
 public interface SensorDao {

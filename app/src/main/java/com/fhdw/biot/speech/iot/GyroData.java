@@ -1,6 +1,5 @@
 package com.fhdw.biot.speech.iot;
 
-
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 

@@ -3,16 +3,12 @@ package com.fhdw.biot.speech.iot;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
-
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +16,7 @@ public class AccelActivity extends BaseChartActivity {
 
     private LineChart lineChartAccelX, lineChartAccelY, lineChartAccelZ;
     private long startTime = 0;
-
+//Test
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,23 +57,26 @@ public class AccelActivity extends BaseChartActivity {
     }
 
     private void loadDataFromDatabase() {
-        DB.databaseWriteExecutor.execute(() -> {
-            List<AccelData> accelDataList = DB.getDatabase(getApplicationContext()).sensorDao().getAllAccelData();
+        DB.databaseWriteExecutor.execute(
+                () -> {
+                    List<AccelData> accelDataList =
+                            DB.getDatabase(getApplicationContext()).sensorDao().getAllAccelData();
 
-            if (!accelDataList.isEmpty()) {
-                startTime = accelDataList.get(0).timestamp;
-            }
+                    if (!accelDataList.isEmpty()) {
+                        startTime = accelDataList.get(0).timestamp;
+                    }
 
-            runOnUiThread(() -> {
-                // Charts with the formatter
-                if (startTime > 0) {
-                    setupChart(lineChartAccelX, "X-Achse", startTime);
-                    setupChart(lineChartAccelY, "Y-Achse", startTime);
-                    setupChart(lineChartAccelZ, "Z-Achse", startTime);
-                }
-                displayDataInCharts(accelDataList);
-            });
-        });
+                    runOnUiThread(
+                            () -> {
+                                // Charts with the formatter
+                                if (startTime > 0) {
+                                    setupChart(lineChartAccelX, "X-Achse", startTime);
+                                    setupChart(lineChartAccelY, "Y-Achse", startTime);
+                                    setupChart(lineChartAccelZ, "Z-Achse", startTime);
+                                }
+                                displayDataInCharts(accelDataList);
+                            });
+                });
     }
 
     private void displayDataInCharts(List<AccelData> accelDataList) {

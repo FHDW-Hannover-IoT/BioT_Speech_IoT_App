@@ -13,5 +13,4 @@ public class AccelData {
     public float accelX;
     public float accelY;
     public float accelZ;
-
 }

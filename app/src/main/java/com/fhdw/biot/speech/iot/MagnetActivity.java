@@ -3,16 +3,12 @@ package com.fhdw.biot.speech.iot;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
-
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,23 +57,26 @@ public class MagnetActivity extends BaseChartActivity {
     }
 
     private void loadDataFromDatabase() {
-        DB.databaseWriteExecutor.execute(() -> {
-            List<MagnetData> magnetDataList = DB.getDatabase(getApplicationContext()).sensorDao().getAllMagnetData();
+        DB.databaseWriteExecutor.execute(
+                () -> {
+                    List<MagnetData> magnetDataList =
+                            DB.getDatabase(getApplicationContext()).sensorDao().getAllMagnetData();
 
-            if (!magnetDataList.isEmpty()) {
-                startTime = magnetDataList.get(0).timestamp;
-            }
+                    if (!magnetDataList.isEmpty()) {
+                        startTime = magnetDataList.get(0).timestamp;
+                    }
 
-            runOnUiThread(() -> {
-                // Re-setup charts with the formatter now that we have a start time
-                if (startTime > 0) {
-                    setupChart(lineChartMagnetX, "X-Achse", startTime);
-                    setupChart(lineChartMagnetY, "Y-Achse", startTime);
-                    setupChart(lineChartMagnetZ, "Z-Achse", startTime);
-                }
-                displayDataInCharts(magnetDataList);
-            });
-        });
+                    runOnUiThread(
+                            () -> {
+                                // Re-setup charts with the formatter now that we have a start time
+                                if (startTime > 0) {
+                                    setupChart(lineChartMagnetX, "X-Achse", startTime);
+                                    setupChart(lineChartMagnetY, "Y-Achse", startTime);
+                                    setupChart(lineChartMagnetZ, "Z-Achse", startTime);
+                                }
+                                displayDataInCharts(magnetDataList);
+                            });
+                });
     }
 
     private void displayDataInCharts(List<MagnetData> magnetDataList) {

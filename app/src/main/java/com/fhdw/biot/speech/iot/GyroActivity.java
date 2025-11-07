@@ -3,16 +3,12 @@ package com.fhdw.biot.speech.iot;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
-
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -61,22 +57,25 @@ public class GyroActivity extends BaseChartActivity {
     }
 
     private void loadDataFromDatabase() {
-        DB.databaseWriteExecutor.execute(() -> {
-            List<GyroData> gyroDataList = DB.getDatabase(getApplicationContext()).sensorDao().getAllGyroData();
+        DB.databaseWriteExecutor.execute(
+                () -> {
+                    List<GyroData> gyroDataList =
+                            DB.getDatabase(getApplicationContext()).sensorDao().getAllGyroData();
 
-            if (!gyroDataList.isEmpty()) {
-                startTime = gyroDataList.get(0).timestamp;
-            }
+                    if (!gyroDataList.isEmpty()) {
+                        startTime = gyroDataList.get(0).timestamp;
+                    }
 
-            runOnUiThread(() -> {
-                if (startTime > 0) {
-                    setupChart(lineChartGyroX, "X-Achse", startTime);
-                    setupChart(lineChartGyroY, "Y-Achse", startTime);
-                    setupChart(lineChartGyroZ, "Z-Achse", startTime);
-                }
-                displayDataInCharts(gyroDataList);
-            });
-        });
+                    runOnUiThread(
+                            () -> {
+                                if (startTime > 0) {
+                                    setupChart(lineChartGyroX, "X-Achse", startTime);
+                                    setupChart(lineChartGyroY, "Y-Achse", startTime);
+                                    setupChart(lineChartGyroZ, "Z-Achse", startTime);
+                                }
+                                displayDataInCharts(gyroDataList);
+                            });
+                });
     }
 
     private void displayDataInCharts(List<GyroData> gyroDataList) {

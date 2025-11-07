@@ -1,13 +1,12 @@
 package com.fhdw.biot.speech.iot;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
@@ -45,32 +44,23 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         Button buttonGyro = findViewById(R.id.btnGyro);
         buttonGyro.setOnClickListener(
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        Intent intent = new Intent(MainActivity.this, GyroActivity.class);
-                        startActivity(intent);
-                    }
+                view -> {
+                    Intent intent = new Intent(MainActivity.this, GyroActivity.class);
+                    startActivity(intent);
                 });
 
         Button buttonAccel = findViewById(R.id.btnAccel);
         buttonAccel.setOnClickListener(
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        Intent intent = new Intent(MainActivity.this, AccelActivity.class);
-                        startActivity(intent);
-                    }
+                view -> {
+                    Intent intent = new Intent(MainActivity.this, AccelActivity.class);
+                    startActivity(intent);
                 });
 
         Button buttonMagnet = findViewById(R.id.btnMagnet);
         buttonMagnet.setOnClickListener(
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        Intent intent = new Intent(MainActivity.this, MagnetActivity.class);
-                        startActivity(intent);
-                    }
+                view -> {
+                    Intent intent = new Intent(MainActivity.this, MagnetActivity.class);
+                    startActivity(intent);
                 });
 
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
@@ -90,7 +80,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         magYValue = findViewById(R.id.magYValue);
         magZValue = findViewById(R.id.magZValue);
 
-        DB db= DB.getDatabase(this);
+        DB db = DB.getDatabase(this);
         sensorDao = db.sensorDao();
     }
 
@@ -123,9 +113,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 accelData.accelZ = event.values[2];
                 accelData.timestamp = System.currentTimeMillis();
 
-                DB.databaseWriteExecutor.execute(()->{
-                    sensorDao.insert(accelData);
-                });
+                DB.databaseWriteExecutor.execute(() -> sensorDao.insert(accelData));
 
                 break;
             case Sensor.TYPE_GYROSCOPE:
@@ -138,9 +126,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 gyroData.gyroZ = event.values[2];
                 gyroData.timestamp = System.currentTimeMillis();
 
-                DB.databaseWriteExecutor.execute(() -> {
-                    sensorDao.insert(gyroData);
-                });
+                DB.databaseWriteExecutor.execute(() -> sensorDao.insert(gyroData));
                 break;
             case Sensor.TYPE_MAGNETIC_FIELD:
                 magXValue.setText(getString(R.string.magnet_x, event.values[0]));
@@ -152,9 +138,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 magnetData.magnetZ = event.values[2];
                 magnetData.timestamp = System.currentTimeMillis();
 
-                DB.databaseWriteExecutor.execute(() -> {
-                    sensorDao.insert(magnetData);
-                });
+                DB.databaseWriteExecutor.execute(() -> sensorDao.insert(magnetData));
                 break;
         }
     }
