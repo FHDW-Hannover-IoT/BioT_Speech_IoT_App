@@ -16,7 +16,8 @@ public class AccelActivity extends BaseChartActivity {
 
     private LineChart lineChartAccelX, lineChartAccelY, lineChartAccelZ;
     private long startTime = 0;
-//Test
+
+    // Test
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
