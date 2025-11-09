@@ -9,4 +9,5 @@
     <string name="magnet_x">X: %1$.2f</string>
     <string name="magnet_y">Y: %1$.2f</string>
     <string name="magnet_z">Z: %1$.2f</string>
+    <string name="ereignisse_title">Ereignisse</string>
 </resources>

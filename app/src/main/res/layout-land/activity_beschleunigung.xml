@@ -8,17 +8,44 @@
     android:background="@color/background"
     tools:context=".MainActivity">
 
-    <TextView
-        android:id="@+id/headerText"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:background="@color/header"
-        android:gravity="center_vertical|center_horizontal"
-        android:padding="8dp"
-        android:text="Beschleunigungssensor"
-        android:textColor="@color/text"
-        android:textSize="30sp"
-        android:textStyle="bold" />
+        android:layout_height="wrap_content"
+        android:background="@color/header">
+
+        <ImageButton
+            android:id="@+id/home_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/baseline_home_24"
+            android:contentDescription="Zur Startseite"
+            android:background="@color/header"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="16dp"
+            android:color="@color/text"/>
+
+        <TextView
+            android:id="@+id/headerText"
+            android:layout_width="650dp"
+            android:layout_height="80dp"
+            android:background="@color/header"
+            android:gravity="center_vertical|center_horizontal"
+            android:padding="17dp"
+            android:text="Beschleunigungssensor"
+            android:textColor="@color/text"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/notification_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/outline_circle_notifications_24"
+            android:background="@color/header"
+            android:layout_marginTop="16dp"
+            android:color="@color/text"/>
+
+    </LinearLayout>
 
     <ScrollView
         android:layout_width="match_parent"

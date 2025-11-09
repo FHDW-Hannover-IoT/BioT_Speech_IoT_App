@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.ImageButton;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -41,6 +42,21 @@ public class MagnetActivity extends BaseChartActivity {
         buttonAccel.setOnClickListener(
                 view -> {
                     Intent intent = new Intent(MagnetActivity.this, AccelActivity.class);
+                    startActivity(intent);
+                });
+
+        ImageButton buttonHome = findViewById(R.id.home_button);
+        buttonHome.setOnClickListener(
+                view -> {
+                    Intent intent = new Intent(MagnetActivity.this, MainActivity.class);
+                    startActivity(intent);
+                });
+
+        ImageButton ereignisButton = findViewById(R.id.notification_button);
+        ereignisButton.setOnClickListener(
+                view -> {
+                    Intent intent = new Intent(MagnetActivity.this, EreignisActivity.class);
+                    intent.putExtra("SENSOR_FILTER", "MAGNET");
                     startActivity(intent);
                 });
 

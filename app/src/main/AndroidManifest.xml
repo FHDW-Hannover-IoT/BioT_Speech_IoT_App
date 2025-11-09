@@ -23,6 +23,7 @@
         <activity android:name=".AccelActivity" />
         <activity android:name=".GyroActivity" />
         <activity android:name=".MagnetActivity" />
+        <activity android:name=".EreignisActivity" />
 
     </application>
 

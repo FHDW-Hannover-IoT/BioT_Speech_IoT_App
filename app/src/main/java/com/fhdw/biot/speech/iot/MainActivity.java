@@ -8,6 +8,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -60,6 +61,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         buttonMagnet.setOnClickListener(
                 view -> {
                     Intent intent = new Intent(MainActivity.this, MagnetActivity.class);
+                    startActivity(intent);
+                });
+
+        ImageButton ereignisButton = findViewById(R.id.notification_button);
+        ereignisButton.setOnClickListener(
+                view -> {
+                    Intent intent = new Intent(MainActivity.this, EreignisActivity.class);
+                    intent.putExtra("SENSOR_FILTER", "ALL");
                     startActivity(intent);
                 });
 
