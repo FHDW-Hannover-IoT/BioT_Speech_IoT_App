@@ -1,6 +1,10 @@
 package com.fhdw.biot.speech.iot;
 
+import static androidx.core.content.ContextCompat.getSystemService;
+
 import android.annotation.SuppressLint;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -28,6 +32,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private TextView accelXValue, accelYValue, accelZValue;
     private TextView gyroXValue, gyroYValue, gyroZValue;
     private TextView magXValue, magYValue, magZValue;
+
+    private float accelEventThreshold = 15;
+    private float gyroEventThreshold = 15;
+    private float magEventThreshold = 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -122,6 +130,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 accelData.accelZ = event.values[2];
                 accelData.timestamp = System.currentTimeMillis();
 
+                for(int i = 0; i < 2; i++){
+                    if(Math.abs(event.values[i]) > accelEventThreshold){
+                        com.fhdw.biot.speech.iot.SensorEvent mag_event =
+                                new com.fhdw.biot.speech.iot.SensorEvent(accelData.timestamp, "mag", event.values[i], "magEvent_" + accelData.timestamp, this);
+                    }
+                }
+
                 DB.databaseWriteExecutor.execute(() -> sensorDao.insert(accelData));
 
                 break;
@@ -135,6 +150,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 gyroData.gyroZ = event.values[2];
                 gyroData.timestamp = System.currentTimeMillis();
 
+                for(int i = 0; i < 3; i++){
+                    if(Math.abs(event.values[i]) > gyroEventThreshold){
+                        com.fhdw.biot.speech.iot.SensorEvent mag_event =
+                                new com.fhdw.biot.speech.iot.SensorEvent(gyroData.timestamp, "mag", event.values[i], "magEvent_" + gyroData.timestamp, this);
+                    }
+                }
+
                 DB.databaseWriteExecutor.execute(() -> sensorDao.insert(gyroData));
                 break;
             case Sensor.TYPE_MAGNETIC_FIELD:
@@ -146,6 +168,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 magnetData.magnetY = event.values[1];
                 magnetData.magnetZ = event.values[2];
                 magnetData.timestamp = System.currentTimeMillis();
+
+                for(int i = 0; i < 2; i++){
+                    if(Math.abs(event.values[i]) > magEventThreshold){
+                        com.fhdw.biot.speech.iot.SensorEvent mag_event =
+                                new com.fhdw.biot.speech.iot.SensorEvent(magnetData.timestamp, "mag", event.values[i], "magEvent_" + magnetData.timestamp, this);
+                    }
+                }
 
                 DB.databaseWriteExecutor.execute(() -> sensorDao.insert(magnetData));
                 break;
