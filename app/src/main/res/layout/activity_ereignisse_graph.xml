@@ -22,6 +22,7 @@
             android:background="@color/header"
             android:layout_marginTop="16dp"
             android:layout_marginStart="16dp"
+            android:paddingBottom="15dp"
             android:color="@color/text"/>
 
         <TextView

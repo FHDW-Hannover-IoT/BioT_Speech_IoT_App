@@ -60,6 +60,26 @@ public class MagnetActivity extends BaseChartActivity {
                     startActivity(intent);
                 });
 
+        DatePickerHandler datePickerHandler = new DatePickerHandler(MagnetActivity.this);
+
+        Button xBisButton = findViewById(R.id.button_x_bis);
+        datePickerHandler.setupButton(xBisButton);
+
+        Button xVonButton = findViewById(R.id.button_x_von);
+        datePickerHandler.setupButton(xVonButton);
+
+        Button yBisButton = findViewById(R.id.button_y_bis);
+        datePickerHandler.setupButton(yBisButton);
+
+        Button yVonButton = findViewById(R.id.button_y_von);
+        datePickerHandler.setupButton(yVonButton);
+
+        Button zBisButton = findViewById(R.id.button_z_bis);
+        datePickerHandler.setupButton(zBisButton);
+
+        Button zVonButton = findViewById(R.id.button_z_von);
+        datePickerHandler.setupButton(zVonButton);
+
         lineChartMagnetX = findViewById(R.id.lineChartMagnetX);
         lineChartMagnetY = findViewById(R.id.lineChartMagnetY);
         lineChartMagnetZ = findViewById(R.id.lineChartMagnetZ);

@@ -17,16 +17,19 @@
             android:id="@+id/home_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:src="@drawable/baseline_home_24"
             android:contentDescription="Zur Startseite"
             android:background="@color/header"
             android:layout_marginTop="16dp"
             android:layout_marginStart="16dp"
+            android:paddingBottom="15dp"
             android:color="@color/text"/>
 
         <TextView
             android:id="@+id/headerText"
-            android:layout_width="330dp"
+            android:layout_width="0dp"
+            android:layout_weight="30"
             android:layout_height="80dp"
             android:background="@color/header"
             android:gravity="center_vertical|center_horizontal"

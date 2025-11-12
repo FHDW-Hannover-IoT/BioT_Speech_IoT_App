@@ -22,14 +22,17 @@
             android:background="@color/header"
             android:layout_marginTop="16dp"
             android:layout_marginStart="16dp"
+            android:paddingBottom="15dp"
+            android:layout_weight="1"
             android:color="@color/text"/>
 
         <TextView
             android:id="@+id/headerText"
-            android:layout_width="330dp"
+            android:layout_width="0dp"
             android:layout_height="80dp"
             android:background="@color/header"
             android:gravity="center_vertical|center_horizontal"
+            android:layout_weight="28"
             android:padding="17dp"
             android:text="Magnetfeld"
             android:textColor="@color/text"
@@ -43,6 +46,9 @@
             android:src="@drawable/outline_circle_notifications_24"
             android:background="@color/header"
             android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            android:paddingBottom="15dp"
+            android:layout_weight="1"
             android:color="@color/text"/>
 
     </LinearLayout>
@@ -51,7 +57,46 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:orientation="vertical"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:layout_margin="10dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Von: "
+                android:textColor="@color/text"/>
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:text="01.01.2025"
+                android:textSize="8dp"
+                android:textColor="@color/background"
+                android:backgroundTint="@color/button"
+                android:id="@+id/button_x_von" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Bis: "
+                android:textColor="@color/text"
+                android:layout_marginStart="10dp"/>
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:text="01.01.2025"
+                android:textSize="8dp"
+                android:textColor="@color/background"
+                android:backgroundTint="@color/button"
+                android:id="@+id/button_x_bis"/>
+
+        </LinearLayout>
 
         <com.github.mikephil.charting.charts.LineChart
             android:id="@+id/lineChartMagnetX"
@@ -60,12 +105,88 @@
             android:layout_weight="1"
             android:layout_margin="16dp"/>
 
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Von: "
+                android:textColor="@color/text"/>
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:text="01.01.2025"
+                android:textSize="8dp"
+                android:textColor="@color/background"
+                android:backgroundTint="@color/button"
+                android:id="@+id/button_y_von" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Bis: "
+                android:textColor="@color/text"
+                android:layout_marginStart="10dp"/>
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:text="01.01.2025"
+                android:textSize="8dp"
+                android:textColor="@color/background"
+                android:backgroundTint="@color/button"
+                android:id="@+id/button_y_bis"/>
+
+        </LinearLayout>
+
         <com.github.mikephil.charting.charts.LineChart
             android:id="@+id/lineChartMagnetY"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
             android:layout_margin="16dp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Von: "
+                android:textColor="@color/text"/>
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:text="01.01.2025"
+                android:textSize="8dp"
+                android:textColor="@color/background"
+                android:backgroundTint="@color/button"
+                android:id="@+id/button_z_von" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Bis: "
+                android:textColor="@color/text"
+                android:layout_marginStart="10dp"/>
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:text="01.01.2025"
+                android:textSize="8dp"
+                android:textColor="@color/background"
+                android:backgroundTint="@color/button"
+                android:id="@+id/button_z_bis"/>
+
+        </LinearLayout>
 
         <com.github.mikephil.charting.charts.LineChart
             android:id="@+id/lineChartMagnetZ"
