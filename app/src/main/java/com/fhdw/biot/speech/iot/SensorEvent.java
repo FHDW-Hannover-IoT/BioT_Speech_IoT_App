@@ -41,9 +41,12 @@ public class SensorEvent {
         return id;
     }
 
-    private void createNotification(String title, String text){
-        NotificationChannel channel = new NotificationChannel("eventChannel", "eventChannel", NotificationManager.IMPORTANCE_DEFAULT);
-        NotificationManager notificationManager = getSystemService(this.context, NotificationManager.class);
+    private void createNotification(String title, String text) {
+        NotificationChannel channel =
+                new NotificationChannel(
+                        "eventChannel", "eventChannel", NotificationManager.IMPORTANCE_DEFAULT);
+        NotificationManager notificationManager =
+                getSystemService(this.context, NotificationManager.class);
 
         // Create Notification Channel
         notificationManager.createNotificationChannel(channel);
