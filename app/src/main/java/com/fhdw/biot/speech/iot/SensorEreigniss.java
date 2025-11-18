@@ -7,14 +7,14 @@ import android.app.NotificationManager;
 import android.content.Context;
 import androidx.core.app.NotificationCompat;
 
-public class SensorEvent {
+public class SensorEreigniss {
     private long timestamp;
     private String sensorType;
     private float value;
     private String id;
     private Context context;
 
-    public SensorEvent(long timestamp, String sensorType, float value, String id, Context context) {
+    public SensorEreigniss(long timestamp, String sensorType, float value, String id, Context context) {
         this.timestamp = timestamp;
         this.sensorType = sensorType;
         this.value = value;

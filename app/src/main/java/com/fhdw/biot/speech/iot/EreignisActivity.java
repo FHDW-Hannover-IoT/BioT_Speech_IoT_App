@@ -17,7 +17,7 @@ import java.util.List;
 public class EreignisActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private MyEventAdapter adapter;
-    private List<SensorEvent> filteredEvents = new ArrayList<>();
+    private List<SensorEreigniss> filteredEvents = new ArrayList<>();
 
     private TextView headerTextView;
 
@@ -59,13 +59,13 @@ public class EreignisActivity extends AppCompatActivity {
 
     private void loadEventData(String filter) {
         // Daten aus Datenbank holen ...
-        List<com.fhdw.biot.speech.iot.SensorEvent> allEvents = new ArrayList<>();
+        List<SensorEreigniss> allEvents = new ArrayList<>();
 
         if ("ALL".equals(filter)) {
             filteredEvents.addAll(allEvents);
             headerTextView.setText("Ereignisse");
         } else {
-            for (com.fhdw.biot.speech.iot.SensorEvent event : allEvents) {
+            for (SensorEreigniss event : allEvents) {
                 if (event.getSensorType().equals(filter)) {
                     filteredEvents.add(event);
                 }

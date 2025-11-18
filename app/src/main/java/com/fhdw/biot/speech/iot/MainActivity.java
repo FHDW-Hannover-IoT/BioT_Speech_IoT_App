@@ -1,7 +1,5 @@
 package com.fhdw.biot.speech.iot;
 
-import static androidx.core.content.ContextCompat.getSystemService;
-
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.hardware.Sensor;
@@ -130,8 +128,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 for (int i = 0; i < 2; i++) {
                     if (Math.abs(event.values[i]) > accelEventThreshold) {
-                        com.fhdw.biot.speech.iot.SensorEvent mag_event =
-                                new com.fhdw.biot.speech.iot.SensorEvent(
+                        SensorEreigniss mag_event =
+                                new SensorEreigniss(
                                         accelData.timestamp,
                                         "mag",
                                         event.values[i],
@@ -155,8 +153,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 for (int i = 0; i < 3; i++) {
                     if (Math.abs(event.values[i]) > gyroEventThreshold) {
-                        com.fhdw.biot.speech.iot.SensorEvent mag_event =
-                                new com.fhdw.biot.speech.iot.SensorEvent(
+                        SensorEreigniss mag_event =
+                                new SensorEreigniss(
                                         gyroData.timestamp,
                                         "mag",
                                         event.values[i],
@@ -179,8 +177,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 for (int i = 0; i < 2; i++) {
                     if (Math.abs(event.values[i]) > magEventThreshold) {
-                        com.fhdw.biot.speech.iot.SensorEvent mag_event =
-                                new com.fhdw.biot.speech.iot.SensorEvent(
+                        SensorEreigniss mag_event =
+                                new SensorEreigniss(
                                         magnetData.timestamp,
                                         "mag",
                                         event.values[i],
