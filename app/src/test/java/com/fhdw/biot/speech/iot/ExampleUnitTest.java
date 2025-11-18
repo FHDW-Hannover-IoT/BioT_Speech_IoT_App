@@ -48,6 +48,8 @@ public class ExampleUnitTest {
     private boolean shouldNotify(float x, float y, float z) {
         return x > 15 || y > 15 || z > 15 || x < -15 || y < -15 || z < -15;
     }
+
+
 }
 // Da Mattis aktuell für alle 3 Sensoren das Limit auf 15 gesetzt hat, sind das die Testfälle
 // Da ich den aktuellen Namen der Methode nicht kenne, heißt sie bei mir "shouldNotify"

@@ -59,6 +59,7 @@ dependencies {
     implementation libs.room.runtime
     implementation libs.room.ktx
     implementation libs.firebase.firestore
+    implementation libs.mockito.core
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core

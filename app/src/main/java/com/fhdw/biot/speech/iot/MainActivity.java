@@ -22,8 +22,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private SensorDao sensorDao;
 
-    private SensorManager sensorManager;
-    private Sensor accelerometer;
+    public SensorManager sensorManager;
+    public Sensor accelerometer;
     private Sensor gyroscope;
     private Sensor magnetometer;
 
