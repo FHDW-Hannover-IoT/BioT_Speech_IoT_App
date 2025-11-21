@@ -8,6 +8,7 @@ public class InitDb extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        System.out.println("INITDB DEBUG: InitDb.onCreate CALLED");
         appDatabase = Database.getDatabase(this);
     }
 }

@@ -10,14 +10,19 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import java.util.List;
+
+import database.InitDb;
+import database.ValueSensor;
+
 public class MainActivity extends AppCompatActivity {
 
     private static final String Broker_URL = "tcp://10.0.2.2:1883";
     private static final String Client_ID = "Nutzer";
     private MqttHandler mqttHandler;
-    //private final TextView datenBewegung = findViewById(R.id.Daten_Bewegung);
-    //private TextView datenPulse = findViewById(R.id.Daten_Bewegung);;
-    //private TextView datenGyro = findViewById(R.id.Daten_Bewegung);;
+    private TextView datenBewegung;
+    private TextView datenZeit;
+    private TextView datenGyro;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,14 +35,98 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
         mqttHandler = new MqttHandler();
-        //mqttHandler.setMessageListener((topic, message) -> {
-        //    System.out.println("Received in Activity: " + message);
-        //    runOnUiThread(() -> datenBewegung.setText(message));
-        //});
+        datenBewegung = findViewById(R.id.Daten_Bewegung);
+        datenZeit = findViewById(R.id.Daten_Zeit);
+        datenGyro = findViewById(R.id.Daten_Gyro);
+
+        mqttHandler.setMessageListener((topic, message) -> {
+            System.out.println("MQTT DEBUG: topic=" + topic + " | msg=" + message);
+
+            runOnUiThread(() -> {
+                System.out.println("UI DEBUG: ENTER runOnUiThread");
+
+                switch (topic) {
+                    case "Sensor/Bewegung":
+                        datenBewegung.setText(message);
+                        String[] parts = message.split(",");
+
+                        try {
+                            ValueSensor sensor = new ValueSensor();
+                            sensor.value1 = Float.parseFloat(parts[0]);
+                            sensor.value2 = Float.parseFloat(parts[1]);
+                            sensor.value3 = Float.parseFloat(parts[2]);
+
+
+                            new Thread(() -> {
+                                try {
+                                    InitDb.appDatabase.valueDao().insert(sensor);
+                                } catch (Exception e) {
+                                    System.out.println("THREAD ERROR: " + e.getMessage());
+                                }
+                            }).start();
+
+                        } catch (Exception e) {
+                            System.out.println("PARSE ERROR: " + e.getMessage());
+                        }
+                        break;
+                    case "Sensor/Gyro":
+                        datenGyro.setText(message);
+                        String[] partsG = message.split(",");
+
+                        try {
+                            ValueSensor sensor = new ValueSensor();
+                            sensor.value4 = Float.parseFloat(partsG[0]);
+                            sensor.value5 = Float.parseFloat(partsG[1]);
+                            sensor.value6 = Float.parseFloat(partsG[2]);
+
+
+                            new Thread(() -> {
+                                try {
+                                    InitDb.appDatabase.valueDao().insert(sensor);
+                                } catch (Exception e) {
+                                    System.out.println("THREAD ERROR: " + e.getMessage());
+                                }
+                            }).start();
+
+                        } catch (Exception e) {
+                            System.out.println("PARSE ERROR: " + e.getMessage());
+                        }
+                        break;
+                    case "Sensor/Zeit":
+                        datenZeit.setText(message);
+
+                        try {
+                            ValueSensor sensor = new ValueSensor();
+                            sensor.value7 = message;
+
+
+
+                            new Thread(() -> {
+                                try {
+                                    InitDb.appDatabase.valueDao().insert(sensor);
+                                } catch (Exception e) {
+                                    System.out.println("THREAD ERROR: " + e.getMessage());
+                                }
+                            }).start();
+
+                        } catch (Exception e) {
+                            System.out.println("PARSE ERROR: " + e.getMessage());
+                        }
+                        break;
+                }
+            });
+        });
+
+
+
         mqttHandler.connect(Broker_URL, Client_ID);
-        subscribeToTopic("Sensor");
-        //subscribeToTopic("Sensor/Magnetfeld");
-        //subscribeToTopic("Sensor/Gyro");
+        subscribeToTopic("Sensor/Bewegung");
+        subscribeToTopic("Sensor/Zeit");
+        subscribeToTopic("Sensor/Gyro");
+        publishMessage("Sensor/Bewegung", "-0.788295,4.259267,0.982682");
+        publishMessage("Sensor/Zeit", "1970-01-01T00:01:10.215742Z");
+        publishMessage("Sensor/Gyro", "1.265565, 0.301551, 0.052052");
+        loadDatabaseValues();
     }
 
     @Override
@@ -56,4 +145,22 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(this, "Subscribing to topic: " + topic, Toast.LENGTH_SHORT).show();
         mqttHandler.subscribe(topic);
     }
+
+    private void loadDatabaseValues() {
+        new Thread(() -> {
+            List<ValueSensor> list = InitDb.appDatabase.valueDao().getAllvalue();
+            System.out.println("DB SIZE: " + list.size());
+            for (ValueSensor s : list) {
+                System.out.println("DB ENTRY: ID=" + s.primeID +
+                        " | X=" + s.value1 +
+                        " | Y=" + s.value2 +
+                        " | Z=" + s.value3 +
+                        " | Y=" + s.value4 +
+                        " | Y=" + s.value5 +
+                        " | Y=" + s.value6 +
+                        " | Y=" + s.value7);
+            }
+        }).start();
+    }
+
 }

@@ -4,7 +4,7 @@ import android.content.Context;
 
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
-@androidx.room.Database(entities = {ValueSensor.class}, version = 1, exportSchema = false)
+@androidx.room.Database(entities = {ValueSensor.class}, version = 2, exportSchema = false)
 public abstract class Database extends RoomDatabase {
     public abstract ValueSensorDAO valueDao();
 
@@ -16,6 +16,7 @@ public abstract class Database extends RoomDatabase {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                                     Database.class, "Datenbank")
+                            .fallbackToDestructiveMigration()
                             .build();
                 }
             }

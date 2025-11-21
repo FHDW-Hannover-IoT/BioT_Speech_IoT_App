@@ -21,9 +21,10 @@ public interface ValueSensorDAO {
         void delete(ValueSensor sensor);
 
         @Query("SELECT * FROM sensor WHERE PrimeID = :primeID")
-        ValueSensor getvalueByID(String primeID);
+        ValueSensor getvalueByID(int primeID);
 
-        @Query("SELECT * FROM sensor")
+
+    @Query("SELECT * FROM sensor")
         List<ValueSensor> getAllvalue();
 
 }
