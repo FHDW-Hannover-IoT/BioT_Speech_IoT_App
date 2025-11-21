@@ -4,7 +4,12 @@ import android.content.Context;
 
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
-@androidx.room.Database(entities = {ValueSensor.class}, version = 1, exportSchema = false)
+
+import database.entities.AccelData;
+import database.entities.GyroData;
+import database.entities.MagnetData;
+
+@androidx.room.Database(entities = {AccelData.class, MagnetData.class, GyroData.class}, version = 1, exportSchema = false)
 public abstract class Database extends RoomDatabase {
     public abstract ValueSensorDAO valueDao();
 
