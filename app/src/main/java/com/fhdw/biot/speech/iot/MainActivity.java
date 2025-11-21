@@ -1,5 +1,7 @@
 package com.fhdw.biot.speech.iot;
 
+import static androidx.core.content.ContextCompat.getSystemService;
+
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.hardware.Sensor;
@@ -20,8 +22,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private SensorDao sensorDao;
 
-    public SensorManager sensorManager;
-    public Sensor accelerometer;
+    private SensorManager sensorManager;
+    private Sensor accelerometer;
     private Sensor gyroscope;
     private Sensor magnetometer;
 
@@ -32,6 +34,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private float accelEventThreshold = 15;
     private float gyroEventThreshold = 15;
     private float magEventThreshold = 100;
+    private long lastEventTime = System.currentTimeMillis();
+    private int timeBetweenEvents = 5000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -126,14 +130,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 accelData.accelZ = event.values[2];
                 accelData.timestamp = System.currentTimeMillis();
 
-                for (int i = 0; i < 2; i++) {
-                    if (Math.abs(event.values[i]) > accelEventThreshold) {
-                        SensorEreigniss mag_event =
+                for (int i = 0; i < 3; i++) {
+                    if (Math.abs(event.values[i]) > accelEventThreshold
+                            && System.currentTimeMillis() > lastEventTime + timeBetweenEvents) {
+                        lastEventTime = System.currentTimeMillis();
+                        SensorEreigniss accel_event =
                                 new SensorEreigniss(
                                         accelData.timestamp,
-                                        "mag",
+                                        "accel",
                                         event.values[i],
-                                        "magEvent_" + accelData.timestamp,
+                                        "accelEvent_" + accelData.timestamp,
                                         this);
                     }
                 }
@@ -152,13 +158,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 gyroData.timestamp = System.currentTimeMillis();
 
                 for (int i = 0; i < 3; i++) {
-                    if (Math.abs(event.values[i]) > gyroEventThreshold) {
-                        SensorEreigniss mag_event =
+                    if (Math.abs(event.values[i]) > gyroEventThreshold
+                            && System.currentTimeMillis() > lastEventTime + timeBetweenEvents) {
+                        lastEventTime = System.currentTimeMillis();
+                        SensorEreigniss gyro_event =
                                 new SensorEreigniss(
                                         gyroData.timestamp,
-                                        "mag",
+                                        "gyro",
                                         event.values[i],
-                                        "magEvent_" + gyroData.timestamp,
+                                        "gyroEvent_" + gyroData.timestamp,
                                         this);
                     }
                 }
@@ -175,8 +183,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 magnetData.magnetZ = event.values[2];
                 magnetData.timestamp = System.currentTimeMillis();
 
-                for (int i = 0; i < 2; i++) {
-                    if (Math.abs(event.values[i]) > magEventThreshold) {
+                for (int i = 0; i < 3; i++) {
+                    if (Math.abs(event.values[i]) > magEventThreshold
+                            && System.currentTimeMillis() > lastEventTime + timeBetweenEvents) {
+                        lastEventTime = System.currentTimeMillis();
                         SensorEreigniss mag_event =
                                 new SensorEreigniss(
                                         magnetData.timestamp,
