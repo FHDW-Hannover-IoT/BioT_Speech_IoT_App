@@ -4,13 +4,33 @@ import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 @Entity(tableName = "gyro_data")
-public class GyroData {
+public class GyroData implements SensorPoint{
+
 
     @PrimaryKey(autoGenerate = true)
-    public int id;
+    private int id;
 
-    public float gyroX;
-    public float gyroY;
-    public float gyroZ;
-    public long timestamp;
+    private long timestamp;
+    private float accelX;
+    private float accelY;
+    private float accelZ;
+    @Override
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    @Override
+    public float getX() {
+        return accelX;
+    }
+
+    @Override
+    public float getY() {
+        return accelY;
+    }
+
+    @Override
+    public float getZ() {
+        return accelZ;
+    }
 }
