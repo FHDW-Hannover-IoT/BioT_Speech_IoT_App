@@ -7,12 +7,12 @@ import androidx.room.PrimaryKey;
 public class AccelData implements SensorPoint{
 
     @PrimaryKey(autoGenerate = true)
-    private int id;
+    public int id;
 
-    private long timestamp;
-    private float accelX;
-    private float accelY;
-    private float accelZ;
+    public long timestamp;
+    public float accelX;
+    public float accelY;
+    public float accelZ;
 
     @Override
     public long getTimestamp() {
