@@ -1,12 +1,13 @@
 package com.fhdw.biot.speech.iot;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
 import org.junit.Before;
 import org.junit.Test;
-import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
-
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -26,7 +27,8 @@ public class AndererUnitTest {
             mockNotificationManager = mock(NotificationManager.class);
 
             // Mocking getSystemService to return our mock NotificationManager
-            when(mockContext.getSystemService(Context.NOTIFICATION_SERVICE)).thenReturn(mockNotificationManager);
+            when(mockContext.getSystemService(Context.NOTIFICATION_SERVICE))
+                    .thenReturn(mockNotificationManager);
         }
 
         @Test
@@ -36,7 +38,8 @@ public class AndererUnitTest {
             float value = 25.5f;
             String id = "sensor123";
 
-            SensorEreigniss sensorEreigniss = new SensorEreigniss(timestamp, sensorType, value, id, mockContext);
+            SensorEreigniss sensorEreigniss =
+                    new SensorEreigniss(timestamp, sensorType, value, id, mockContext);
 
             assertEquals(timestamp, sensorEreigniss.getTimestamp());
             assertEquals(sensorType, sensorEreigniss.getSensorType());
@@ -51,10 +54,12 @@ public class AndererUnitTest {
             float value = 25.5f;
             String id = "sensor123";
 
-            SensorEreigniss sensorEreigniss = new SensorEreigniss(timestamp, sensorType, value, id, mockContext);
+            SensorEreigniss sensorEreigniss =
+                    new SensorEreigniss(timestamp, sensorType, value, id, mockContext);
 
             // Verify that the notification channel was created
-            ArgumentCaptor<NotificationChannel> channelCaptor = ArgumentCaptor.forClass(NotificationChannel.class);
+            ArgumentCaptor<NotificationChannel> channelCaptor =
+                    ArgumentCaptor.forClass(NotificationChannel.class);
             verify(mockNotificationManager).createNotificationChannel(channelCaptor.capture());
 
             NotificationChannel capturedChannel = channelCaptor.getValue();

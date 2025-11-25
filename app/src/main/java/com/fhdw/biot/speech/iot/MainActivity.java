@@ -76,6 +76,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     startActivity(intent);
                 });
 
+        Button graphButton = findViewById(R.id.graphenansicht);
+        graphButton.setOnClickListener(
+                view -> {
+                    Intent intent = new Intent(MainActivity.this, MainGraphActivity.class);
+                    startActivity(intent);
+                });
+
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);

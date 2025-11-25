@@ -75,11 +75,15 @@
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="30dp"
-                android:text="01.01.2025"
-                android:textSize="8dp"
+                android:text="01.01.2025 00:00"
+                android:textSize="10dp"
                 android:textColor="@color/background"
                 android:backgroundTint="@color/button"
-                android:id="@+id/button_x_von" />
+                android:id="@+id/button_x_von"
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp"
+                android:paddingBottom="0dp"
+                android:paddingTop="0dp"/>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -91,11 +95,15 @@
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="30dp"
-                android:text="01.01.2025"
-                android:textSize="8dp"
+                android:text="01.01.2025 00:00"
+                android:textSize="10sp"
                 android:textColor="@color/background"
                 android:backgroundTint="@color/button"
-                android:id="@+id/button_x_bis"/>
+                android:id="@+id/button_x_bis"
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp"
+                android:paddingBottom="0dp"
+                android:paddingTop="0dp"/>
 
         </LinearLayout>
 
@@ -120,11 +128,15 @@
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="30dp"
-                android:text="01.01.2025"
-                android:textSize="8dp"
+                android:text="01.01. 00:00"
+                android:textSize="10dp"
                 android:textColor="@color/background"
                 android:backgroundTint="@color/button"
-                android:id="@+id/button_y_von" />
+                android:id="@+id/button_y_von"
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp"
+                android:paddingBottom="0dp"
+                android:paddingTop="0dp"/>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -136,11 +148,15 @@
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="30dp"
-                android:text="01.01.2025"
-                android:textSize="8dp"
+                android:text="01.01.2025 00:00"
+                android:textSize="10dp"
                 android:textColor="@color/background"
                 android:backgroundTint="@color/button"
-                android:id="@+id/button_y_bis"/>
+                android:id="@+id/button_y_bis"
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp"
+                android:paddingBottom="0dp"
+                android:paddingTop="0dp"/>
 
         </LinearLayout>
 
@@ -165,11 +181,15 @@
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="30dp"
-                android:text="01.01.2025"
-                android:textSize="8dp"
+                android:text="01.01.2025 00:00"
+                android:textSize="10dp"
                 android:textColor="@color/background"
                 android:backgroundTint="@color/button"
-                android:id="@+id/button_z_von" />
+                android:id="@+id/button_z_von"
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp"
+                android:paddingBottom="0dp"
+                android:paddingTop="0dp"/>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -181,11 +201,15 @@
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="30dp"
-                android:text="01.01.2025"
-                android:textSize="8dp"
+                android:text="01.01.2025 00:00"
+                android:textSize="10dp"
                 android:textColor="@color/background"
                 android:backgroundTint="@color/button"
-                android:id="@+id/button_z_bis"/>
+                android:id="@+id/button_z_bis"
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp"
+                android:paddingBottom="0dp"
+                android:paddingTop="0dp"/>
 
         </LinearLayout>
 
@@ -210,7 +234,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Magnetfeld"
+            android:text="Mag"
             android:textColor="@color/text"
             android:layout_margin="10dp"
             android:gravity="center"
@@ -243,7 +267,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Gyroskop"
+            android:text="Gyro"
             android:textColor="@color/text"
             android:layout_margin="10dp"
             android:gravity="center"

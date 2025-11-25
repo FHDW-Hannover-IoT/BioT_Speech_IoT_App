@@ -14,14 +14,15 @@ public class SensorEreigniss {
     private String id;
     private Context context;
 
-    public SensorEreigniss(long timestamp, String sensorType, float value, String id, Context context) {
+    public SensorEreigniss(
+            long timestamp, String sensorType, float value, String id, Context context) {
         this.timestamp = timestamp;
         this.sensorType = sensorType;
         this.value = value;
         this.id = id;
         this.context = context;
 
-        // Notifocation
+        // Notification
         createNotification("title", "text");
     }
 
