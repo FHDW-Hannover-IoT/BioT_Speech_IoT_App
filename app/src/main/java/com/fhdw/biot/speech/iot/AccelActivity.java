@@ -11,14 +11,15 @@ import androidx.core.view.WindowInsetsCompat;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 public class AccelActivity extends BaseChartActivity {
 
     private LineChart lineChartAccelX, lineChartAccelY, lineChartAccelZ;
-    private long startTime = 0;
+    private Calendar dateFromCalendar;
+    private Calendar dateToCalendar;
 
-    // Test
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,63 +62,137 @@ public class AccelActivity extends BaseChartActivity {
                     startActivity(intent);
                 });
 
-        DatePickerHandler datePickerHandler = new DatePickerHandler(AccelActivity.this);
-
-        Button xBisButton = findViewById(R.id.button_x_bis);
-        datePickerHandler.setupButton(xBisButton);
-
-        Button xVonButton = findViewById(R.id.button_x_von);
-        datePickerHandler.setupButton(xVonButton);
-
-        Button yBisButton = findViewById(R.id.button_y_bis);
-        datePickerHandler.setupButton(yBisButton);
-
-        Button yVonButton = findViewById(R.id.button_y_von);
-        datePickerHandler.setupButton(yVonButton);
-
-        Button zBisButton = findViewById(R.id.button_z_bis);
-        datePickerHandler.setupButton(zBisButton);
-
-        Button zVonButton = findViewById(R.id.button_z_von);
-        datePickerHandler.setupButton(zVonButton);
-
         lineChartAccelX = findViewById(R.id.lineChartAccelX);
         lineChartAccelY = findViewById(R.id.lineChartAccelY);
         lineChartAccelZ = findViewById(R.id.lineChartAccelZ);
 
-        // Initial chart
+        // Initial chart setup
         setupChart(lineChartAccelX, "X-Achse", 0);
         setupChart(lineChartAccelY, "Y-Achse", 0);
         setupChart(lineChartAccelZ, "Z-Achse", 0);
 
-        loadDataFromDatabase();
+        // Setup DatePickers
+        setupDatePickers();
+
+        // Observe LiveData and update charts automatically
+        DB.getDatabase(getApplicationContext()).sensorDao().getAllAccelData().observe(this, accelDataList -> {
+            if (accelDataList != null && !accelDataList.isEmpty()) {
+                long firstTimestamp = accelDataList.get(0).timestamp;
+                setupChart(lineChartAccelX, "X-Achse", firstTimestamp);
+                setupChart(lineChartAccelY, "Y-Achse", firstTimestamp);
+                setupChart(lineChartAccelZ, "Z-Achse", firstTimestamp);
+                displayDataInCharts(accelDataList);
+            }
+        });
     }
 
-    private void loadDataFromDatabase() {
-        DB.databaseWriteExecutor.execute(
-                () -> {
-                    List<AccelData> accelDataList =
-                            DB.getDatabase(getApplicationContext()).sensorDao().getAllAccelData();
+    private void setupDatePickers() {
+        Button xVonButton = findViewById(R.id.button_x_von);
+        Button xBisButton = findViewById(R.id.button_x_bis);
+        Button yVonButton = findViewById(R.id.button_y_von);
+        Button yBisButton = findViewById(R.id.button_y_bis);
+        Button zVonButton = findViewById(R.id.button_z_von);
+        Button zBisButton = findViewById(R.id.button_z_bis);
 
-                    if (!accelDataList.isEmpty()) {
-                        startTime = accelDataList.get(0).timestamp;
-                    }
+        // Initialisiere die Calendar-Objekte
+        dateFromCalendar = Calendar.getInstance();
+        dateToCalendar = Calendar.getInstance();
 
-                    runOnUiThread(
-                            () -> {
-                                // Charts with the formatter
-                                if (startTime > 0) {
-                                    setupChart(lineChartAccelX, "X-Achse", startTime);
-                                    setupChart(lineChartAccelY, "Y-Achse", startTime);
-                                    setupChart(lineChartAccelZ, "Z-Achse", startTime);
-                                }
-                                displayDataInCharts(accelDataList);
-                            });
-                });
+        // Beobachte das älteste Datum aus der Datenbank
+        DB.getDatabase(getApplicationContext()).sensorDao().getOldestAccelTimestamp().observe(this, oldestTimestamp -> {
+            if (oldestTimestamp != null && oldestTimestamp > 0) {
+                dateFromCalendar.setTimeInMillis(oldestTimestamp);
+                // Setze das "von"-Datum auf das älteste Datum
+                setupFromDatePickers(xVonButton, yVonButton, zVonButton);
+            }
+        });
+
+        // Setze das "bis"-Datum auf das aktuelle Datum
+        setupToDatePickers(xBisButton, yBisButton, zBisButton);
+    }
+
+    private void setupFromDatePickers(Button xVonButton, Button yVonButton, Button zVonButton) {
+        DatePickerHandler.createForButton(xVonButton, calendar -> {
+            dateFromCalendar = calendar;
+            updateChartsWithDateFilter();
+        }, AccelActivity.this);
+
+        DatePickerHandler.createForButton(yVonButton, calendar -> {
+            dateFromCalendar = calendar;
+            updateChartsWithDateFilter();
+        }, AccelActivity.this);
+
+        DatePickerHandler.createForButton(zVonButton, calendar -> {
+            dateFromCalendar = calendar;
+            updateChartsWithDateFilter();
+        }, AccelActivity.this);
+
+        // Setze anfängliches Datum
+        xVonButton.setText(formatCalendarDate(dateFromCalendar));
+        yVonButton.setText(formatCalendarDate(dateFromCalendar));
+        zVonButton.setText(formatCalendarDate(dateFromCalendar));
+    }
+
+    private void setupToDatePickers(Button xBisButton, Button yBisButton, Button zBisButton) {
+        DatePickerHandler.createForButton(xBisButton, calendar -> {
+            dateToCalendar = calendar;
+            updateChartsWithDateFilter();
+        }, AccelActivity.this);
+
+        DatePickerHandler.createForButton(yBisButton, calendar -> {
+            dateToCalendar = calendar;
+            updateChartsWithDateFilter();
+        }, AccelActivity.this);
+
+        DatePickerHandler.createForButton(zBisButton, calendar -> {
+            dateToCalendar = calendar;
+            updateChartsWithDateFilter();
+        }, AccelActivity.this);
+
+        xBisButton.setText(formatCalendarDate(dateToCalendar));
+        yBisButton.setText(formatCalendarDate(dateToCalendar));
+        zBisButton.setText(formatCalendarDate(dateToCalendar));
+    }
+
+    private void updateChartsWithDateFilter() {
+        if (dateFromCalendar == null || dateToCalendar == null) {
+            return;
+        }
+
+        Calendar adjustedToCalendar = (Calendar) dateToCalendar.clone();
+        adjustedToCalendar.add(Calendar.DAY_OF_MONTH, 0);
+        adjustedToCalendar.set(Calendar.HOUR_OF_DAY, 23);
+        adjustedToCalendar.set(Calendar.MINUTE, 59);
+        adjustedToCalendar.set(Calendar.SECOND, 59);
+
+        DB.getDatabase(getApplicationContext()).sensorDao().getAccelDataBetween(
+                dateFromCalendar.getTimeInMillis(),
+                adjustedToCalendar.getTimeInMillis()
+        ).observe(this, filteredData -> {
+            if (filteredData != null && !filteredData.isEmpty()) {
+                long firstTimestamp = filteredData.get(0).timestamp;
+                setupChart(lineChartAccelX, "X-Achse", firstTimestamp);
+                setupChart(lineChartAccelY, "Y-Achse", firstTimestamp);
+                setupChart(lineChartAccelZ, "Z-Achse", firstTimestamp);
+                displayDataInCharts(filteredData);
+            } else {
+                lineChartAccelX.clear();
+                lineChartAccelY.clear();
+                lineChartAccelZ.clear();
+            }
+        });
+    }
+
+    private String formatCalendarDate(Calendar calendar) {
+        return String.format(java.util.Locale.GERMANY, "%02d.%02d.%04d",
+            calendar.get(Calendar.DAY_OF_MONTH),
+            calendar.get(Calendar.MONTH) + 1,
+            calendar.get(Calendar.YEAR)
+        );
     }
 
     private void displayDataInCharts(List<AccelData> accelDataList) {
-        if (accelDataList.isEmpty()) {
+        if (accelDataList == null || accelDataList.isEmpty()) {
             return;
         }
 

@@ -1,5 +1,6 @@
 package com.fhdw.biot.speech.iot;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
@@ -18,11 +19,30 @@ public interface SensorDao {
     void insert(MagnetData data);
 
     @Query("SELECT * FROM accel_data Order By timestamp ASC")
-    List<AccelData> getAllAccelData();
+    LiveData<List<AccelData>> getAllAccelData();
 
     @Query("SELECT * FROM gyro_data ORDER BY timestamp ASC")
-    List<GyroData> getAllGyroData();
+    LiveData<List<GyroData>> getAllGyroData();
 
     @Query("SELECT * FROM magnet_data ORDER BY timestamp ASC")
-    List<MagnetData> getAllMagnetData();
+    LiveData<List<MagnetData>> getAllMagnetData();
+
+    // Abfragen für die Datumsfilterung
+    @Query("SELECT MIN(timestamp) FROM accel_data")
+    LiveData<Long> getOldestAccelTimestamp();
+
+    @Query("SELECT MIN(timestamp) FROM gyro_data")
+    LiveData<Long> getOldestGyroTimestamp();
+
+    @Query("SELECT MIN(timestamp) FROM magnet_data")
+    LiveData<Long> getOldestMagnetTimestamp();
+
+    @Query("SELECT * FROM accel_data WHERE timestamp BETWEEN :startTime AND :endTime ORDER BY timestamp ASC")
+    LiveData<List<AccelData>> getAccelDataBetween(long startTime, long endTime);
+
+    @Query("SELECT * FROM gyro_data WHERE timestamp BETWEEN :startTime AND :endTime ORDER BY timestamp ASC")
+    LiveData<List<GyroData>> getGyroDataBetween(long startTime, long endTime);
+
+    @Query("SELECT * FROM magnet_data WHERE timestamp BETWEEN :startTime AND :endTime ORDER BY timestamp ASC")
+    LiveData<List<MagnetData>> getMagnetDataBetween(long startTime, long endTime);
 }

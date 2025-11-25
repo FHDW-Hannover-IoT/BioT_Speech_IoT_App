@@ -29,8 +29,8 @@ public abstract class BaseChartActivity extends AppCompatActivity {
         }
 
         chart.getAxisLeft().setTextColor(Color.WHITE);
-        chart.getAxisRight().setTextColor(Color.WHITE);
-        chart.getLegend().setTextColor(Color.WHITE);
+        //chart.getAxisRight().setTextColor(Color.WHITE);
+        //chart.getLegend().setTextColor(Color.WHITE);
 
         chart.invalidate();
     }

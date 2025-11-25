@@ -22,8 +22,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private SensorDao sensorDao;
 
-    private SensorManager sensorManager;
-    private Sensor accelerometer;
+    public SensorManager sensorManager;
+    public Sensor accelerometer;
     private Sensor gyroscope;
     private Sensor magnetometer;
 
@@ -112,7 +112,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onPause() {
         super.onPause();
-        sensorManager.unregisterListener(this);
+        //sensorManager.unregisterListener(this);
     }
 
     @SuppressLint("StringFormatInvalid")
@@ -204,6 +204,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        // Do something here if sensor accuracy changes.
+
     }
 }

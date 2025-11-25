@@ -11,12 +11,14 @@ import androidx.core.view.WindowInsetsCompat;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 public class MagnetActivity extends BaseChartActivity {
 
     private LineChart lineChartMagnetX, lineChartMagnetY, lineChartMagnetZ;
-    private long startTime = 0;
+    private Calendar dateFromCalendar;
+    private Calendar dateToCalendar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,26 +62,6 @@ public class MagnetActivity extends BaseChartActivity {
                     startActivity(intent);
                 });
 
-        DatePickerHandler datePickerHandler = new DatePickerHandler(MagnetActivity.this);
-
-        Button xBisButton = findViewById(R.id.button_x_bis);
-        datePickerHandler.setupButton(xBisButton);
-
-        Button xVonButton = findViewById(R.id.button_x_von);
-        datePickerHandler.setupButton(xVonButton);
-
-        Button yBisButton = findViewById(R.id.button_y_bis);
-        datePickerHandler.setupButton(yBisButton);
-
-        Button yVonButton = findViewById(R.id.button_y_von);
-        datePickerHandler.setupButton(yVonButton);
-
-        Button zBisButton = findViewById(R.id.button_z_bis);
-        datePickerHandler.setupButton(zBisButton);
-
-        Button zVonButton = findViewById(R.id.button_z_von);
-        datePickerHandler.setupButton(zVonButton);
-
         lineChartMagnetX = findViewById(R.id.lineChartMagnetX);
         lineChartMagnetY = findViewById(R.id.lineChartMagnetY);
         lineChartMagnetZ = findViewById(R.id.lineChartMagnetZ);
@@ -89,34 +71,127 @@ public class MagnetActivity extends BaseChartActivity {
         setupChart(lineChartMagnetY, "Y-Achse", 0);
         setupChart(lineChartMagnetZ, "Z-Achse", 0);
 
-        loadDataFromDatabase();
+        // Setup DatePickers
+        setupDatePickers();
+
+        // Observe LiveData and update charts automatically
+        DB.getDatabase(getApplicationContext()).sensorDao().getAllMagnetData().observe(this, magnetDataList -> {
+            if (magnetDataList != null && !magnetDataList.isEmpty()) {
+                long firstTimestamp = magnetDataList.get(0).timestamp;
+                setupChart(lineChartMagnetX, "X-Achse", firstTimestamp);
+                setupChart(lineChartMagnetY, "Y-Achse", firstTimestamp);
+                setupChart(lineChartMagnetZ, "Z-Achse", firstTimestamp);
+                displayDataInCharts(magnetDataList);
+            }
+        });
     }
 
-    private void loadDataFromDatabase() {
-        DB.databaseWriteExecutor.execute(
-                () -> {
-                    List<MagnetData> magnetDataList =
-                            DB.getDatabase(getApplicationContext()).sensorDao().getAllMagnetData();
+    private void setupDatePickers() {
+        Button xVonButton = findViewById(R.id.button_x_von);
+        Button xBisButton = findViewById(R.id.button_x_bis);
+        Button yVonButton = findViewById(R.id.button_y_von);
+        Button yBisButton = findViewById(R.id.button_y_bis);
+        Button zVonButton = findViewById(R.id.button_z_von);
+        Button zBisButton = findViewById(R.id.button_z_bis);
 
-                    if (!magnetDataList.isEmpty()) {
-                        startTime = magnetDataList.get(0).timestamp;
-                    }
+        // Initialisiere die Calendar-Objekte
+        dateFromCalendar = Calendar.getInstance();
+        dateToCalendar = Calendar.getInstance();
 
-                    runOnUiThread(
-                            () -> {
-                                // Re-setup charts with the formatter now that we have a start time
-                                if (startTime > 0) {
-                                    setupChart(lineChartMagnetX, "X-Achse", startTime);
-                                    setupChart(lineChartMagnetY, "Y-Achse", startTime);
-                                    setupChart(lineChartMagnetZ, "Z-Achse", startTime);
-                                }
-                                displayDataInCharts(magnetDataList);
-                            });
-                });
+        // Beobachte das älteste Datum aus der Datenbank
+        DB.getDatabase(getApplicationContext()).sensorDao().getOldestMagnetTimestamp().observe(this, oldestTimestamp -> {
+            if (oldestTimestamp != null && oldestTimestamp > 0) {
+                dateFromCalendar.setTimeInMillis(oldestTimestamp);
+                // Setze das "von"-Datum auf das älteste Datum
+                setupFromDatePickers(xVonButton, yVonButton, zVonButton);
+            }
+        });
+
+        // Setze das "bis"-Datum auf das aktuelle Datum
+        setupToDatePickers(xBisButton, yBisButton, zBisButton);
+    }
+
+    private void setupFromDatePickers(Button xVonButton, Button yVonButton, Button zVonButton) {
+        DatePickerHandler.createForButton(xVonButton, calendar -> {
+            dateFromCalendar = calendar;
+            updateChartsWithDateFilter();
+        }, MagnetActivity.this);
+
+        DatePickerHandler.createForButton(yVonButton, calendar -> {
+            dateFromCalendar = calendar;
+            updateChartsWithDateFilter();
+        }, MagnetActivity.this);
+
+        DatePickerHandler.createForButton(zVonButton, calendar -> {
+            dateFromCalendar = calendar;
+            updateChartsWithDateFilter();
+        }, MagnetActivity.this);
+
+        xVonButton.setText(formatCalendarDate(dateFromCalendar));
+        yVonButton.setText(formatCalendarDate(dateFromCalendar));
+        zVonButton.setText(formatCalendarDate(dateFromCalendar));
+    }
+
+    private void setupToDatePickers(Button xBisButton, Button yBisButton, Button zBisButton) {
+        DatePickerHandler.createForButton(xBisButton, calendar -> {
+            dateToCalendar = calendar;
+            updateChartsWithDateFilter();
+        }, MagnetActivity.this);
+
+        DatePickerHandler.createForButton(yBisButton, calendar -> {
+            dateToCalendar = calendar;
+            updateChartsWithDateFilter();
+        }, MagnetActivity.this);
+
+        DatePickerHandler.createForButton(zBisButton, calendar -> {
+            dateToCalendar = calendar;
+            updateChartsWithDateFilter();
+        }, MagnetActivity.this);
+
+        xBisButton.setText(formatCalendarDate(dateToCalendar));
+        yBisButton.setText(formatCalendarDate(dateToCalendar));
+        zBisButton.setText(formatCalendarDate(dateToCalendar));
+    }
+
+    private void updateChartsWithDateFilter() {
+        if (dateFromCalendar == null || dateToCalendar == null) {
+            return;
+        }
+
+        Calendar adjustedToCalendar = (Calendar) dateToCalendar.clone();
+        adjustedToCalendar.add(Calendar.DAY_OF_MONTH, 0);
+        adjustedToCalendar.set(Calendar.HOUR_OF_DAY, 23);
+        adjustedToCalendar.set(Calendar.MINUTE, 59);
+        adjustedToCalendar.set(Calendar.SECOND, 59);
+
+        DB.getDatabase(getApplicationContext()).sensorDao().getMagnetDataBetween(
+                dateFromCalendar.getTimeInMillis(),
+                adjustedToCalendar.getTimeInMillis()
+        ).observe(this, filteredData -> {
+            if (filteredData != null && !filteredData.isEmpty()) {
+                long firstTimestamp = filteredData.get(0).timestamp;
+                setupChart(lineChartMagnetX, "X-Achse", firstTimestamp);
+                setupChart(lineChartMagnetY, "Y-Achse", firstTimestamp);
+                setupChart(lineChartMagnetZ, "Z-Achse", firstTimestamp);
+                displayDataInCharts(filteredData);
+            } else {
+                lineChartMagnetX.clear();
+                lineChartMagnetY.clear();
+                lineChartMagnetZ.clear();
+            }
+        });
+    }
+
+    private String formatCalendarDate(Calendar calendar) {
+        return String.format(java.util.Locale.GERMANY, "%02d.%02d.%04d",
+            calendar.get(Calendar.DAY_OF_MONTH),
+            calendar.get(Calendar.MONTH) + 1,
+            calendar.get(Calendar.YEAR)
+        );
     }
 
     private void displayDataInCharts(List<MagnetData> magnetDataList) {
-        if (magnetDataList.isEmpty()) {
+        if (magnetDataList == null || magnetDataList.isEmpty()) {
             return;
         }
 
