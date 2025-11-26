@@ -62,11 +62,13 @@ public class EreignisActivity extends AppCompatActivity {
         DB.databaseWriteExecutor.execute(
                 () -> {
                     List<EreignisData> allEventsList =
-                            DB.getDatabase(getApplicationContext()).sensorDao().getAllEreignisData();
+                            DB.getDatabase(getApplicationContext())
+                                    .sensorDao()
+                                    .getAllEreignisData();
 
                     runOnUiThread(
                             () -> {
-                                if(allEventsList != null){
+                                if (allEventsList != null) {
                                     if ("ALL".equals(filter)) {
                                         filteredEvents.addAll(allEventsList);
                                         headerTextView.setText("Ereignisse");
@@ -91,7 +93,7 @@ public class EreignisActivity extends AppCompatActivity {
                                         }
                                     }
                                     adapter.notifyDataSetChanged();
-                                }else{
+                                } else {
                                     Log.e("ERROR", "allEvents is null");
                                 }
                             });
