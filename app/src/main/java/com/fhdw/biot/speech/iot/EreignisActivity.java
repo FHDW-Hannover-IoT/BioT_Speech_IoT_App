@@ -18,6 +18,7 @@ public class EreignisActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private MyEventAdapter adapter;
     private List<EreignisData> filteredEvents = new ArrayList<>();
+    private SensorDao sensorDao;
 
     private TextView headerTextView;
 
@@ -59,7 +60,7 @@ public class EreignisActivity extends AppCompatActivity {
 
     private void loadEventData(String filter) {
         // Daten aus Datenbank holen ...
-        List<EreignisData> allEvents = new ArrayList<>();
+        List<EreignisData> allEvents = sensorDao.getAllEreignisData();
 
         if ("ALL".equals(filter)) {
             filteredEvents.addAll(allEvents);

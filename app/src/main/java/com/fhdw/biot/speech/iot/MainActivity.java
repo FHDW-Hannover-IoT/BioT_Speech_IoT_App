@@ -142,7 +142,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         SensorEreigniss accel_event =
                                 new SensorEreigniss(
                                         accelData.timestamp,
-                                        "accel",
+                                        "ACCEL",
                                         event.values[i],
                                         "accelEvent_" + accelData.timestamp,
                                         this);
@@ -170,7 +170,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         SensorEreigniss gyro_event =
                                 new SensorEreigniss(
                                         gyroData.timestamp,
-                                        "gyro",
+                                        "GYRO",
                                         event.values[i],
                                         "gyroEvent_" + gyroData.timestamp,
                                         this);
@@ -197,7 +197,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         SensorEreigniss mag_event =
                                 new SensorEreigniss(
                                         magnetData.timestamp,
-                                        "mag",
+                                        "MAGNET",
                                         event.values[i],
                                         "magEvent_" + magnetData.timestamp,
                                         this);

@@ -27,9 +27,11 @@ public class SensorEreigniss {
         this.context = context;
 
         // Notification
+        /*
         int reqCode = 1;
         Intent intent = new Intent(this.context, MainActivity.class);
         this.showNotification(this.context, "SensorEvent", "text", intent, reqCode);
+        */
     }
 
     public long getTimestamp() {
@@ -57,29 +59,6 @@ public class SensorEreigniss {
         return ereignisData;
     }
 
-    public void createNotification(String title, String text) {
-        NotificationChannel channel =
-                new NotificationChannel(
-                        "eventChannel", "eventChannel", NotificationManager.IMPORTANCE_DEFAULT);
-        NotificationManager notificationManager =
-                getSystemService(this.context, NotificationManager.class);
-
-        // Create Notification Channel
-        assert notificationManager != null;
-        notificationManager.createNotificationChannel(channel);
-
-        createNotification(title, text);
-        NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(this.context, "eventChannel")
-                        .setSmallIcon(R.drawable.outline_circle_notifications_24)
-                        .setContentTitle(title)
-                        .setContentText(text)
-                        //.setOngoing(true)
-                        .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-        Log.d("channel", channel.getId());
-
-        notificationManager.notify(1, mBuilder.build());
-    }
     public void showNotification(Context context, String title, String message, Intent intent, int reqCode) {
         PendingIntent pendingIntent = PendingIntent.getActivity(context, reqCode, intent, PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
         String CHANNEL_ID = "channel_name";// The id of the channel.
