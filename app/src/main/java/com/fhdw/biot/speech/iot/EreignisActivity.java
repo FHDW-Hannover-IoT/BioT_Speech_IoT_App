@@ -17,7 +17,7 @@ import java.util.List;
 public class EreignisActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private MyEventAdapter adapter;
-    private List<SensorEreigniss> filteredEvents = new ArrayList<>();
+    private List<EreignisData> filteredEvents = new ArrayList<>();
 
     private TextView headerTextView;
 
@@ -59,14 +59,14 @@ public class EreignisActivity extends AppCompatActivity {
 
     private void loadEventData(String filter) {
         // Daten aus Datenbank holen ...
-        List<SensorEreigniss> allEvents = new ArrayList<>();
+        List<EreignisData> allEvents = new ArrayList<>();
 
         if ("ALL".equals(filter)) {
             filteredEvents.addAll(allEvents);
             headerTextView.setText("Ereignisse");
         } else {
-            for (SensorEreigniss event : allEvents) {
-                if (event.getSensorType().equals(filter)) {
+            for (EreignisData event : allEvents) {
+                if (event.sensorType.equals(filter)) {
                     filteredEvents.add(event);
                 }
             }
