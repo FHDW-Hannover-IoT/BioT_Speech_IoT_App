@@ -1,5 +1,4 @@
 package com.fhdw.biot.speech.iot;
-
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.hardware.Sensor;
@@ -7,6 +6,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -20,8 +20,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private SensorDao sensorDao;
 
-    private SensorManager sensorManager;
-    private Sensor accelerometer;
+    public SensorManager sensorManager;
+    public Sensor accelerometer;
     private Sensor gyroscope;
     private Sensor magnetometer;
 
@@ -146,8 +146,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                         event.values[i],
                                         "accelEvent_" + accelData.timestamp,
                                         this);
-                        DB.databaseWriteExecutor.execute(
-                                () -> sensorDao.insert(accel_event.getEreignisData()));
+                        DB.databaseWriteExecutor.execute(() -> sensorDao.insert(accel_event.getEreignisData()));
                     }
                 }
 
@@ -175,8 +174,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                         event.values[i],
                                         "gyroEvent_" + gyroData.timestamp,
                                         this);
-                        DB.databaseWriteExecutor.execute(
-                                () -> sensorDao.insert(gyro_event.getEreignisData()));
+                        DB.databaseWriteExecutor.execute(() -> sensorDao.insert(gyro_event.getEreignisData()));
                     }
                 }
 
@@ -203,8 +201,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                         event.values[i],
                                         "magEvent_" + magnetData.timestamp,
                                         this);
-                        DB.databaseWriteExecutor.execute(
-                                () -> sensorDao.insert(mag_event.getEreignisData()));
+                        DB.databaseWriteExecutor.execute(() -> sensorDao.insert(mag_event.getEreignisData()));
                     }
                 }
 
