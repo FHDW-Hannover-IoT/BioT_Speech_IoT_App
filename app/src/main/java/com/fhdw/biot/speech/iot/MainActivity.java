@@ -1,7 +1,4 @@
 package com.fhdw.biot.speech.iot;
-
-import static androidx.core.content.ContextCompat.getSystemService;
-
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.hardware.Sensor;
@@ -31,9 +28,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private TextView gyroXValue, gyroYValue, gyroZValue;
     private TextView magXValue, magYValue, magZValue;
 
-    private float accelEventThreshold = 15;
-    private float gyroEventThreshold = 15;
-    private float magEventThreshold = 100;
+    private float accelEventThreshold = 5;
+    private float gyroEventThreshold = 5;
+    private float magEventThreshold = 10;
     private long lastEventTime = System.currentTimeMillis();
     private int timeBetweenEvents = 5000;
 
@@ -149,6 +146,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                         "accelEvent_" + accelData.timestamp,
                                         this);
                         DB.databaseWriteExecutor.execute(() -> sensorDao.insert(accel_event.getEreignisData()));
+                        accel_event.createNotification("title", "text");
+
                     }
                 }
 
@@ -177,6 +176,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                         "gyroEvent_" + gyroData.timestamp,
                                         this);
                         DB.databaseWriteExecutor.execute(() -> sensorDao.insert(gyro_event.getEreignisData()));
+                        gyro_event.createNotification("title", "text");
                     }
                 }
 
@@ -204,6 +204,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                         "magEvent_" + magnetData.timestamp,
                                         this);
                         DB.databaseWriteExecutor.execute(() -> sensorDao.insert(mag_event.getEreignisData()));
+                        mag_event.createNotification("title", "text");
                     }
                 }
 

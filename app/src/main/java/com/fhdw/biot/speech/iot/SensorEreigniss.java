@@ -5,6 +5,7 @@ import static androidx.core.content.ContextCompat.getSystemService;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.util.Log;
 import androidx.core.app.NotificationCompat;
 
 public class SensorEreigniss {
@@ -23,7 +24,6 @@ public class SensorEreigniss {
         this.context = context;
 
         // Notification
-        createNotification("title", "text");
     }
 
     public long getTimestamp() {
@@ -47,10 +47,11 @@ public class SensorEreigniss {
         ereignisData.sensorType = this.sensorType;
         ereignisData.value = this.value;
         ereignisData.timestamp = this.timestamp;
+        Log.d("CREATE_EREIGNIS_DATA", "creating EreignisData for: " + this.sensorType);
         return ereignisData;
     }
 
-    private void createNotification(String title, String text) {
+    public void createNotification(String title, String text) {
         NotificationChannel channel =
                 new NotificationChannel(
                         "eventChannel", "eventChannel", NotificationManager.IMPORTANCE_DEFAULT);
@@ -58,20 +59,19 @@ public class SensorEreigniss {
                 getSystemService(this.context, NotificationManager.class);
 
         // Create Notification Channel
+        assert notificationManager != null;
         notificationManager.createNotificationChannel(channel);
 
         createNotification(title, text);
         NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(this.context)
+                new NotificationCompat.Builder(this.context, "eventChannel")
                         .setSmallIcon(R.drawable.outline_circle_notifications_24)
                         .setContentTitle(title)
                         .setContentText(text)
-                        .setOngoing(true)
-                        .setChannelId("eventChannel")
+                        //.setOngoing(true)
                         .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-        var obj = mBuilder.build();
-        System.out.println(channel);
+        Log.d("channel", channel.getId());
 
-        notificationManager.notify(1, obj);
+        notificationManager.notify(1, mBuilder.build());
     }
 }
