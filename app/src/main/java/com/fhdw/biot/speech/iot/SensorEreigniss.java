@@ -42,6 +42,14 @@ public class SensorEreigniss {
         return id;
     }
 
+    public EreignisData getEreignisData(){
+        EreignisData ereignisData = new EreignisData();
+        ereignisData.sensorType = this.sensorType;
+        ereignisData.value = this.value;
+        ereignisData.timestamp = this.timestamp;
+        return ereignisData;
+    }
+
     private void createNotification(String title, String text) {
         NotificationChannel channel =
                 new NotificationChannel(

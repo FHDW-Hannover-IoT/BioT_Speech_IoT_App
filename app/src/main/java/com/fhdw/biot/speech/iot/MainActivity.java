@@ -148,6 +148,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                         event.values[i],
                                         "accelEvent_" + accelData.timestamp,
                                         this);
+                        DB.databaseWriteExecutor.execute(() -> sensorDao.insert(accel_event.getEreignisData()));
                     }
                 }
 
@@ -175,6 +176,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                         event.values[i],
                                         "gyroEvent_" + gyroData.timestamp,
                                         this);
+                        DB.databaseWriteExecutor.execute(() -> sensorDao.insert(gyro_event.getEreignisData()));
                     }
                 }
 
@@ -201,6 +203,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                         event.values[i],
                                         "magEvent_" + magnetData.timestamp,
                                         this);
+                        DB.databaseWriteExecutor.execute(() -> sensorDao.insert(mag_event.getEreignisData()));
                     }
                 }
 
