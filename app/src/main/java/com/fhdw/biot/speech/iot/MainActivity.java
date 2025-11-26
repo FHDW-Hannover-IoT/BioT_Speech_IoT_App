@@ -6,6 +6,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -146,8 +147,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                         "accelEvent_" + accelData.timestamp,
                                         this);
                         DB.databaseWriteExecutor.execute(() -> sensorDao.insert(accel_event.getEreignisData()));
-                        accel_event.createNotification("title", "text");
-
                     }
                 }
 
@@ -176,7 +175,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                         "gyroEvent_" + gyroData.timestamp,
                                         this);
                         DB.databaseWriteExecutor.execute(() -> sensorDao.insert(gyro_event.getEreignisData()));
-                        gyro_event.createNotification("title", "text");
                     }
                 }
 
@@ -204,7 +202,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                         "magEvent_" + magnetData.timestamp,
                                         this);
                         DB.databaseWriteExecutor.execute(() -> sensorDao.insert(mag_event.getEreignisData()));
-                        mag_event.createNotification("title", "text");
                     }
                 }
 
