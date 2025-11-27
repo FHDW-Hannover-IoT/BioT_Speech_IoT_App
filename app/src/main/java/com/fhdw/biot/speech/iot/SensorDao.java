@@ -18,6 +18,9 @@ public interface SensorDao {
     @Insert
     void insert(MagnetData data);
 
+    @Insert
+    void insert(EreignisData date);
+
     @Query("SELECT * FROM accel_data Order By timestamp ASC")
     LiveData<List<AccelData>> getAllAccelData();
 
@@ -45,4 +48,7 @@ public interface SensorDao {
 
     @Query("SELECT * FROM magnet_data WHERE timestamp BETWEEN :startTime AND :endTime ORDER BY timestamp ASC")
     LiveData<List<MagnetData>> getMagnetDataBetween(long startTime, long endTime);
+
+    @Query("SELECT * FROM ereignis_data ORDER BY timestamp ASC")
+    List<EreignisData> getAllEreignisData();
 }

@@ -25,6 +25,7 @@
         <activity android:name=".GyroActivity" />
         <activity android:name=".MagnetActivity" />
         <activity android:name=".EreignisActivity" />
+        <activity android:name=".MainGraphActivity" />
 
     </application>
 

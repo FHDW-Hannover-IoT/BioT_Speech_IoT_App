@@ -1,7 +1,5 @@
 package com.fhdw.biot.speech.iot;
 
-import static androidx.core.content.ContextCompat.getSystemService;
-
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.hardware.Sensor;
@@ -31,9 +29,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private TextView gyroXValue, gyroYValue, gyroZValue;
     private TextView magXValue, magYValue, magZValue;
 
-    private float accelEventThreshold = 15;
-    private float gyroEventThreshold = 15;
-    private float magEventThreshold = 100;
+    private float accelEventThreshold = 5;
+    private float gyroEventThreshold = 5;
+    private float magEventThreshold = 10;
     private long lastEventTime = System.currentTimeMillis();
     private int timeBetweenEvents = 5000;
 
@@ -77,6 +75,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 view -> {
                     Intent intent = new Intent(MainActivity.this, EreignisActivity.class);
                     intent.putExtra("SENSOR_FILTER", "ALL");
+                    startActivity(intent);
+                });
+
+        Button graphButton = findViewById(R.id.graphenansicht);
+        graphButton.setOnClickListener(
+                view -> {
+                    Intent intent = new Intent(MainActivity.this, MainGraphActivity.class);
                     startActivity(intent);
                 });
 
@@ -137,10 +142,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         SensorEreigniss accel_event =
                                 new SensorEreigniss(
                                         accelData.timestamp,
-                                        "accel",
+                                        "ACCEL",
                                         event.values[i],
                                         "accelEvent_" + accelData.timestamp,
                                         this);
+                        DB.databaseWriteExecutor.execute(
+                                () -> sensorDao.insert(accel_event.getEreignisData()));
                     }
                 }
 
@@ -164,10 +171,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         SensorEreigniss gyro_event =
                                 new SensorEreigniss(
                                         gyroData.timestamp,
-                                        "gyro",
+                                        "GYRO",
                                         event.values[i],
                                         "gyroEvent_" + gyroData.timestamp,
                                         this);
+                        DB.databaseWriteExecutor.execute(
+                                () -> sensorDao.insert(gyro_event.getEreignisData()));
                     }
                 }
 
@@ -190,10 +199,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         SensorEreigniss mag_event =
                                 new SensorEreigniss(
                                         magnetData.timestamp,
-                                        "mag",
+                                        "MAGNET",
                                         event.values[i],
                                         "magEvent_" + magnetData.timestamp,
                                         this);
+                        DB.databaseWriteExecutor.execute(
+                                () -> sensorDao.insert(mag_event.getEreignisData()));
                     }
                 }
 

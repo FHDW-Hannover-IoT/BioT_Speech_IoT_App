@@ -10,9 +10,9 @@ import java.util.List;
 
 public class MyEventAdapter extends RecyclerView.Adapter<MyEventAdapter.EventViewHolder> {
 
-    private List<SensorEreigniss> eventList;
+    private List<EreignisData> eventList;
 
-    public MyEventAdapter(List<SensorEreigniss> eventList) {
+    public MyEventAdapter(List<EreignisData> eventList) {
         this.eventList = eventList;
     }
 
@@ -41,10 +41,10 @@ public class MyEventAdapter extends RecyclerView.Adapter<MyEventAdapter.EventVie
 
     @Override
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
-        SensorEreigniss currentEvent = eventList.get(position);
-        holder.tvSensorType.setText(currentEvent.getSensorType());
-        holder.tvTimestamp.setText(String.valueOf(currentEvent.getTimestamp()));
-        holder.tvValue.setText(String.valueOf(currentEvent.getValue()));
+        EreignisData currentEvent = eventList.get(position);
+        holder.tvSensorType.setText(currentEvent.sensorType);
+        holder.tvTimestamp.setText(String.valueOf(currentEvent.timestamp));
+        holder.tvValue.setText(String.valueOf(currentEvent.value));
     }
 
     @Override

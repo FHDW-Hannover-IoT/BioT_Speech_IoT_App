@@ -8,7 +8,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @Database(
-        entities = {AccelData.class, GyroData.class, MagnetData.class},
+        entities = {AccelData.class, GyroData.class, MagnetData.class, EreignisData.class},
         version = 2,
         exportSchema = false)
 public abstract class DB extends RoomDatabase {
