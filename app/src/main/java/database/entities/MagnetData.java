@@ -4,13 +4,34 @@ import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 @Entity(tableName = "magnet_data")
-public class MagnetData {
+public class MagnetData implements SensorPoint{
+
 
     @PrimaryKey(autoGenerate = true)
     public int id;
 
-    public float magnetX;
-    public float magnetY;
-    public float magnetZ;
     public long timestamp;
+    public float accelX;
+    public float accelY;
+    public float accelZ;
+
+    @Override
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    @Override
+    public float getX() {
+        return accelX;
+    }
+
+    @Override
+    public float getY() {
+        return accelY;
+    }
+
+    @Override
+    public float getZ() {
+        return accelZ;
+    }
 }
