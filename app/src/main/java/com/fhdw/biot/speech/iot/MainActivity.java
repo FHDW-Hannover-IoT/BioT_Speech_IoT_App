@@ -32,8 +32,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private float accelEventThreshold = 5;
     private float gyroEventThreshold = 5;
     private float magEventThreshold = 10;
-    private long lastEventTime = System.currentTimeMillis();
+    private long lastAccelEventTime = System.currentTimeMillis();
+    private long lastGyroEventTime = System.currentTimeMillis();
+    private long lastMagEventTime = System.currentTimeMillis();
     private int timeBetweenEvents = 5000;
+    private char[] axis = {'x', 'y', 'z'};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -137,15 +140,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 for (int i = 0; i < 3; i++) {
                     if (Math.abs(event.values[i]) > accelEventThreshold
-                            && System.currentTimeMillis() > lastEventTime + timeBetweenEvents) {
-                        lastEventTime = System.currentTimeMillis();
+                            && System.currentTimeMillis() > lastAccelEventTime + timeBetweenEvents) {
+                        lastAccelEventTime = System.currentTimeMillis();
                         SensorEreigniss accel_event =
                                 new SensorEreigniss(
                                         accelData.timestamp,
                                         "ACCEL",
                                         event.values[i],
                                         "accelEvent_" + accelData.timestamp,
-                                        this);
+                                        this,
+                                        axis[i]);
                         DB.databaseWriteExecutor.execute(
                                 () -> sensorDao.insert(accel_event.getEreignisData()));
                     }
@@ -166,15 +170,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 for (int i = 0; i < 3; i++) {
                     if (Math.abs(event.values[i]) > gyroEventThreshold
-                            && System.currentTimeMillis() > lastEventTime + timeBetweenEvents) {
-                        lastEventTime = System.currentTimeMillis();
+                            && System.currentTimeMillis() > lastGyroEventTime + timeBetweenEvents) {
+                        lastGyroEventTime = System.currentTimeMillis();
                         SensorEreigniss gyro_event =
                                 new SensorEreigniss(
                                         gyroData.timestamp,
                                         "GYRO",
                                         event.values[i],
                                         "gyroEvent_" + gyroData.timestamp,
-                                        this);
+                                        this,
+                                        axis[i]);
                         DB.databaseWriteExecutor.execute(
                                 () -> sensorDao.insert(gyro_event.getEreignisData()));
                     }
@@ -194,15 +199,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 for (int i = 0; i < 3; i++) {
                     if (Math.abs(event.values[i]) > magEventThreshold
-                            && System.currentTimeMillis() > lastEventTime + timeBetweenEvents) {
-                        lastEventTime = System.currentTimeMillis();
+                            && System.currentTimeMillis() > lastMagEventTime + timeBetweenEvents) {
+                        lastMagEventTime = System.currentTimeMillis();
                         SensorEreigniss mag_event =
                                 new SensorEreigniss(
                                         magnetData.timestamp,
                                         "MAGNET",
                                         event.values[i],
                                         "magEvent_" + magnetData.timestamp,
-                                        this);
+                                        this,
+                                        axis[i]);
                         DB.databaseWriteExecutor.execute(
                                 () -> sensorDao.insert(mag_event.getEreignisData()));
                     }

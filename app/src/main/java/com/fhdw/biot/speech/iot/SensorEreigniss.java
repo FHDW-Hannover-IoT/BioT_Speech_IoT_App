@@ -15,14 +15,16 @@ public class SensorEreigniss {
     private float value;
     private String id;
     private Context context;
+    private char axis;
 
     public SensorEreigniss(
-            long timestamp, String sensorType, float value, String id, Context context) {
+            long timestamp, String sensorType, float value, String id, Context context, char axis) {
         this.timestamp = timestamp;
         this.sensorType = sensorType;
         this.value = value;
         this.id = id;
         this.context = context;
+        this.axis = axis;
 
         // Notification
         int reqCode = 1;
@@ -51,6 +53,7 @@ public class SensorEreigniss {
         ereignisData.sensorType = this.sensorType;
         ereignisData.value = this.value;
         ereignisData.timestamp = this.timestamp;
+        ereignisData.axis = this.axis;
         Log.d("CREATE_EREIGNIS_DATA", "creating EreignisData for: " + this.sensorType);
         return ereignisData;
     }
