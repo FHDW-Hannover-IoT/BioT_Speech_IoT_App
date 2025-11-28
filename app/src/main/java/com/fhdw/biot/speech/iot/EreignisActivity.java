@@ -2,6 +2,7 @@ package com.fhdw.biot.speech.iot;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
@@ -17,8 +18,7 @@ import java.util.List;
 public class EreignisActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private MyEventAdapter adapter;
-    private List<SensorEreigniss> filteredEvents = new ArrayList<>();
-
+    private List<EreignisData> filteredEvents = new ArrayList<>();
     private TextView headerTextView;
 
     @Override
@@ -59,31 +59,44 @@ public class EreignisActivity extends AppCompatActivity {
 
     private void loadEventData(String filter) {
         // Daten aus Datenbank holen ...
-        List<SensorEreigniss> allEvents = new ArrayList<>();
+        DB.databaseWriteExecutor.execute(
+                () -> {
+                    List<EreignisData> allEventsList =
+                            DB.getDatabase(getApplicationContext())
+                                    .sensorDao()
+                                    .getAllEreignisData();
 
-        if ("ALL".equals(filter)) {
-            filteredEvents.addAll(allEvents);
-            headerTextView.setText("Ereignisse");
-        } else {
-            for (SensorEreigniss event : allEvents) {
-                if (event.getSensorType().equals(filter)) {
-                    filteredEvents.add(event);
-                }
-            }
-            switch (filter) {
-                case "ACCEL":
-                    headerTextView.setText("Ereignisse Beschleunigung");
-                    break;
-                case "MAGNET":
-                    headerTextView.setText("Ereignisse Magnetfeld");
-                    break;
-                case "GYRO":
-                    headerTextView.setText("Ereignisse Gyroskop");
-                    break;
-                default:
-                    headerTextView.setText("Ereignisse");
-            }
-        }
-        adapter.notifyDataSetChanged();
+                    runOnUiThread(
+                            () -> {
+                                if (allEventsList != null) {
+                                    if ("ALL".equals(filter)) {
+                                        filteredEvents.addAll(allEventsList);
+                                        headerTextView.setText("Ereignisse");
+                                    } else {
+                                        for (EreignisData event : allEventsList) {
+                                            if (event.sensorType.equals(filter)) {
+                                                filteredEvents.add(event);
+                                            }
+                                        }
+                                        switch (filter) {
+                                            case "ACCEL":
+                                                headerTextView.setText("Ereignisse Beschleunigung");
+                                                break;
+                                            case "MAGNET":
+                                                headerTextView.setText("Ereignisse Magnetfeld");
+                                                break;
+                                            case "GYRO":
+                                                headerTextView.setText("Ereignisse Gyroskop");
+                                                break;
+                                            default:
+                                                headerTextView.setText("Ereignisse");
+                                        }
+                                    }
+                                    adapter.notifyDataSetChanged();
+                                } else {
+                                    Log.e("ERROR", "allEvents is null");
+                                }
+                            });
+                });
     }
 }

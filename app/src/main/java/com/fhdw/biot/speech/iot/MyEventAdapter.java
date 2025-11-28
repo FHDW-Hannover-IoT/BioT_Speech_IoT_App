@@ -6,13 +6,15 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import java.util.Date;
 import java.util.List;
 
 public class MyEventAdapter extends RecyclerView.Adapter<MyEventAdapter.EventViewHolder> {
 
-    private List<SensorEreigniss> eventList;
+    private List<EreignisData> eventList;
 
-    public MyEventAdapter(List<SensorEreigniss> eventList) {
+    public MyEventAdapter(List<EreignisData> eventList) {
         this.eventList = eventList;
     }
 
@@ -20,12 +22,14 @@ public class MyEventAdapter extends RecyclerView.Adapter<MyEventAdapter.EventVie
         public TextView tvSensorType;
         public TextView tvTimestamp;
         public TextView tvValue;
+        public TextView tvAxis;
 
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
             tvSensorType = itemView.findViewById(R.id.tv_sensor_type);
             tvTimestamp = itemView.findViewById(R.id.tv_timestamp);
             tvValue = itemView.findViewById(R.id.tv_value);
+            tvAxis = itemView.findViewById(R.id.tv_axis);
         }
     }
 
@@ -41,10 +45,11 @@ public class MyEventAdapter extends RecyclerView.Adapter<MyEventAdapter.EventVie
 
     @Override
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
-        SensorEreigniss currentEvent = eventList.get(position);
-        holder.tvSensorType.setText(currentEvent.getSensorType());
-        holder.tvTimestamp.setText(String.valueOf(currentEvent.getTimestamp()));
-        holder.tvValue.setText(String.valueOf(currentEvent.getValue()));
+        EreignisData currentEvent = eventList.get(position);
+        holder.tvSensorType.setText(currentEvent.sensorType);
+        holder.tvTimestamp.setText(String.valueOf(new Date(currentEvent.timestamp)));
+        holder.tvValue.setText(String.valueOf(currentEvent.value));
+        holder.tvAxis.setText("In " + currentEvent.axis + "-Richtung");
     }
 
     @Override

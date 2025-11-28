@@ -34,4 +34,14 @@
         android:textSize="16sp"
         android:textColor="@color/text"/>
 
+    <TextView
+        android:id="@+id/tv_axis"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="10.5"
+        android:gravity="end"
+        android:textSize="16sp"
+        android:textColor="@color/text"/>
+
 </LinearLayout>
