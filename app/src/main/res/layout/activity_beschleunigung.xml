@@ -105,6 +105,16 @@
                 android:paddingBottom="0dp"
                 android:paddingTop="0dp"/>
 
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/outline_reset_focus_24"
+                android:background="@color/background"
+                android:layout_marginStart="10dp"
+                android:paddingTop="3dp"
+                android:id="@+id/resetX"
+                />
+
         </LinearLayout>
 
         <com.github.mikephil.charting.charts.LineChart
@@ -157,6 +167,16 @@
                 android:paddingEnd="0dp"
                 android:paddingBottom="0dp"
                 android:paddingTop="0dp"/>
+
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/outline_reset_focus_24"
+                android:background="@color/background"
+                android:layout_marginStart="10dp"
+                android:paddingTop="3dp"
+                android:id="@+id/resetY"
+                />
 
         </LinearLayout>
 
@@ -211,6 +231,16 @@
                 android:paddingBottom="0dp"
                 android:paddingTop="0dp"/>
 
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/outline_reset_focus_24"
+                android:background="@color/background"
+                android:layout_marginStart="10dp"
+                android:paddingTop="3dp"
+                android:id="@+id/resetZ"
+                />
+
         </LinearLayout>
 
         <com.github.mikephil.charting.charts.LineChart
@@ -238,7 +268,7 @@
             android:textColor="@color/text"
             android:layout_margin="10dp"
             android:gravity="center"
-            android:textSize="15sp"/>
+            android:textSize="20sp"/>
 
         <Button
             android:id="@+id/btnPrevMagnet"
@@ -271,6 +301,6 @@
             android:textColor="@color/text"
             android:layout_margin="10dp"
             android:gravity="center"
-            android:textSize="15sp"/>
+            android:textSize="20sp"/>
     </LinearLayout>
 </LinearLayout>

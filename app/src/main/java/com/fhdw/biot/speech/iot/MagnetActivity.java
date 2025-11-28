@@ -84,6 +84,30 @@ public class MagnetActivity extends BaseChartActivity {
         lineChartMagnetY = findViewById(R.id.lineChartMagnetY);
         lineChartMagnetZ = findViewById(R.id.lineChartMagnetZ);
 
+        ImageButton resetAccel = findViewById(R.id.resetX);
+        resetAccel.setOnClickListener(
+                view -> {
+                    lineChartMagnetX.fitScreen();
+                    xBisButton.setText("");
+                    xVonButton.setText("");
+                });
+
+        ImageButton resetGyro = findViewById(R.id.resetY);
+        resetGyro.setOnClickListener(
+                view -> {
+                    lineChartMagnetY.fitScreen();
+                    yBisButton.setText("");
+                    zVonButton.setText("");
+                });
+
+        ImageButton resetMagnet = findViewById(R.id.resetZ);
+        resetMagnet.setOnClickListener(
+                view -> {
+                    lineChartMagnetZ.fitScreen();
+                    zBisButton.setText("");
+                    zVonButton.setText("");
+                });
+
         // Initial chart setup
         setupChart(lineChartMagnetX, "X-Achse", 0);
         setupChart(lineChartMagnetY, "Y-Achse", 0);

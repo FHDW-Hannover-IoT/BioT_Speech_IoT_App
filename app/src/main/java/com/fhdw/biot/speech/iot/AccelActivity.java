@@ -85,6 +85,30 @@ public class AccelActivity extends BaseChartActivity {
         lineChartAccelY = findViewById(R.id.lineChartAccelY);
         lineChartAccelZ = findViewById(R.id.lineChartAccelZ);
 
+        ImageButton resetAccel = findViewById(R.id.resetX);
+        resetAccel.setOnClickListener(
+                view -> {
+                    lineChartAccelX.fitScreen();
+                    xBisButton.setText("");
+                    xVonButton.setText("");
+                });
+
+        ImageButton resetGyro = findViewById(R.id.resetY);
+        resetGyro.setOnClickListener(
+                view -> {
+                    lineChartAccelY.fitScreen();
+                    yBisButton.setText("");
+                    zVonButton.setText("");
+                });
+
+        ImageButton resetMagnet = findViewById(R.id.resetZ);
+        resetMagnet.setOnClickListener(
+                view -> {
+                    lineChartAccelZ.fitScreen();
+                    zBisButton.setText("");
+                    zVonButton.setText("");
+                });
+
         // Initial chart
         setupChart(lineChartAccelX, "X-Achse", 0);
         setupChart(lineChartAccelY, "Y-Achse", 0);

@@ -61,7 +61,7 @@
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="30dp"
-                android:text="01.01.2025 00:00"
+                android:text=""
                 android:textSize="10dp"
                 android:textColor="@color/background"
                 android:backgroundTint="@color/button"
@@ -81,7 +81,7 @@
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="30dp"
-                android:text="01.01.2025 00:00"
+                android:text=""
                 android:textSize="10sp"
                 android:textColor="@color/background"
                 android:backgroundTint="@color/button"
@@ -90,6 +90,16 @@
                 android:paddingEnd="0dp"
                 android:paddingBottom="0dp"
                 android:paddingTop="0dp"/>
+
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/outline_reset_focus_24"
+                android:background="@color/background"
+                android:layout_marginStart="10dp"
+                android:paddingTop="3dp"
+                android:id="@+id/resetAccel"
+                />
 
         </LinearLayout>
 
@@ -148,7 +158,7 @@
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="30dp"
-                android:text="01.01. 00:00"
+                android:text=""
                 android:textSize="10dp"
                 android:textColor="@color/background"
                 android:backgroundTint="@color/button"
@@ -168,7 +178,7 @@
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="30dp"
-                android:text="01.01.2025 00:00"
+                android:text=""
                 android:textSize="10dp"
                 android:textColor="@color/background"
                 android:backgroundTint="@color/button"
@@ -177,6 +187,16 @@
                 android:paddingEnd="0dp"
                 android:paddingBottom="0dp"
                 android:paddingTop="0dp"/>
+
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/outline_reset_focus_24"
+                android:background="@color/background"
+                android:layout_marginStart="10dp"
+                android:paddingTop="3dp"
+                android:id="@+id/resetGyro"
+                />
 
         </LinearLayout>
 
@@ -235,7 +255,7 @@
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="30dp"
-                android:text="01.01.2025 00:00"
+                android:text=""
                 android:textSize="10dp"
                 android:textColor="@color/background"
                 android:backgroundTint="@color/button"
@@ -255,7 +275,7 @@
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="30dp"
-                android:text="01.01.2025 00:00"
+                android:text=""
                 android:textSize="10dp"
                 android:textColor="@color/background"
                 android:backgroundTint="@color/button"
@@ -264,6 +284,16 @@
                 android:paddingEnd="0dp"
                 android:paddingBottom="0dp"
                 android:paddingTop="0dp"/>
+
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/outline_reset_focus_24"
+                android:background="@color/background"
+                android:layout_marginStart="10dp"
+                android:paddingTop="3dp"
+                android:id="@+id/resetMagnet"
+                />
 
         </LinearLayout>
 
@@ -333,11 +363,11 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Beschleunigung"
+            android:text="Accel"
             android:textColor="@color/background"
             android:layout_margin="4dp"
             android:backgroundTint="@color/button"
-            android:textSize="10sp" />
+            android:textSize="15sp" />
 
         <Button
             android:id="@+id/btnGyro"
@@ -348,7 +378,7 @@
             android:textColor="@color/background"
             android:layout_margin="4dp"
             android:backgroundTint="@color/button"
-            android:textSize="10sp"/>
+            android:textSize="15sp"/>
 
         <Button
             android:id="@+id/btnMagnet"
@@ -359,6 +389,6 @@
             android:textColor="@color/background"
             android:layout_margin="4dp"
             android:backgroundTint="@color/button"
-            android:textSize="10sp"/>
+            android:textSize="15sp"/>
     </LinearLayout>
 </LinearLayout>
