@@ -140,10 +140,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 for (int i = 0; i < 3; i++) {
                     if (Math.abs(event.values[i]) > accelEventThreshold
-                            && System.currentTimeMillis() > lastAccelEventTime + timeBetweenEvents) {
+                            && System.currentTimeMillis()
+                                    > lastAccelEventTime + timeBetweenEvents) {
                         lastAccelEventTime = System.currentTimeMillis();
-                        SensorEreigniss accel_event =
-                                new SensorEreigniss(
+                        SensorEreignis accel_event =
+                                new SensorEreignis(
                                         accelData.timestamp,
                                         "ACCEL",
                                         event.values[i],
@@ -172,8 +173,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     if (Math.abs(event.values[i]) > gyroEventThreshold
                             && System.currentTimeMillis() > lastGyroEventTime + timeBetweenEvents) {
                         lastGyroEventTime = System.currentTimeMillis();
-                        SensorEreigniss gyro_event =
-                                new SensorEreigniss(
+                        SensorEreignis gyro_event =
+                                new SensorEreignis(
                                         gyroData.timestamp,
                                         "GYRO",
                                         event.values[i],
@@ -201,8 +202,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     if (Math.abs(event.values[i]) > magEventThreshold
                             && System.currentTimeMillis() > lastMagEventTime + timeBetweenEvents) {
                         lastMagEventTime = System.currentTimeMillis();
-                        SensorEreigniss mag_event =
-                                new SensorEreigniss(
+                        SensorEreignis mag_event =
+                                new SensorEreignis(
                                         magnetData.timestamp,
                                         "MAGNET",
                                         event.values[i],

@@ -42,6 +42,13 @@ public class EreignisActivity extends AppCompatActivity {
                     startActivity(intent);
                 });
 
+        ImageButton editEreignisseButton = findViewById(R.id.new_event);
+        editEreignisseButton.setOnClickListener(
+                view -> {
+                    Intent intent = new Intent(EreignisActivity.this, NewEreignisActivity.class);
+                    startActivity(intent);
+                });
+
         recyclerView = findViewById(R.id.my_table_recyclerview);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 

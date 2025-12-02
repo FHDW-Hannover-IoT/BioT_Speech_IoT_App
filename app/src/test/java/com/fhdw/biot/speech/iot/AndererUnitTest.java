@@ -38,13 +38,13 @@ public class AndererUnitTest {
             float value = 25.5f;
             String id = "sensor123";
 
-            SensorEreigniss sensorEreigniss =
-                    new SensorEreigniss(timestamp, sensorType, value, id, mockContext);
+            SensorEreignis sensorEreignis =
+                    new SensorEreignis(timestamp, sensorType, value, id, mockContext);
 
-            assertEquals(timestamp, sensorEreigniss.getTimestamp());
-            assertEquals(sensorType, sensorEreigniss.getSensorType());
-            assertEquals(value, sensorEreigniss.getValue(), 0.0);
-            assertEquals(id, sensorEreigniss.getId());
+            assertEquals(timestamp, sensorEreignis.getTimestamp());
+            assertEquals(sensorType, sensorEreignis.getSensorType());
+            assertEquals(value, sensorEreignis.getValue(), 0.0);
+            assertEquals(id, sensorEreignis.getId());
         }
 
         @Test
@@ -54,8 +54,8 @@ public class AndererUnitTest {
             float value = 25.5f;
             String id = "sensor123";
 
-            SensorEreigniss sensorEreigniss =
-                    new SensorEreigniss(timestamp, sensorType, value, id, mockContext);
+            SensorEreignis sensorEreignis =
+                    new SensorEreignis(timestamp, sensorType, value, id, mockContext);
 
             // Verify that the notification channel was created
             ArgumentCaptor<NotificationChannel> channelCaptor =

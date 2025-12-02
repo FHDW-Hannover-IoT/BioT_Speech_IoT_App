@@ -9,7 +9,7 @@ import android.os.Build;
 import android.util.Log;
 import androidx.core.app.NotificationCompat;
 
-public class SensorEreigniss {
+public class SensorEreignis {
     private long timestamp;
     private String sensorType;
     private float value;
@@ -17,7 +17,7 @@ public class SensorEreigniss {
     private Context context;
     private char axis;
 
-    public SensorEreigniss(
+    public SensorEreignis(
             long timestamp, String sensorType, float value, String id, Context context, char axis) {
         this.timestamp = timestamp;
         this.sensorType = sensorType;

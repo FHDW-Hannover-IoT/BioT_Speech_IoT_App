@@ -18,7 +18,7 @@ public interface SensorDao {
     void insert(MagnetData data);
 
     @Insert
-    void insert(EreignisData date);
+    void insert(EreignisData data);
 
     @Query("SELECT * FROM accel_data Order By timestamp ASC")
     List<AccelData> getAllAccelData();
