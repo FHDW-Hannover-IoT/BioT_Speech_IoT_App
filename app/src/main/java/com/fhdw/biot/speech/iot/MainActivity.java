@@ -58,6 +58,8 @@ public class MainActivity extends AppCompatActivity {
      */
     private MqttHandler mqttHandler;
 
+    private SensorDataSimulator dataSimulator;
+
     /**
      * TextView that displays movement sensor data (Sensor/Bewegung).
      */
@@ -144,42 +146,19 @@ public class MainActivity extends AppCompatActivity {
 
                         // Movement sensor: "x,y,z"
                         case "Sensor/Bewegung": {
-                            // Show raw payload in the corresponding TextView.
-                            datenBewegung.setText(message);
-
-                            // Split CSV "x,y,z" into components.
-                            String[] p = message.split(",");
-                            if (p.length >= 3) {
-                                ValueSensor s = new ValueSensor();
-                                s.value1 = Float.parseFloat(p[0].trim()); // X
-                                s.value2 = Float.parseFloat(p[1].trim()); // Y
-                                s.value3 = Float.parseFloat(p[2].trim()); // Z
-                                // Persist to DB in a background thread.
-                                storeSensor(s);
-                            }
+                            handleMovementMessage(message);
                             break;
                         }
 
                         // Gyro sensor: "x,y,z"
                         case "Sensor/Gyro": {
-                            datenGyro.setText(message);
-                            String[] g = message.split(",");
-                            if (g.length >= 3) {
-                                ValueSensor s = new ValueSensor();
-                                s.value4 = Float.parseFloat(g[0].trim());
-                                s.value5 = Float.parseFloat(g[1].trim());
-                                s.value6 = Float.parseFloat(g[2].trim());
-                                storeSensor(s);
-                            }
+                            handleGyroMessage(message);
                             break;
                         }
 
                         // Time / timestamp: plain string
                         case "Sensor/Zeit": {
-                            datenZeit.setText(message);
-                            ValueSensor s = new ValueSensor();
-                            s.value7 = message;
-                            storeSensor(s);
+                            handleTimeMessage(message);
                             break;
                         }
 
@@ -217,14 +196,12 @@ public class MainActivity extends AppCompatActivity {
                 mqttHandler.subscribe("Sensor/Gyro");
                 mqttHandler.subscribe("Sensor/Zeit");
 
-                // Publish some retained test messages so new subscribers will
-                // immediately receive the last value.
-                mqttHandler.publish("Sensor/Bewegung", "-0.788295,4.259267,0.982682", true);
-                mqttHandler.publish("Sensor/Gyro", "1.265565,0.301551,0.052052", true);
-                mqttHandler.publish("Sensor/Zeit", "1970-01-01T00:01:10.215742Z", true);
-
                 // Load existing DB values and log the count.
                 loadDatabaseValues();
+
+                //Simulated data being generated
+                dataSimulator = new SensorDataSimulator(mqttHandler, 1000L); // 1 second interval
+                dataSimulator.start();
             }
 
             @Override
@@ -249,11 +226,64 @@ public class MainActivity extends AppCompatActivity {
      */
     @Override
     protected void onDestroy() {
+        if (dataSimulator != null) dataSimulator.stop();
         if (mqttHandler != null) mqttHandler.disconnect();
         super.onDestroy();
     }
 
-    // ==== DB helper methods – taken from your git version ====
+    // ============================================================
+    //  Datastream handlers
+    //  Each of these is called for EVERY incoming message on their topic.
+    // ============================================================
+
+    private void handleMovementMessage(String message) {
+        // Update UI
+        datenBewegung.setText(message);
+
+        // Parse CSV: "x,y,z"
+        String[] p = message.split(",");
+        if (p.length >= 3) {
+            try {
+                ValueSensor s = new ValueSensor();
+                s.value1 = Float.parseFloat(p[0].trim());
+                s.value2 = Float.parseFloat(p[1].trim());
+                s.value3 = Float.parseFloat(p[2].trim());
+                storeSensor(s);
+            } catch (NumberFormatException e) {
+                Log.e(TAG, "handleMovementMessage parse error: " + e.getMessage(), e);
+            }
+        } else {
+            Log.w(TAG, "handleMovementMessage: not enough values: " + message);
+        }
+    }
+
+    private void handleGyroMessage(String message) {
+        datenGyro.setText(message);
+
+        String[] g = message.split(",");
+        if (g.length >= 3) {
+            try {
+                ValueSensor s = new ValueSensor();
+                s.value4 = Float.parseFloat(g[0].trim());
+                s.value5 = Float.parseFloat(g[1].trim());
+                s.value6 = Float.parseFloat(g[2].trim());
+                storeSensor(s);
+            } catch (NumberFormatException e) {
+                Log.e(TAG, "handleGyroMessage parse error: " + e.getMessage(), e);
+            }
+        } else {
+            Log.w(TAG, "handleGyroMessage: not enough values: " + message);
+        }
+    }
+
+    private void handleTimeMessage(String message) {
+        datenZeit.setText(message);
+
+        ValueSensor s = new ValueSensor();
+        s.value7 = message;
+        storeSensor(s);
+    }
+
 
     /**
      * Persists a {@link ValueSensor} entity into the Room database on a
