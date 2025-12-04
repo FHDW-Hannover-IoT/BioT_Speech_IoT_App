@@ -10,6 +10,7 @@ public class ValueSensor {
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "PrimeID")
     public int primeID;
+
     @ColumnInfo(name = "BewegungX")
     public float value1;
 
@@ -30,5 +31,4 @@ public class ValueSensor {
 
     @ColumnInfo(name = "Zeit")
     public String value7;
-
 }

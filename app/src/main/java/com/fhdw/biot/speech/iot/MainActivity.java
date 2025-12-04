@@ -120,7 +120,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onPause() {
         super.onPause();
-        //sensorManager.unregisterListener(this);
+        // sensorManager.unregisterListener(this);
     }
 
     @SuppressLint("StringFormatInvalid")
@@ -141,7 +141,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 for (int i = 0; i < 3; i++) {
                     if (Math.abs(event.values[i]) > accelEventThreshold
                             && System.currentTimeMillis()
-                            > lastAccelEventTime + timeBetweenEvents) {
+                                    > lastAccelEventTime + timeBetweenEvents) {
                         lastAccelEventTime = System.currentTimeMillis();
                         SensorEreignis accel_event =
                                 new SensorEreignis(

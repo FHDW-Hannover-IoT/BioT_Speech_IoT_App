@@ -20,6 +20,9 @@ public class EreignisActivity extends AppCompatActivity {
     private MyEventAdapter adapter;
     private List<EreignisData> filteredEvents = new ArrayList<>();
     private TextView headerTextView;
+    private TextView btnSortSensor, btnSortType, btnSortValue, btnSortTimestamp;
+    private boolean isSortAscending = true;
+    private String currentSortKey = "TIMESTAMP";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +51,15 @@ public class EreignisActivity extends AppCompatActivity {
                     Intent intent = new Intent(EreignisActivity.this, NewEreignisActivity.class);
                     startActivity(intent);
                 });
+        btnSortSensor = findViewById(R.id.btn_sort_sensor);
+        btnSortType = findViewById(R.id.btn_sort_type);
+        btnSortValue = findViewById(R.id.btn_sort_value);
+        btnSortTimestamp = findViewById(R.id.btn_sort_timestamp);
+
+        btnSortSensor.setOnClickListener(v -> sortEvents("SENSOR"));
+        btnSortType.setOnClickListener(v -> sortEvents("TYPE"));
+        btnSortValue.setOnClickListener(v -> sortEvents("VALUE"));
+        btnSortTimestamp.setOnClickListener(v -> sortEvents("TIMESTAMP"));
 
         recyclerView = findViewById(R.id.my_table_recyclerview);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -105,5 +117,33 @@ public class EreignisActivity extends AppCompatActivity {
                                 }
                             });
                 });
+    }
+
+    private void sortEvents(String sortKey) {
+        if (currentSortKey.equals(sortKey)) {
+            isSortAscending = !isSortAscending;
+        } else {
+            currentSortKey = sortKey;
+            isSortAscending = true;
+        }
+
+        filteredEvents.sort(
+                (e1, e2) -> {
+                    int comparisonResult = 0;
+                    switch (sortKey) {
+                        case "TYPE":
+                            comparisonResult = e1.getSensorType().compareTo(e2.getSensorType());
+                            break;
+                        case "VALUE":
+                            comparisonResult = Float.compare(e1.getValue(), e2.getValue());
+                            break;
+                        case "TIMESTAMP":
+                            comparisonResult = Long.compare(e1.getTimestamp(), e2.getTimestamp());
+                            break;
+                    }
+                    return isSortAscending ? comparisonResult : -comparisonResult;
+                });
+
+        adapter.notifyDataSetChanged();
     }
 }

@@ -73,12 +73,14 @@
                 android:textColor="@color/text"
                 android:minWidth="80dp"/>
 
-            <Spinner
+            <EditText
                 android:id="@+id/spinner_event_type"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:spinnerMode="dropdown" />
+                android:hint="Typ eingeben"
+                android:textColor="@color/text"
+                android:textColorHint="@color/text"/>
         </LinearLayout>
 
         <LinearLayout

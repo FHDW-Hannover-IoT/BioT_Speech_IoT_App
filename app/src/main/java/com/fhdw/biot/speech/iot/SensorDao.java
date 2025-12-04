@@ -40,13 +40,16 @@ public interface SensorDao {
     @Query("SELECT MIN(timestamp) FROM magnet_data")
     LiveData<Long> getOldestMagnetTimestamp();
 
-    @Query("SELECT * FROM accel_data WHERE timestamp BETWEEN :startTime AND :endTime ORDER BY timestamp ASC")
+    @Query(
+            "SELECT * FROM accel_data WHERE timestamp BETWEEN :startTime AND :endTime ORDER BY timestamp ASC")
     LiveData<List<AccelData>> getAccelDataBetween(long startTime, long endTime);
 
-    @Query("SELECT * FROM gyro_data WHERE timestamp BETWEEN :startTime AND :endTime ORDER BY timestamp ASC")
+    @Query(
+            "SELECT * FROM gyro_data WHERE timestamp BETWEEN :startTime AND :endTime ORDER BY timestamp ASC")
     LiveData<List<GyroData>> getGyroDataBetween(long startTime, long endTime);
 
-    @Query("SELECT * FROM magnet_data WHERE timestamp BETWEEN :startTime AND :endTime ORDER BY timestamp ASC")
+    @Query(
+            "SELECT * FROM magnet_data WHERE timestamp BETWEEN :startTime AND :endTime ORDER BY timestamp ASC")
     LiveData<List<MagnetData>> getMagnetDataBetween(long startTime, long endTime);
 
     @Query("SELECT * FROM ereignis_data ORDER BY timestamp ASC")

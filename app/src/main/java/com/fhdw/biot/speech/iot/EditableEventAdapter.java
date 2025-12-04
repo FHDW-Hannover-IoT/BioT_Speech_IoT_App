@@ -65,14 +65,14 @@ public class EditableEventAdapter
     public static class EventViewHolder extends RecyclerView.ViewHolder {
         public ImageButton btnDelete;
         public Spinner spinnerSensorType;
-        public Spinner spinnerEventType;
+        public EditText eventType;
         public EditText treshholdValue;
 
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
             btnDelete = itemView.findViewById(R.id.btn_delete_event);
             spinnerSensorType = itemView.findViewById(R.id.spinner_sensor_type);
-            spinnerEventType = itemView.findViewById(R.id.spinner_event_type);
+            eventType = itemView.findViewById(R.id.spinner_event_type);
             treshholdValue = itemView.findViewById(R.id.et_threshold_value);
         }
     }
