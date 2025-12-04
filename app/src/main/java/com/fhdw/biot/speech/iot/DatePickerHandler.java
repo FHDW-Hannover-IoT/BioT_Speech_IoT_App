@@ -4,7 +4,7 @@ import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.widget.Button;
-import java.text.SimpleDateFormat;
+import android.widget.DatePicker;
 import android.widget.TimePicker;
 import java.util.Calendar;
 import java.util.Locale;

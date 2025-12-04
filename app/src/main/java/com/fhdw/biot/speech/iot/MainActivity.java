@@ -141,7 +141,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 for (int i = 0; i < 3; i++) {
                     if (Math.abs(event.values[i]) > accelEventThreshold
                             && System.currentTimeMillis()
-                                    > lastAccelEventTime + timeBetweenEvents) {
+                            > lastAccelEventTime + timeBetweenEvents) {
                         lastAccelEventTime = System.currentTimeMillis();
                         SensorEreignis accel_event =
                                 new SensorEreignis(
@@ -222,6 +222,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
+        // Do something here if sensor accuracy changes.
     }
 }
