@@ -8,6 +8,8 @@ material = "1.13.0"
 activity = "1.10.0"
 constraintlayout = "2.2.1"
 spotless = "8.0.0"
+orgEclipsePahoMqttv5Client = "1.2.5"
+orgEclipsePahoAndroidService = "1.1.1"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -17,6 +19,8 @@ appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "a
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+org-eclipse-paho-mqttv5-client = { group = "org.eclipse.paho", name = "org.eclipse.paho.mqttv5.client", version.ref = "orgEclipsePahoMqttv5Client" }
+org-eclipse-paho-android-service = { group = "org.eclipse.paho", name = "org.eclipse.paho.android.service", version.ref = "orgEclipsePahoAndroidService" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -1,322 +1,381 @@
 package com.fhdw.biot.speech.iot;
 
-import org.eclipse.paho.client.mqttv3.IMqttActionListener;
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.IMqttToken;
-import org.eclipse.paho.client.mqttv3.MqttAsyncClient;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.eclipse.paho.mqttv5.client.MqttAsyncClient;
+import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
+import org.eclipse.paho.mqttv5.client.MqttCallback;
+import org.eclipse.paho.mqttv5.client.MqttDisconnectResponse;
+import org.eclipse.paho.mqttv5.client.IMqttToken;
+import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
+
+import org.eclipse.paho.mqttv5.common.MqttException;
+import org.eclipse.paho.mqttv5.common.MqttMessage;
+import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 
 /**
  * MqttHandler
  * -----------
- * A small wrapper around Eclipse Paho's {@link MqttAsyncClient}.
+ * Thin wrapper around Eclipse Paho MQTT v5 {@link MqttAsyncClient}.
  *
- * Responsibilities:
- * - Create and hold a single MQTT client instance.
- * - Asynchronously connect to an MQTT broker.
- * - Expose connection status via {@link #isConnected()}.
- * - Allow subscribers to:
- *      - Subscribe to topics.
- *      - Publish messages (optionally retained).
- *      - Receive incoming messages via {@link MqttMessageListener}.
- * - Cleanly disconnect from the broker.
+ * High-level responsibilities:
+ *  - Own exactly one {@link MqttAsyncClient} instance for the whole app.
+ *  - Provide easy methods to:
+ *      - connect(...)       → open TCP + MQTT session to the broker.
+ *      - subscribe(topic)   → register interest in specific topics.
+ *      - publish(topic,..)  → send messages to the broker.
+ *      - disconnect()       → close connection cleanly.
+ *  - Expose connection status via {@link #isConnected()}.
+ *  - Forward incoming messages to a higher-level listener
+ *    ({@link MqttMessageListener}) which is implemented in MainActivity.
  *
- * Threading model:
- * - {@link #connect(ConnectionListener)} and {@link #disconnect()} spawn their own
- *   background threads so that networking does not block the UI.
- * - Incoming messages arrive on Paho's internal thread and are forwarded to
- *   {@link MqttMessageListener#onMessageReceived(String, String)}.
+ * Data flow (receive side):
+ *  Broker → MqttAsyncClient → MqttCallback.messageArrived(...)
+ *         → MqttHandler.listener.onMessageReceived(...)
+ *         → MainActivity.handleMovement / handleGyro / handleTime
+ *         → TextViews + Room database.
+ *
+ * Data flow (send side):
+ *  SensorDataSimulator / MainActivity → MqttHandler.publish(...)
+ *      → MqttAsyncClient.publish(...)
+ *      → Broker → (optionally other subscribers, including our own client).
  */
 public class MqttHandler {
 
     /**
-     * Underlying Eclipse Paho asynchronous MQTT client.
+     * Underlying Paho asynchronous client.
+     * All real MQTT protocol work happens inside this object.
      */
     private final MqttAsyncClient client;
 
     /**
-     * Simple flag to remember if a connection attempt has succeeded.
-     * <p>
-     * Marked {@code volatile} so changes are visible across threads.
-     * Note: we also check {@link MqttAsyncClient#isConnected()} in {@link #isConnected()}.
+     * Simple flag to remember if the last connect succeeded.
+     * This is set to true in connectComplete() and false in disconnected()
+     * and in error paths. We always combine it with client.isConnected().
+     *
+     * Marked volatile so changes from background threads are visible to others.
      */
     private volatile boolean connected = false;
 
     /**
-     * Optional callback that will receive incoming MQTT messages from any subscribed topic.
+     * Optional high-level listener that receives incoming messages as
+     * (topic, String payload). MainActivity passes a lambda here.
      */
     private MqttMessageListener listener;
 
+    // ------------------------------------------------------------
+    // Listener interfaces
+    // ------------------------------------------------------------
+
     /**
-     * Listener for connection-level events.
-     * <p>
-     * Implemented by the code that calls {@link #connect(ConnectionListener)} (e.g. MainActivity).
+     * Notified about connection lifecycle events.
+     * Implemented by MainActivity to get callbacks when:
+     *  - the connect attempt has succeeded (onConnected)
+     *  - the connect attempt has failed (onFailure)
      */
     public interface ConnectionListener {
-
-        /**
-         * Called once the client has successfully connected to the broker.
-         */
         void onConnected();
-
-        /**
-         * Called when the connection attempt fails or throws an exception.
-         *
-         * @param t the cause of the failure (may be {@code null} in rare cases)
-         */
         void onFailure(Throwable t);
     }
 
     /**
-     * Listener interface for incoming MQTT messages.
-     * <p>
-     * Implemented by clients (e.g., MainActivity) that want to react to published sensor data.
+     * Notified about every incoming MQTT message on any subscribed topic.
+     * Implemented by MainActivity where messages are routed to UI + DB.
      */
     public interface MqttMessageListener {
-
-        /**
-         * Called whenever a subscribed topic receives a new message.
-         *
-         * @param topic   the MQTT topic on which the message arrived, e.g. "Sensor/Bewegung"
-         * @param message the payload as a decoded UTF-8 String
-         */
         void onMessageReceived(String topic, String message);
     }
 
-    /**
-     * Constructs a new {@code MqttHandler} and configures the underlying Paho client.
-     *
-     * @param brokerUrl MQTT broker URL, e.g. "tcp://192.168.178.31:1883"
-     * @param clientId  client identifier used by the broker to differentiate clients.
-     *                  Must be unique per broker connection.
-     *
-     * @throws MqttException if the client cannot be created (invalid URL, etc.).
-     */
+    // ------------------------------------------------------------
+    // Constructor
+    // ------------------------------------------------------------
     public MqttHandler(String brokerUrl, String clientId) throws MqttException {
-        System.out.println("MQTT: creating client -> " + brokerUrl + " id=" + clientId);
+        System.out.println("MQTTv5: creating client → " + brokerUrl + " id=" + clientId);
 
-        // MemoryPersistence: MQTT session data (like in-flight messages) is stored in RAM.
+        /*
+         * Create the underlying Paho client.
+         *
+         * - brokerUrl: e.g. "tcp://10.0.2.2:1883"
+         * - clientId : must be unique per client connected to the broker
+         * - MemoryPersistence:
+         *      Keeps QoS state and in-flight messages only in RAM
+         *      (no disk persistence on Android).
+         */
         client = new MqttAsyncClient(brokerUrl, clientId, new MemoryPersistence());
 
-        // Global callback for connection loss, incoming messages, and delivery confirmations.
+        /*
+         * Register a global callback implementation.
+         * Paho uses this for:
+         *  - connection loss
+         *  - protocol-level errors
+         *  - incoming messages
+         *  - publish delivery notifications
+         *  - successful connect / reconnect
+         *  - AUTH packets (rarely used)
+         */
         client.setCallback(new MqttCallback() {
+
             /**
-             * Called when the connection to the broker is lost for any reason
-             * (network error, broker shutdown, etc.).
+             * Called when the connection is closed for *any* reason
+             * (network problem, broker shutdown, disconnect(), etc.).
              */
             @Override
-            public void connectionLost(Throwable cause) {
+            public void disconnected(MqttDisconnectResponse disconnectResponse) {
                 connected = false;
-                System.out.println("MQTT: connectionLost -> " +
-                        (cause == null ? "null" : cause.getMessage()));
+                System.out.println(
+                        "MQTTv5: DISCONNECTED → " +
+                                (disconnectResponse == null ? "null" : disconnectResponse.getReasonString())
+                );
             }
 
             /**
-             * Called when a message arrives on a subscribed topic.
+             * Called when an MQTT-level error occurs that is not normal
+             * connection loss. Mostly useful for debugging.
+             */
+            @Override
+            public void mqttErrorOccurred(MqttException exception) {
+                System.out.println("MQTTv5 ERROR → " + exception.getMessage());
+            }
+
+            /**
+             * Called whenever a message arrives on any topic this client
+             * is subscribed to.
              *
-             * @param topic   topic name
-             * @param message raw {@link MqttMessage} containing payload, QoS, retained flag, etc.
+             * Data flow:
+             *  Broker → client.subscribe("some/topic", ...)
+             *         → MqttAsyncClient receives PUBLISH
+             *         → this messageArrived(...)
+             *         → (topic, MqttMessage) converted to (topic, String)
+             *         → listener.onMessageReceived(...) (if set)
+             *         → MainActivity updates UI + DB.
              */
             @Override
             public void messageArrived(String topic, MqttMessage message) {
                 String payload = new String(message.getPayload());
-                System.out.println("MQTT: messageArrived topic=" + topic + " payload=" + payload);
+                System.out.println("MQTTv5: Message Arrived → " + topic + " = " + payload);
 
-                // Forward to high-level listener if one is registered.
-                if (listener != null) listener.onMessageReceived(topic, payload);
+                if (listener != null) {
+                    listener.onMessageReceived(topic, payload);
+                }
             }
 
             /**
-             * Called when a message that this client has published is completely delivered.
+             * Called when a message that this client has PUBLISHED
+             * has been fully delivered according to its QoS.
              *
-             * @param token delivery token associated with the published message.
+             * We only log this; app logic does not depend on it.
              */
             @Override
-            public void deliveryComplete(IMqttDeliveryToken token) {
-                System.out.println("MQTT: deliveryComplete token=" + token);
+            public void deliveryComplete(IMqttToken token) {
+                System.out.println("MQTTv5: Delivery Complete → " + token);
+            }
+
+            /**
+             * Called after a successful initial connect OR automatic reconnect.
+             * This is another signal that the TCP/MQTT session is now usable.
+             */
+            @Override
+            public void connectComplete(boolean reconnect, String serverURI) {
+                connected = true;
+                System.out.println("MQTTv5: Connect Complete → " + serverURI +
+                        " (reconnect=" + reconnect + ")");
+            }
+
+            /**
+             * Extra abstract method for MQTT v5: AUTH packets.
+             * We don't use authentication extensions, so we only log and ignore.
+             */
+            @Override
+            public void authPacketArrived(int reasonCode, MqttProperties properties) {
+                // You probably don't use AUTH packets; just log and ignore.
+                System.out.println(
+                        "MQTTv5: authPacketArrived → reasonCode=" +
+                                reasonCode + " props=" + properties
+                );
             }
         });
     }
 
+    // ------------------------------------------------------------
+    // CONNECT (background thread, sync call)
+    // ------------------------------------------------------------
+
     /**
-     * Asynchronously connects to the MQTT broker using sensible defaults.
+     * Connects to the MQTT broker on a background thread.
      *
-     * <p>Configuration:</p>
-     * <ul>
-     *     <li>{@code cleanSession = true} – no persistent session on broker.</li>
-     *     <li>{@code automaticReconnect = true} – client will try to reconnect automatically
-     *         if connection is lost.</li>
-     * </ul>
+     * Threading:
+     *  - A new thread ("mqtt-connect-thread") is started.
+     *  - Inside that thread we call client.connect(...) and block
+     *    until it finishes using token.waitForCompletion().
      *
-     * @param connListener callback that will be notified on success or failure.
-     *                     May be {@code null} if the caller does not care.
-     *
-     * Return value: {@code void}. This method returns immediately; the connection
-     * result is delivered through {@link ConnectionListener}.
+     * Callbacks:
+     *  - On success  → ConnectionListener.onConnected()
+     *  - On failure  → ConnectionListener.onFailure(Throwable)
      */
-    public void connect(final ConnectionListener connListener) {
+    public void connect(ConnectionListener connListener) {
         new Thread(() -> {
             try {
-                System.out.println("MQTT: connect() called");
+                // Configure session behaviour.
+                MqttConnectionOptions options = new MqttConnectionOptions();
+                options.setAutomaticReconnect(true); // Paho will try to reconnect if link drops.
+                options.setCleanStart(true);        // Start a new session (no old subscriptions).
 
-                MqttConnectOptions options = new MqttConnectOptions();
-                options.setCleanSession(true);
-                options.setAutomaticReconnect(true);
+                // Start connect and wait until it has completed:
+                IMqttToken token = client.connect(options);
+                token.waitForCompletion();      // <-- BLOCKS this background thread
+                //     until connected or failed.
 
-                // Async connect with an action listener.
-                client.connect(options, null, new IMqttActionListener() {
-                    @Override
-                    public void onSuccess(IMqttToken asyncActionToken) {
-                        connected = true;
-                        System.out.println("MQTT: connected successfully to " + client.getServerURI());
-                        if (connListener != null) connListener.onConnected();
-                    }
+                // If we got here without exception, the client is connected:
+                connected = client.isConnected();
 
-                    @Override
-                    public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-                        connected = false;
-                        System.out.println("MQTT: connect failed -> " + (exception == null ? "unknown" : exception.getMessage()));
-                        if (connListener != null) connListener.onFailure(exception);
-                    }
-                });
-            } catch (MqttException e) {
+                System.out.println("MQTTv5: CONNECTED to " + client.getServerURI()
+                        + " isConnected=" + client.isConnected());
+
+                if (connected && connListener != null) {
+                    connListener.onConnected();
+                }
+
+            } catch (Exception e) {
                 connected = false;
-                System.out.println("MQTT: connect threw -> " + e.getMessage());
-                if (connListener != null) connListener.onFailure(e);
+                System.out.println("MQTTv5: CONNECT FAILED → " + e.getMessage());
+                if (connListener != null) {
+                    connListener.onFailure(e);
+                }
             }
-        }).start();
+        }, "mqtt-connect-thread").start();
     }
 
     /**
-     * Checks whether the client is currently connected to the broker.
+     * Returns true only if:
+     *  - our internal flag says "connected", AND
+     *  - the Paho client also reports isConnected().
      *
-     * @return {@code true} if both:
-     *         <ul>
-     *             <li>our internal flag {@link #connected} is {@code true}, and</li>
-     *             <li>{@link MqttAsyncClient#isConnected()} reports the client is connected.</li>
-     *         </ul>
-     *         Otherwise {@code false}.
+     * This is what MainActivity uses before subscribe/publish.
      */
     public boolean isConnected() {
-        return connected && client != null && client.isConnected();
+        return connected && client.isConnected();
     }
 
+    // ------------------------------------------------------------
+    // SUBSCRIBE
+    // ------------------------------------------------------------
+
     /**
-     * Subscribes to a topic with QoS 1 (at least once).
+     * Subscribes to the given topic with QoS 1 ("at least once").
      *
-     * @param topic the topic filter to subscribe to, e.g. "Sensor/Bewegung".
+     * Threading:
+     *  - If currently not connected, this method just logs and returns.
+     *  - Otherwise a new thread ("mqtt-subscribe-thread") is started and
+     *    client.subscribe(topic, 1) is called there.
      *
-     * Return value: {@code void}.
-     * Side effects:
-     * - If not connected, prints a message and returns without subscribing.
-     * - If connected, sends SUBSCRIBE request and logs success or failure.
+     * Data impact:
+     *  - After a successful subscribe, any PUBLISH sent to that topic by
+     *    any client will trigger messageArrived(...) → listener.onMessageReceived(...).
      */
     public void subscribe(String topic) {
         if (!isConnected()) {
-            System.out.println("MQTT: subscribe called but not connected -> " + topic);
+            System.out.println("MQTTv5: Cannot subscribe — not connected.");
             return;
         }
-        try {
-            client.subscribe(topic, 1, null, new IMqttActionListener() {
-                @Override
-                public void onSuccess(IMqttToken asyncActionToken) {
-                    System.out.println("MQTT: subscribe success -> " + topic);
-                }
 
-                @Override
-                public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-                    System.out.println("MQTT: subscribe FAILED -> " + topic + " : " + (exception == null ? "unknown" : exception.getMessage()));
-                }
-            });
-        } catch (MqttException e) {
-            System.out.println("MQTT: subscribe exception -> " + e.getMessage());
-        }
+        new Thread(() -> {
+            try {
+                client.subscribe(topic, 1); // QoS 1
+                System.out.println("MQTTv5: SUBSCRIBED → " + topic);
+            } catch (Exception e) {
+                System.out.println("MQTTv5: SUBSCRIBE FAILED → " + topic +
+                        " : " + e.getMessage());
+            }
+        }, "mqtt-subscribe-thread").start();
     }
 
+    // ------------------------------------------------------------
+    // PUBLISH
+    // ------------------------------------------------------------
+
     /**
-     * Convenience method to publish a non-retained message.
-     *
-     * @param topic   topic to publish on
-     * @param payload string payload to send
+     * Convenience overload: publish a non-retained message.
      */
     public void publish(String topic, String payload) {
         publish(topic, payload, false);
     }
 
     /**
-     * Publishes a message on the given topic, optionally as a retained message.
+     * Publishes a message with QoS 1 on the given topic.
      *
-     * @param topic    topic to publish on, e.g. "Sensor/Zeit"
-     * @param payload  payload to send, as a String (internally encoded as bytes)
-     * @param retained if {@code true}, brokers stores this as the "last known" value
-     *                 on that topic and delivers it to future subscribers immediately.
+     * @param topic    MQTT topic to publish on (e.g. "Sensor/Bewegung").
+     * @param payload  payload as UTF-8 String.
+     * @param retained if true, the broker stores this as the last known message
+     *                 for that topic and immediately sends it to new subscribers.
      *
-     * Return value: {@code void}.
-     * Side effects:
-     * - If not connected, logs and returns without sending.
-     * - Otherwise, starts a background thread to perform the publish.
+     * Threading:
+     *  - If not connected, we log and return.
+     *  - Otherwise we spin up "mqtt-publish-thread" where we do a blocking
+     *    client.publish(...). The UI thread never blocks on network I/O.
+     *
+     * Data impact:
+     *  - The message is sent to the broker.
+     *  - The broker forwards it to all clients subscribed to this topic
+     *    (including our own client, if subscribed).
+     *  - That in turn triggers messageArrived(...) and ends up in MainActivity.
      */
     public void publish(String topic, String payload, boolean retained) {
         if (!isConnected()) {
-            System.out.println("MQTT: publish called but not connected -> " + topic);
+            System.out.println("MQTTv5: Cannot publish — not connected.");
             return;
         }
+
         new Thread(() -> {
             try {
                 MqttMessage msg = new MqttMessage(payload.getBytes());
-                msg.setQos(1);                // At least once delivery.
-                msg.setRetained(retained);    // Retained or transient.
+                msg.setQos(1);            // "at least once"
+                msg.setRetained(retained);
 
-                client.publish(topic, msg, null, new IMqttActionListener() {
-                    @Override
-                    public void onSuccess(IMqttToken asyncActionToken) {
-                        System.out.println("MQTT: publish success -> " + topic +
-                                " payload=" + payload + " retained=" + retained);
-                    }
+                // Blocking publish, but on our own thread, so UI is safe.
+                client.publish(topic, msg);
+                System.out.println("MQTTv5: PUBLISH SUCCESS → " + topic +
+                        " payload=" + payload + " retained=" + retained);
 
-                    @Override
-                    public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-                        System.out.println("MQTT: publish FAILED -> " + topic + " : " + (exception == null ? "unknown" : exception.getMessage()));
-                    }
-                });
-            } catch (MqttException e) {
-                System.out.println("MQTT: publish exception -> " + e.getMessage());
+            } catch (Exception e) {
+                System.out.println("MQTTv5: PUBLISH FAILED → " + topic +
+                        " ERROR = " + e.getMessage());
             }
-        }).start();
+        }, "mqtt-publish-thread").start();
     }
 
+    // ------------------------------------------------------------
+    // DISCONNECT
+    // ------------------------------------------------------------
+
     /**
-     * Gracefully disconnects from the broker in a background thread.
-     * Return value: {@code void}.
-     * Side effects:
-     * - If the client is currently connected, sends DISCONNECT and updates
-     *   {@link #connected} to {@code false}.
-     * - Logs success or any exceptions.
+     * Gracefully disconnects from the broker.
+     *
+     * Threading:
+     *  - Runs in "mqtt-disconnect-thread" to avoid blocking the UI.
+     *
+     * Behaviour:
+     *  - If the client is currently connected, calls client.disconnect().
+     *  - Sets the internal connected flag to false.
+     *  - Any further publish/subscribe calls will log "not connected".
      */
     public void disconnect() {
         new Thread(() -> {
             try {
-                if (client != null && client.isConnected()) {
+                if (client.isConnected()) {
                     client.disconnect();
                     connected = false;
-                    System.out.println("MQTT: disconnected");
+                    System.out.println("MQTTv5: DISCONNECTED");
                 }
-            } catch (MqttException e) {
-                System.out.println("MQTT: disconnect error -> " + e.getMessage());
+            } catch (Exception e) {
+                System.out.println("MQTTv5: Disconnect error → " + e.getMessage());
             }
-        }).start();
+        }, "mqtt-disconnect-thread").start();
     }
 
     /**
      * Registers or replaces the high-level message listener.
-     * When non-null, the listener will receive all incoming messages on any
-     * topic that this client has subscribed to.
-     * @param l implementation of {@link MqttMessageListener}, or {@code null} to remove the listener.
-     * Return value: {@code void}.
+     *
+     * Typically called once from MainActivity.onCreate() to pass a lambda
+     * that routes incoming messages to the corresponding handler method
+     * (movement / gyro / time).
      */
     public void setMessageListener(MqttMessageListener l) {
         this.listener = l;
