@@ -17,7 +17,6 @@ import com.github.mikephil.charting.data.LineDataSet;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Locale;
 
 public class MainGraphActivity extends BaseChartActivity {
 
@@ -195,9 +194,9 @@ public class MainGraphActivity extends BaseChartActivity {
         DatePickerHandler.createForButton(zVonButton, fromListener, this);
 
         // Setze anfängliches Datum
-        xVonButton.setText(makeDateTimeString(dateFromCalendar));
-        yVonButton.setText(makeDateTimeString(dateFromCalendar));
-        zVonButton.setText(makeDateTimeString(dateFromCalendar));
+        xVonButton.setText("");
+        yVonButton.setText("");
+        zVonButton.setText("");
     }
 
     private void setupToDatePickers() {
@@ -210,20 +209,9 @@ public class MainGraphActivity extends BaseChartActivity {
         DatePickerHandler.createForButton(yBisButton, toListener, this);
         DatePickerHandler.createForButton(zBisButton, toListener, this);
 
-        xBisButton.setText(makeDateTimeString(dateToCalendar));
-        yBisButton.setText(makeDateTimeString(dateToCalendar));
-        zBisButton.setText(makeDateTimeString(dateToCalendar));
-    }
-
-    private String makeDateTimeString(Calendar calendar) {
-        return String.format(
-                Locale.GERMAN,
-                "%02d.%02d.%04d %02d:%02d",
-                calendar.YEAR,
-                calendar.MONTH,
-                calendar.DAY_OF_MONTH,
-                23,
-                59);
+        xBisButton.setText("");
+        yBisButton.setText("");
+        zBisButton.setText("");
     }
 
     private void updateChartsWithDateFilter() {

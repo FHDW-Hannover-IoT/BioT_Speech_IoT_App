@@ -13,6 +13,7 @@ import com.github.mikephil.charting.data.Entry;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 public class AccelActivity extends BaseChartActivity {
 
@@ -21,6 +22,7 @@ public class AccelActivity extends BaseChartActivity {
     private Calendar dateFromCalendar;
     private Calendar dateToCalendar;
     private Button xVonButton, xBisButton, yVonButton, yBisButton, zVonButton, zBisButton;
+    private Button btnFilterLast10Min;
 
     // Test
     @Override
@@ -79,6 +81,9 @@ public class AccelActivity extends BaseChartActivity {
 
         zVonButton = findViewById(R.id.button_z_von);
 
+        btnFilterLast10Min = findViewById(R.id.btn_x_10min);
+        btnFilterLast10Min.setOnClickListener(view -> filterLastTenMinutes());
+
         lineChartAccelX = findViewById(R.id.lineChartAccelX);
         lineChartAccelY = findViewById(R.id.lineChartAccelY);
         lineChartAccelZ = findViewById(R.id.lineChartAccelZ);
@@ -96,7 +101,7 @@ public class AccelActivity extends BaseChartActivity {
                 view -> {
                     lineChartAccelY.fitScreen();
                     yBisButton.setText("");
-                    zVonButton.setText("");
+                    yVonButton.setText("");
                 });
 
         ImageButton resetMagnet = findViewById(R.id.resetZ);
@@ -216,6 +221,29 @@ public class AccelActivity extends BaseChartActivity {
         zBisButton.setText(formatCalendarDate(dateToCalendar));
     }
 
+    private void filterLastTenMinutes() {
+        long now = System.currentTimeMillis();
+        long tenMinutesAgo = now - (10 * 60 * 1000);
+        dateToCalendar = Calendar.getInstance();
+        dateToCalendar.setTimeInMillis(now);
+        dateFromCalendar = Calendar.getInstance();
+        dateFromCalendar.setTimeInMillis(tenMinutesAgo);
+
+        syncDateButtonTexts();
+        updateChartsWithDateFilter();
+    }
+
+    private void syncDateButtonTexts() {
+        xVonButton.setText(makeDateTimeString(dateFromCalendar));
+        yVonButton.setText(makeDateTimeString(dateFromCalendar));
+        zVonButton.setText(makeDateTimeString(dateFromCalendar));
+
+        // "Bis"-Buttons
+        xBisButton.setText(makeDateTimeString(dateToCalendar));
+        yBisButton.setText(makeDateTimeString(dateToCalendar));
+        zBisButton.setText(makeDateTimeString(dateToCalendar));
+    }
+
     private void updateChartsWithDateFilter() {
         if (dateFromCalendar == null || dateToCalendar == null) {
             return;
@@ -251,6 +279,15 @@ public class AccelActivity extends BaseChartActivity {
     private String formatCalendarDate(Calendar calendar) {
         return String.format(
                 java.util.Locale.GERMANY,
+                "%02d.%02d.%04d",
+                calendar.get(Calendar.DAY_OF_MONTH),
+                calendar.get(Calendar.MONTH) + 1,
+                calendar.get(Calendar.YEAR));
+    }
+
+    private String makeDateTimeString(Calendar calendar) {
+        return String.format(
+                Locale.GERMAN,
                 "%02d.%02d.%04d",
                 calendar.get(Calendar.DAY_OF_MONTH),
                 calendar.get(Calendar.MONTH) + 1,
