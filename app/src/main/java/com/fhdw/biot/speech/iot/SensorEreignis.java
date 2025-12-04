@@ -9,20 +9,22 @@ import android.os.Build;
 import android.util.Log;
 import androidx.core.app.NotificationCompat;
 
-public class SensorEreigniss {
+public class SensorEreignis {
     private long timestamp;
     private String sensorType;
     private float value;
     private String id;
     private Context context;
+    private char axis;
 
-    public SensorEreigniss(
-            long timestamp, String sensorType, float value, String id, Context context) {
+    public SensorEreignis(
+            long timestamp, String sensorType, float value, String id, Context context, char axis) {
         this.timestamp = timestamp;
         this.sensorType = sensorType;
         this.value = value;
         this.id = id;
         this.context = context;
+        this.axis = axis;
 
         // Notification
         int reqCode = 1;
@@ -51,6 +53,7 @@ public class SensorEreigniss {
         ereignisData.sensorType = this.sensorType;
         ereignisData.value = this.value;
         ereignisData.timestamp = this.timestamp;
+        ereignisData.axis = this.axis;
         Log.d("CREATE_EREIGNIS_DATA", "creating EreignisData for: " + this.sensorType);
         return ereignisData;
     }

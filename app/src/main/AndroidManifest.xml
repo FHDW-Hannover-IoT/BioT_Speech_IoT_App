@@ -26,6 +26,7 @@
         <activity android:name=".MagnetActivity" />
         <activity android:name=".EreignisActivity" />
         <activity android:name=".MainGraphActivity" />
+        <activity android:name=".NewEreignisActivity" />
 
     </application>
 

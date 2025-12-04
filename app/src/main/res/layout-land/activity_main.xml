@@ -197,7 +197,18 @@
                 android:textSize="28sp" />
         </LinearLayout>
 
+
+
     </LinearLayout>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="Zur Grapenansicht"
+        android:backgroundTint="@color/button"
+        android:textColor="@color/background"
+        android:id="@+id/graphenansicht"/>
 
 
         <LinearLayout
@@ -213,11 +224,11 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Beschleunigung"
+                android:text="Accel"
                 android:textColor="@color/black"
                 android:layout_margin="6dp"
                 android:backgroundTint="@color/button"
-                android:textSize="13sp" />
+                android:textSize="17sp" />
 
             <Button
                 android:id="@+id/btnGyro"
@@ -228,7 +239,7 @@
                 android:textColor="@color/black"
                 android:layout_margin="6dp"
                 android:backgroundTint="@color/button"
-                android:textSize="13sp"/>
+                android:textSize="17sp"/>
 
             <Button
                 android:id="@+id/btnMagnet"
@@ -239,6 +250,6 @@
                 android:textColor="@color/black"
                 android:layout_margin="6dp"
                 android:backgroundTint="@color/button"
-                android:textSize="13sp"/>
+                android:textSize="17sp"/>
         </LinearLayout>
     </LinearLayout>

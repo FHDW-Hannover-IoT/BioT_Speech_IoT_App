@@ -122,6 +122,30 @@ public class MainGraphActivity extends BaseChartActivity {
         lineChartGyro = findViewById(R.id.lineChartGyro);
         lineChartMag = findViewById(R.id.lineChartMag);
 
+        ImageButton resetAccel = findViewById(R.id.resetAccel);
+        resetAccel.setOnClickListener(
+                view -> {
+                    lineChartAccel.fitScreen();
+                    xBisButton.setText("");
+                    xVonButton.setText("");
+                });
+
+        ImageButton resetGyro = findViewById(R.id.resetGyro);
+        resetGyro.setOnClickListener(
+                view -> {
+                    lineChartGyro.fitScreen();
+                    yBisButton.setText("");
+                    zVonButton.setText("");
+                });
+
+        ImageButton resetMagnet = findViewById(R.id.resetMagnet);
+        resetMagnet.setOnClickListener(
+                view -> {
+                    lineChartMag.fitScreen();
+                    zBisButton.setText("");
+                    zVonButton.setText("");
+                });
+
         setupChart(lineChartAccel, "Beschleunigung", 0);
         setupChart(lineChartGyro, "Gyroskop", 0);
         setupChart(lineChartMag, "Magnetfeld", 0);

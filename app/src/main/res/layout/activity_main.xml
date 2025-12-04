@@ -216,11 +216,11 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Beschleunigung"
+                android:text="Accel"
                 android:textColor="@color/background"
                 android:layout_margin="4dp"
                 android:backgroundTint="@color/button"
-                android:textSize="10sp" />
+                android:textSize="15sp" />
 
             <Button
                 android:id="@+id/btnGyro"
@@ -231,7 +231,7 @@
                 android:textColor="@color/background"
                 android:layout_margin="4dp"
                 android:backgroundTint="@color/button"
-                android:textSize="10sp"/>
+                android:textSize="15sp"/>
 
             <Button
                 android:id="@+id/btnMagnet"
@@ -242,6 +242,6 @@
                 android:textColor="@color/background"
                 android:layout_margin="4dp"
                 android:backgroundTint="@color/button"
-                android:textSize="10sp"/>
+                android:textSize="15sp"/>
         </LinearLayout>
     </LinearLayout>

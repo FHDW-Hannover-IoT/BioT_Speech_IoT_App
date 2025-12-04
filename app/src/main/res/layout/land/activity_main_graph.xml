@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:id="@+id/gyro"
+    android:id="@+id/main"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@color/background"
@@ -13,28 +13,15 @@
         android:layout_height="wrap_content"
         android:background="@color/header">
 
-        <ImageButton
-            android:id="@+id/home_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/baseline_home_24"
-            android:contentDescription="Zur Startseite"
-            android:background="@color/header"
-            android:layout_marginTop="16dp"
-            android:layout_marginStart="16dp"
-            android:paddingBottom="15dp"
-            android:layout_weight="1"
-            android:color="@color/text"/>
-
         <TextView
             android:id="@+id/headerText"
             android:layout_width="0dp"
+            android:layout_weight="30"
             android:layout_height="80dp"
             android:background="@color/header"
             android:gravity="center_vertical|center_horizontal"
-            android:layout_weight="28"
-            android:padding="17dp"
-            android:text="Gyroskop"
+            android:paddingStart="40dp"
+            android:text="Sensordaten"
             android:textColor="@color/text"
             android:textSize="28sp"
             android:textStyle="bold" />
@@ -43,22 +30,22 @@
             android:id="@+id/notification_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:src="@drawable/outline_circle_notifications_24"
             android:background="@color/header"
             android:layout_marginTop="16dp"
             android:layout_marginEnd="16dp"
             android:paddingBottom="15dp"
-            android:layout_weight="1"
             android:color="@color/text"/>
-
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/contentArea"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:orientation="vertical"
         android:layout_weight="1"
-        android:layout_margin="10dp">
+        android:orientation="vertical"
+        android:padding="16dp">
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -74,11 +61,11 @@
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="30dp"
-                android:text=""
+                android:text="01.01.2025 00:00"
                 android:textSize="10dp"
                 android:textColor="@color/background"
                 android:backgroundTint="@color/button"
-                android:id="@+id/button_x_von"
+                android:id="@+id/button_Accel_von"
                 android:paddingStart="0dp"
                 android:paddingEnd="0dp"
                 android:paddingBottom="0dp"
@@ -94,11 +81,11 @@
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="30dp"
-                android:text=""
-                android:textSize="10dp"
+                android:text="01.01.2025 00:00"
+                android:textSize="10sp"
                 android:textColor="@color/background"
                 android:backgroundTint="@color/button"
-                android:id="@+id/button_x_bis"
+                android:id="@+id/button_Accel_bis"
                 android:paddingStart="0dp"
                 android:paddingEnd="0dp"
                 android:paddingBottom="0dp"
@@ -111,13 +98,13 @@
                 android:background="@color/background"
                 android:layout_marginStart="10dp"
                 android:paddingTop="3dp"
-                android:id="@+id/resetX"
+                android:id="@+id/resetAccel"
                 />
 
         </LinearLayout>
 
         <com.github.mikephil.charting.charts.LineChart
-            android:id="@+id/lineChartGyroX"
+            android:id="@+id/lineChartAccel"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
@@ -126,65 +113,36 @@
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <TextView
+            >
+            <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Von: "
-                android:textColor="@color/text"/>
-
-            <Button
-                android:layout_width="wrap_content"
-                android:layout_height="30dp"
-                android:text=""
-                android:textSize="10dp"
-                android:textColor="@color/background"
-                android:backgroundTint="@color/button"
-                android:id="@+id/button_y_von"
-                android:paddingStart="0dp"
-                android:paddingEnd="0dp"
-                android:paddingBottom="0dp"
-                android:paddingTop="0dp"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Bis: "
+                android:text="x-Achse"
                 android:textColor="@color/text"
-                android:layout_marginStart="10dp"/>
+                android:id="@+id/AccelxCheck"/>
 
-            <Button
-                android:layout_width="wrap_content"
-                android:layout_height="30dp"
-                android:text=""
-                android:textSize="10dp"
-                android:textColor="@color/background"
-                android:backgroundTint="@color/button"
-                android:id="@+id/button_y_bis"
-                android:paddingStart="0dp"
-                android:paddingEnd="0dp"
-                android:paddingBottom="0dp"
-                android:paddingTop="0dp"/>
-
-            <ImageButton
+            <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/outline_reset_focus_24"
-                android:background="@color/background"
-                android:layout_marginStart="10dp"
-                android:paddingTop="3dp"
-                android:id="@+id/resetY"
-                />
+                android:text="y-Achse"
+                android:textColor="@color/text"
+                android:id="@+id/AccelyCheck"/>
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="z-Achse"
+                android:textColor="@color/text"
+                android:id="@+id/AccelzCheck"/>
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Summe"
+                android:textColor="@color/text"
+                android:id="@+id/AccelSumCheck"/>
 
         </LinearLayout>
-
-        <com.github.mikephil.charting.charts.LineChart
-            android:id="@+id/lineChartGyroY"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:layout_margin="16dp" />
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -200,11 +158,11 @@
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="30dp"
-                android:text=""
+                android:text="01.01. 00:00"
                 android:textSize="10dp"
                 android:textColor="@color/background"
                 android:backgroundTint="@color/button"
-                android:id="@+id/button_z_von"
+                android:id="@+id/button_Gyro_von"
                 android:paddingStart="0dp"
                 android:paddingEnd="0dp"
                 android:paddingBottom="0dp"
@@ -220,11 +178,11 @@
             <Button
                 android:layout_width="wrap_content"
                 android:layout_height="30dp"
-                android:text=""
+                android:text="01.01.2025 00:00"
                 android:textSize="10dp"
                 android:textColor="@color/background"
                 android:backgroundTint="@color/button"
-                android:id="@+id/button_z_bis"
+                android:id="@+id/button_Gyro_bis"
                 android:paddingStart="0dp"
                 android:paddingEnd="0dp"
                 android:paddingBottom="0dp"
@@ -237,17 +195,159 @@
                 android:background="@color/background"
                 android:layout_marginStart="10dp"
                 android:paddingTop="3dp"
-                android:id="@+id/resetZ"
+                android:id="@+id/resetGyro"
                 />
 
         </LinearLayout>
 
         <com.github.mikephil.charting.charts.LineChart
-            android:id="@+id/lineChartGyroZ"
+            android:id="@+id/lineChartGyro"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
             android:layout_margin="16dp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            >
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="x-Achse"
+                android:textColor="@color/text"
+                android:id="@+id/GyroxCheck"/>
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="y-Achse"
+                android:textColor="@color/text"
+                android:id="@+id/GyroyCheck"/>
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="z-Achse"
+                android:textColor="@color/text"
+                android:id="@+id/GyrozCheck"/>
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Summe"
+                android:textColor="@color/text"
+                android:id="@+id/GyroSumCheck"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Von: "
+                android:textColor="@color/text"/>
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:text="01.01.2025 00:00"
+                android:textSize="10dp"
+                android:textColor="@color/background"
+                android:backgroundTint="@color/button"
+                android:id="@+id/button_Mag_von"
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp"
+                android:paddingBottom="0dp"
+                android:paddingTop="0dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Bis: "
+                android:textColor="@color/text"
+                android:layout_marginStart="10dp"/>
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="30dp"
+                android:text="01.01.2025 00:00"
+                android:textSize="10dp"
+                android:textColor="@color/background"
+                android:backgroundTint="@color/button"
+                android:id="@+id/button_Mag_bis"
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp"
+                android:paddingBottom="0dp"
+                android:paddingTop="0dp"/>
+
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/outline_reset_focus_24"
+                android:background="@color/background"
+                android:layout_marginStart="10dp"
+                android:paddingTop="3dp"
+                android:id="@+id/resetMagnet"
+                />
+
+        </LinearLayout>
+
+        <com.github.mikephil.charting.charts.LineChart
+            android:id="@+id/lineChartMag"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_margin="16dp"/>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            >
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="x-Achse"
+                android:textColor="@color/text"
+                android:id="@+id/MagxCheck"/>
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="y-Achse"
+                android:textColor="@color/text"
+                android:id="@+id/MagyCheck"/>
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="z-Achse"
+                android:textColor="@color/text"
+                android:id="@+id/MagzCheck"/>
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Summe"
+                android:textColor="@color/text"
+                android:id="@+id/MagSumCheck"/>
+
+        </LinearLayout>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="Zur Werteansicht"
+            android:layout_marginTop="10dp"
+            android:backgroundTint="@color/button"
+            android:textColor="@color/background"
+            android:id="@+id/werteansicht"/>
+
     </LinearLayout>
 
     <LinearLayout
@@ -258,48 +358,37 @@
         android:gravity="center"
         android:background="@color/header">
 
-        <TextView
-            android:id="@+id/accelDescription"
+        <Button
+            android:id="@+id/btnAccel"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Acc"
-            android:textColor="@color/text"
-            android:layout_margin="10dp"
-            android:gravity="center"
-            android:textSize="20sp"/>
+            android:text="Beschleunigung"
+            android:textColor="@color/background"
+            android:layout_margin="4dp"
+            android:backgroundTint="@color/button"
+            android:textSize="10sp" />
 
         <Button
-            android:id="@+id/btnPrevAccel"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="&lt;"
-            android:textColor="@color/background"
-            android:layout_marginEnd="20dp"
-            android:backgroundTint="@color/button"
-            android:textSize="20sp" />
-
-        <Button
-            android:id="@+id/btnNextMagnet"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="&gt;"
-            android:textColor="@color/background"
-            android:layout_marginStart="20dp"
-            android:backgroundTint="@color/button"
-            android:textSize="20sp"/>
-
-        <TextView
             android:id="@+id/btnGyro"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Mag"
-            android:textColor="@color/text"
-            android:layout_margin="10dp"
-            android:gravity="center"
-            android:textSize="20sp"/>
+            android:text="Gyroskop"
+            android:textColor="@color/background"
+            android:layout_margin="4dp"
+            android:backgroundTint="@color/button"
+            android:textSize="10sp"/>
+
+        <Button
+            android:id="@+id/btnMagnet"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Magnetfeld"
+            android:textColor="@color/background"
+            android:layout_margin="4dp"
+            android:backgroundTint="@color/button"
+            android:textSize="10sp"/>
     </LinearLayout>
 </LinearLayout>

@@ -78,7 +78,7 @@
                 <Button
                     android:layout_width="wrap_content"
                     android:layout_height="30dp"
-                    android:text="01.01.2025 00:00"
+                    android:text=""
                     android:textSize="10dp"
                     android:textColor="@color/background"
                     android:backgroundTint="@color/button"
@@ -98,7 +98,7 @@
                 <Button
                     android:layout_width="wrap_content"
                     android:layout_height="30dp"
-                    android:text="01.01.2025 00:00"
+                    android:text=""
                     android:textSize="10dp"
                     android:textColor="@color/background"
                     android:backgroundTint="@color/button"
@@ -107,6 +107,16 @@
                     android:paddingEnd="0dp"
                     android:paddingBottom="0dp"
                     android:paddingTop="0dp"/>
+
+                <ImageButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/outline_reset_focus_24"
+                    android:background="@color/background"
+                    android:layout_marginStart="10dp"
+                    android:paddingTop="3dp"
+                    android:id="@+id/resetX"
+                    />
 
             </LinearLayout>
 
@@ -131,7 +141,7 @@
                 <Button
                     android:layout_width="wrap_content"
                     android:layout_height="30dp"
-                    android:text="01.01.2025 00:00"
+                    android:text=""
                     android:textSize="10dp"
                     android:textColor="@color/background"
                     android:backgroundTint="@color/button"
@@ -151,7 +161,7 @@
                 <Button
                     android:layout_width="wrap_content"
                     android:layout_height="30dp"
-                    android:text="01.01.2025 00:00"
+                    android:text=""
                     android:textSize="10dp"
                     android:textColor="@color/background"
                     android:backgroundTint="@color/button"
@@ -160,6 +170,16 @@
                     android:paddingEnd="0dp"
                     android:paddingBottom="0dp"
                     android:paddingTop="0dp"/>
+
+                <ImageButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/outline_reset_focus_24"
+                    android:background="@color/background"
+                    android:layout_marginStart="10dp"
+                    android:paddingTop="3dp"
+                    android:id="@+id/resetY"
+                    />
 
             </LinearLayout>
 
@@ -184,7 +204,7 @@
                 <Button
                     android:layout_width="wrap_content"
                     android:layout_height="30dp"
-                    android:text="01.01.2025"
+                    android:text=""
                     android:textSize="8dp"
                     android:textColor="@color/background"
                     android:backgroundTint="@color/button"
@@ -200,11 +220,21 @@
                 <Button
                     android:layout_width="wrap_content"
                     android:layout_height="30dp"
-                    android:text="01.01.2025"
+                    android:text=""
                     android:textSize="8dp"
                     android:textColor="@color/background"
                     android:backgroundTint="@color/button"
                     android:id="@+id/button_z_bis"/>
+
+                <ImageButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/outline_reset_focus_24"
+                    android:background="@color/background"
+                    android:layout_marginStart="10dp"
+                    android:paddingTop="3dp"
+                    android:id="@+id/resetZ"
+                    />
 
             </LinearLayout>
 
@@ -227,11 +257,11 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Accel"
+                    android:text="Acc"
                     android:textColor="@color/text"
                     android:layout_margin="10dp"
                     android:gravity="center"
-                    android:textSize="15sp"/>
+                    android:textSize="20sp"/>
 
                 <Button
                     android:id="@+id/btnPrevAccel"
@@ -264,7 +294,7 @@
                     android:textColor="@color/text"
                     android:layout_margin="10dp"
                     android:gravity="center"
-                    android:textSize="15sp"/>
+                    android:textSize="20sp"/>
             </LinearLayout>
         </LinearLayout>
 

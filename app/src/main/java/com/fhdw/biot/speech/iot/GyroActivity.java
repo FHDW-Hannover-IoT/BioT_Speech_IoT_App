@@ -66,6 +66,30 @@ public class GyroActivity extends BaseChartActivity {
         lineChartGyroY = findViewById(R.id.lineChartGyroY);
         lineChartGyroZ = findViewById(R.id.lineChartGyroZ);
 
+        ImageButton resetAccel = findViewById(R.id.resetX);
+        resetAccel.setOnClickListener(
+                view -> {
+                    lineChartGyroX.fitScreen();
+                    xBisButton.setText("");
+                    xVonButton.setText("");
+                });
+
+        ImageButton resetGyro = findViewById(R.id.resetY);
+        resetGyro.setOnClickListener(
+                view -> {
+                    lineChartGyroY.fitScreen();
+                    yBisButton.setText("");
+                    zVonButton.setText("");
+                });
+
+        ImageButton resetMagnet = findViewById(R.id.resetZ);
+        resetMagnet.setOnClickListener(
+                view -> {
+                    lineChartGyroZ.fitScreen();
+                    zBisButton.setText("");
+                    zVonButton.setText("");
+                });
+
         // Initial chart setup
         setupChart(lineChartGyroX, "X-Achse", 0);
         setupChart(lineChartGyroY, "Y-Achse", 0);
