@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageButton;
+
 import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -18,174 +19,199 @@ import com.fhdw.biot.speech.iot.sensor.AccelActivity;
 import com.fhdw.biot.speech.iot.events.EreignisActivity;
 import com.fhdw.biot.speech.iot.sensor.GyroActivity;
 import com.fhdw.biot.speech.iot.sensor.MagnetActivity;
+
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+
 import database.entities.AccelData;
 import database.entities.GyroData;
 import database.entities.MagnetData;
 import database.DB;
 
+/**
+ * MainGraphActivity
+ * -----------------
+ * THIS IS THE MAIN VISUALIZATION SCREEN FOR THE ENTIRE APP.
+ *
+ * PURPOSE OF THIS ACTIVITY:
+ *  • Visualize all 3 sensors (Accel, Gyro, Magnet) at once.
+ *  • Allow users to toggle individual axes (X, Y, Z) and the total magnitude.
+ *  • Allow dynamic filtering by date range.
+ *  • Automatically redraw the graphs anytime:
+ *        - the database updates,
+ *        - the user changes the date range,
+ *        - the user toggles checkboxes.
+ *
+ * INTERNAL STRUCTURE:
+ *  1. Three LineCharts → Accel, Gyro, Magnet.
+ *  2. Each chart can display up to 4 datasets:
+ *        - X axis, Y axis, Z axis, and total magnitude (sqrt(x²+y²+z²))
+ *  3. The Activity obtains data from Room using LiveData so updates are automatic.
+ *  4. Date ranges are applied using DB filters and LiveData re-queries.
+ *  5. The actual drawing logic comes from BaseChartActivity.
+ *
+ * This Activity is essentially a "dashboard" combining multiple real-time sensor signals.
+ */
 public class MainGraphActivity extends BaseChartActivity {
 
+    // -----------------------------------------------
+    // CHARTS — one for each sensor category
+    // -----------------------------------------------
     private LineChart lineChartAccel, lineChartGyro, lineChartMag;
+
+    // -----------------------------------------------
+    // DATE FILTER RANGE
+    // -----------------------------------------------
     private Calendar dateFromCalendar;
     private Calendar dateToCalendar;
-    private LineDataSet lineDataAccelx,
-            lineDataAccely,
-            lineDataAccelz,
-            lineDataAccelTotal,
-            lineDataGyrox,
-            lineDataGyroy,
-            lineDataGyroz,
-            lineDataGyroTotal,
-            lineDataMagx,
-            lineDataMagy,
-            lineDataMagz,
-            lineDataMagTotal;
-    private CheckBox AccelXCheck,
-            AccelYCheck,
-            AccelZCheck,
-            AccelSumCheck,
-            GyroXCheck,
-            GyroYCheck,
-            GyroZCheck,
-            GyroSumCheck,
-            MagXCheck,
-            MagYCheck,
-            MagZCheck,
-            MagSumCheck;
+
+    // -----------------------------------------------
+    // DATASETS FOR ALL AXES AND TOTAL MAGNITUDE
+    // These objects hold the chart data before deciding
+    // which datasets will be shown depending on checkboxes.
+    // -----------------------------------------------
+    private LineDataSet lineDataAccelx, lineDataAccely, lineDataAccelz, lineDataAccelTotal;
+    private LineDataSet lineDataGyrox, lineDataGyroy, lineDataGyroz, lineDataGyroTotal;
+    private LineDataSet lineDataMagx, lineDataMagy, lineDataMagz, lineDataMagTotal;
+
+    // -----------------------------------------------
+    // CHECKBOXES controlling which lines are visible
+    // -----------------------------------------------
+    private CheckBox AccelXCheck, AccelYCheck, AccelZCheck, AccelSumCheck;
+    private CheckBox GyroXCheck, GyroYCheck, GyroZCheck, GyroSumCheck;
+    private CheckBox MagXCheck, MagYCheck, MagZCheck, MagSumCheck;
+
+    // Buttons for date pickers
     private Button xVonButton, xBisButton, yVonButton, yBisButton, zVonButton, zBisButton;
-    private long startTime = 0;
+
+    private long startTime = 0; // initial timestamp for axis formatting (seconds)
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main_graph);
+
+        // ------------------------------------------------------------
+        // SAFE INSETS (dynamic padding for status/navigation bars)
+        // ------------------------------------------------------------
         ViewCompat.setOnApplyWindowInsetsListener(
                 findViewById(R.id.main),
                 (v, insets) -> {
-                    Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                    v.setPadding(
-                            systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+                    Insets bar = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                    v.setPadding(bar.left, bar.top, bar.right, bar.bottom);
                     return insets;
                 });
 
+        // ------------------------------------------------------------
+        // NAVIGATION BUTTONS
+        // ------------------------------------------------------------
         Button ButtonWerte = findViewById(R.id.werteansicht);
-        ButtonWerte.setOnClickListener(
-                view -> {
-                    Intent intent = new Intent(MainGraphActivity.this, MainActivity.class);
-                    startActivity(intent);
-                });
+        ButtonWerte.setOnClickListener(v ->
+                startActivity(new Intent(MainGraphActivity.this, MainActivity.class)));
 
+        // Setup dynamic visibility controls (checkboxes)
         setupCheckboxes();
 
-        DatePickerHandler datePickerHandler = new DatePickerHandler(MainGraphActivity.this);
-
+        // ------------------------------------------------------------
+        // DATE PICKER BUTTON REFERENCES
+        // ------------------------------------------------------------
+        xVonButton = findViewById(R.id.button_Accel_von);
         xBisButton = findViewById(R.id.button_Accel_bis);
 
-        xVonButton = findViewById(R.id.button_Accel_von);
-
+        yVonButton = findViewById(R.id.button_Gyro_von);
         yBisButton = findViewById(R.id.button_Gyro_bis);
 
-        yVonButton = findViewById(R.id.button_Gyro_von);
-
+        zVonButton = findViewById(R.id.button_Mag_von);
         zBisButton = findViewById(R.id.button_Mag_bis);
 
-        zVonButton = findViewById(R.id.button_Mag_von);
+        // ------------------------------------------------------------
+        // SENSOR NAVIGATION BUTTONS
+        // ------------------------------------------------------------
+        findViewById(R.id.btnGyro).setOnClickListener(
+                v -> startActivity(new Intent(MainGraphActivity.this, GyroActivity.class)));
 
-        Button buttonGyro = findViewById(R.id.btnGyro);
-        buttonGyro.setOnClickListener(
-                view -> {
-                    Intent intent = new Intent(MainGraphActivity.this, GyroActivity.class);
-                    startActivity(intent);
-                });
+        findViewById(R.id.btnAccel).setOnClickListener(
+                v -> startActivity(new Intent(MainGraphActivity.this, AccelActivity.class)));
 
-        Button buttonAccel = findViewById(R.id.btnAccel);
-        buttonAccel.setOnClickListener(
-                view -> {
-                    Intent intent = new Intent(MainGraphActivity.this, AccelActivity.class);
-                    startActivity(intent);
-                });
+        findViewById(R.id.btnMagnet).setOnClickListener(
+                v -> startActivity(new Intent(MainGraphActivity.this, MagnetActivity.class)));
 
-        Button buttonMagnet = findViewById(R.id.btnMagnet);
-        buttonMagnet.setOnClickListener(
-                view -> {
-                    Intent intent = new Intent(MainGraphActivity.this, MagnetActivity.class);
-                    startActivity(intent);
-                });
+        // Ereignis view
+        findViewById(R.id.notification_button).setOnClickListener(v -> {
+            Intent intent = new Intent(MainGraphActivity.this, EreignisActivity.class);
+            intent.putExtra("SENSOR_FILTER", "ALL");
+            startActivity(intent);
+        });
 
-        ImageButton ereignisButton = findViewById(R.id.notification_button);
-        ereignisButton.setOnClickListener(
-                view -> {
-                    Intent intent = new Intent(MainGraphActivity.this, EreignisActivity.class);
-                    intent.putExtra("SENSOR_FILTER", "ALL");
-                    startActivity(intent);
-                });
-
+        // ------------------------------------------------------------
+        // CHART REFERENCES
+        // ------------------------------------------------------------
         lineChartAccel = findViewById(R.id.lineChartAccel);
         lineChartGyro = findViewById(R.id.lineChartGyro);
         lineChartMag = findViewById(R.id.lineChartMag);
 
+        // Initial chart setup (no data yet)
         setupChart(lineChartAccel, "Beschleunigung", 0);
         setupChart(lineChartGyro, "Gyroskop", 0);
         setupChart(lineChartMag, "Magnetfeld", 0);
 
-        ImageButton resetAccel = findViewById(R.id.resetAccel);
-        resetAccel.setOnClickListener(
-                view -> {
-                    lineChartAccel.fitScreen();
-                    xBisButton.setText("");
-                    xVonButton.setText("");
-                });
+        // Reset buttons restore the zoom and clear date fields
+        findViewById(R.id.resetAccel).setOnClickListener(v -> {
+            lineChartAccel.fitScreen();
+            xVonButton.setText("");
+            xBisButton.setText("");
+        });
 
-        ImageButton resetGyro = findViewById(R.id.resetGyro);
-        resetGyro.setOnClickListener(
-                view -> {
-                    lineChartGyro.fitScreen();
-                    yBisButton.setText("");
-                    zVonButton.setText("");
-                });
+        findViewById(R.id.resetGyro).setOnClickListener(v -> {
+            lineChartGyro.fitScreen();
+            yVonButton.setText("");
+            yBisButton.setText("");
+        });
 
-        ImageButton resetMagnet = findViewById(R.id.resetMagnet);
-        resetMagnet.setOnClickListener(
-                view -> {
-                    lineChartMag.fitScreen();
-                    zBisButton.setText("");
-                    zVonButton.setText("");
-                });
+        findViewById(R.id.resetMagnet).setOnClickListener(v -> {
+            lineChartMag.fitScreen();
+            zVonButton.setText("");
+            zBisButton.setText("");
+        });
 
-        setupChart(lineChartAccel, "Beschleunigung", 0);
-        setupChart(lineChartGyro, "Gyroskop", 0);
-        setupChart(lineChartMag, "Magnetfeld", 0);
-
+        // ------------------------------------------------------------
+        // REAL-TIME DATA OBSERVERS (LiveData)
+        // These keep the UI always up-to-date.
+        // ------------------------------------------------------------
         observeAccelData();
         observeGyroData();
         observeMagnetData();
 
+        // Finally setup date pickers for filtering
         setupDatePickers();
     }
 
-    private void setupDatePickers() {
+    // =====================================================================
+    // DATE RANGE SETUP
+    // =====================================================================
 
+    /**
+     * Reads the oldest available timestamp from DB → sets initial "from" date.
+     */
+    private void setupDatePickers() {
         dateFromCalendar = Calendar.getInstance();
         dateToCalendar = Calendar.getInstance();
 
         DB.getDatabase(getApplicationContext())
                 .sensorDao()
                 .getOldestAccelTimestamp()
-                .observe(
-                        this,
-                        oldestTimestamp -> {
-                            if (oldestTimestamp != null && oldestTimestamp > 0) {
-                                dateFromCalendar.setTimeInMillis(oldestTimestamp);
-                            }
-                        });
+                .observe(this, oldest -> {
+                    if (oldest != null && oldest > 0) {
+                        dateFromCalendar.setTimeInMillis(oldest);
+                    }
+                });
 
         setupFromDatePickers();
         setupToDatePickers();
@@ -193,111 +219,120 @@ public class MainGraphActivity extends BaseChartActivity {
         updateChartsWithDateFilter();
     }
 
+    /**
+     * Creates the three “from date” pickers (Accel/Gyro/Magnet).
+     */
     private void setupFromDatePickers() {
-        DatePickerHandler.OnDateSelectedListener fromListener =
-                calendar -> {
-                    dateFromCalendar = calendar;
-                    updateChartsWithDateFilter();
-                };
-        DatePickerHandler.createForButton(xVonButton, fromListener, this);
+        DatePickerHandler.OnDateSelectedListener listener = cal -> {
+            dateFromCalendar = cal;
+            updateChartsWithDateFilter();
+        };
 
-        DatePickerHandler.createForButton(yVonButton, fromListener, this);
+        DatePickerHandler.createForButton(xVonButton, listener, this);
+        DatePickerHandler.createForButton(yVonButton, listener, this);
+        DatePickerHandler.createForButton(zVonButton, listener, this);
 
-        DatePickerHandler.createForButton(zVonButton, fromListener, this);
-
-        // Setze anfängliches Datum
+        // Initially empty → user decides manually
         xVonButton.setText("");
         yVonButton.setText("");
         zVonButton.setText("");
     }
 
+    /**
+     * Creates the three “to date” pickers.
+     */
     private void setupToDatePickers() {
-        DatePickerHandler.OnDateSelectedListener toListener =
-                calendar -> {
-                    dateToCalendar = calendar;
-                    updateChartsWithDateFilter();
-                };
-        DatePickerHandler.createForButton(xBisButton, toListener, this);
-        DatePickerHandler.createForButton(yBisButton, toListener, this);
-        DatePickerHandler.createForButton(zBisButton, toListener, this);
+        DatePickerHandler.OnDateSelectedListener listener = cal -> {
+            dateToCalendar = cal;
+            updateChartsWithDateFilter();
+        };
+
+        DatePickerHandler.createForButton(xBisButton, listener, this);
+        DatePickerHandler.createForButton(yBisButton, listener, this);
+        DatePickerHandler.createForButton(zBisButton, listener, this);
 
         xBisButton.setText("");
         yBisButton.setText("");
         zBisButton.setText("");
     }
 
+    // =====================================================================
+    // DATE FILTER APPLICATION
+    // =====================================================================
+
+    /**
+     * Applies date range filter to all sensors (Accel/Gyro/Magnet)
+     * and recomputes datasets.
+     */
     private void updateChartsWithDateFilter() {
-        if (dateFromCalendar == null || dateToCalendar == null) {
-            return;
-        }
+        if (dateFromCalendar == null || dateToCalendar == null) return;
 
-        Calendar adjustedToCalendar = (Calendar) dateToCalendar.clone();
-        adjustedToCalendar.add(Calendar.DAY_OF_MONTH, 0);
-        adjustedToCalendar.set(Calendar.HOUR_OF_DAY, 23);
-        adjustedToCalendar.set(Calendar.MINUTE, 59);
-        adjustedToCalendar.set(Calendar.SECOND, 59);
+        // Extend end date to include full day
+        Calendar adjustedTo = (Calendar) dateToCalendar.clone();
+        adjustedTo.set(Calendar.HOUR_OF_DAY, 23);
+        adjustedTo.set(Calendar.MINUTE, 59);
+        adjustedTo.set(Calendar.SECOND, 59);
 
-        final long startTime = dateFromCalendar.getTimeInMillis();
-        final long endTime = adjustedToCalendar.getTimeInMillis();
+        long start = dateFromCalendar.getTimeInMillis();
+        long end = adjustedTo.getTimeInMillis();
 
+        // ============================
+        // ACCEL DATA
+        // ============================
         DB.getDatabase(getApplicationContext())
                 .sensorDao()
-                .getAccelDataBetween(startTime, endTime)
-                .observe(
-                        this,
-                        filteredData -> {
-                            if (filteredData != null && !filteredData.isEmpty()) {
-                                initializeAccelDataSets(filteredData);
-                            } else {
-                                lineDataAccelx =
-                                        lineDataAccely = lineDataAccelz = lineDataAccelTotal = null;
-                                setupChart(lineChartAccel, "Beschleunigung", 0);
-                            }
-                            updateAccelChart();
-                        });
+                .getAccelDataBetween(start, end)
+                .observe(this, data -> {
+                    if (data != null && !data.isEmpty())
+                        initializeAccelDataSets(data);
+                    else {
+                        lineDataAccelx = lineDataAccely = lineDataAccelz = lineDataAccelTotal = null;
+                        setupChart(lineChartAccel, "Beschleunigung", 0);
+                    }
+                    updateAccelChart();
+                });
 
+        // ============================
+        // GYRO DATA
+        // ============================
         DB.getDatabase(getApplicationContext())
                 .sensorDao()
-                .getGyroDataBetween(startTime, endTime)
-                .observe(
-                        this,
-                        filteredData -> {
-                            if (filteredData != null && !filteredData.isEmpty()) {
-                                initializeGyroDataSets(filteredData);
-                            } else {
-                                lineDataGyrox =
-                                        lineDataGyroy = lineDataGyroz = lineDataGyroTotal = null;
-                                setupChart(lineChartGyro, "Gyroskop", 0);
-                            }
-                            updateAccelChart();
-                        });
+                .getGyroDataBetween(start, end)
+                .observe(this, data -> {
+                    if (data != null && !data.isEmpty())
+                        initializeGyroDataSets(data);
+                    else {
+                        lineDataGyrox = lineDataGyroy = lineDataGyroz = lineDataGyroTotal = null;
+                        setupChart(lineChartGyro, "Gyroskop", 0);
+                    }
+                    updateAccelChart();
+                });
 
+        // ============================
+        // MAGNET DATA
+        // ============================
         DB.getDatabase(getApplicationContext())
                 .sensorDao()
-                .getMagnetDataBetween(startTime, endTime)
-                .observe(
-                        this,
-                        filteredData -> {
-                            if (filteredData != null && !filteredData.isEmpty()) {
-                                initializeMagDataSets(filteredData);
-                            } else {
-                                lineDataMagx =
-                                        lineDataMagy = lineDataMagz = lineDataMagTotal = null;
-                                setupChart(lineChartMag, "Magnetfeld", 0);
-                            }
-                            updateAccelChart();
-                        });
+                .getMagnetDataBetween(start, end)
+                .observe(this, data -> {
+                    if (data != null && !data.isEmpty())
+                        initializeMagDataSets(data);
+                    else {
+                        lineDataMagx = lineDataMagy = lineDataMagz = lineDataMagTotal = null;
+                        setupChart(lineChartMag, "Magnetfeld", 0);
+                    }
+                    updateAccelChart();
+                });
     }
 
-    private String formatCalendarDate(Calendar calendar) {
-        return String.format(
-                java.util.Locale.GERMANY,
-                "%02d.%02d.%04d",
-                calendar.get(Calendar.DAY_OF_MONTH),
-                calendar.get(Calendar.MONTH) + 1,
-                calendar.get(Calendar.YEAR));
-    }
+    // =====================================================================
+    // CHECKBOX HANDLING
+    // =====================================================================
 
+    /**
+     * Links every checkbox to a listener → whenever user toggles a dataset,
+     * we rebuild the charts instantly.
+     */
     private void setupCheckboxes() {
         AccelXCheck = findViewById(R.id.AccelxCheck);
         AccelYCheck = findViewById(R.id.AccelyCheck);
@@ -314,232 +349,177 @@ public class MainGraphActivity extends BaseChartActivity {
         MagZCheck = findViewById(R.id.MagzCheck);
         MagSumCheck = findViewById(R.id.MagSumCheck);
 
-        AccelXCheck.setOnCheckedChangeListener((buttonView, isChecked) -> updateAccelChart());
-        AccelYCheck.setOnCheckedChangeListener((buttonView, isChecked) -> updateAccelChart());
-        AccelZCheck.setOnCheckedChangeListener((buttonView, isChecked) -> updateAccelChart());
-        AccelSumCheck.setOnCheckedChangeListener((buttonView, isChecked) -> updateAccelChart());
+        // Whenever any of these changes, update charts
+        CheckBox[] all = {
+                AccelXCheck, AccelYCheck, AccelZCheck, AccelSumCheck,
+                GyroXCheck, GyroYCheck, GyroZCheck, GyroSumCheck,
+                MagXCheck, MagYCheck, MagZCheck, MagSumCheck
+        };
 
-        GyroXCheck.setOnCheckedChangeListener((buttonView, isChecked) -> updateAccelChart());
-        GyroYCheck.setOnCheckedChangeListener((buttonView, isChecked) -> updateAccelChart());
-        GyroZCheck.setOnCheckedChangeListener((buttonView, isChecked) -> updateAccelChart());
-        GyroSumCheck.setOnCheckedChangeListener((buttonView, isChecked) -> updateAccelChart());
-
-        MagXCheck.setOnCheckedChangeListener((buttonView, isChecked) -> updateAccelChart());
-        MagYCheck.setOnCheckedChangeListener((buttonView, isChecked) -> updateAccelChart());
-        MagZCheck.setOnCheckedChangeListener((buttonView, isChecked) -> updateAccelChart());
-        MagSumCheck.setOnCheckedChangeListener((buttonView, isChecked) -> updateAccelChart());
+        for (CheckBox box : all)
+            box.setOnCheckedChangeListener((button, isChecked) -> updateAccelChart());
     }
+
+    // =====================================================================
+    // LIVE DATA OBSERVERS — REAL-TIME DATABASE UPDATES
+    // =====================================================================
 
     private void observeAccelData() {
         DB.getDatabase(getApplicationContext())
                 .sensorDao()
                 .getAllAccelData()
-                .observe(
-                        this,
-                        accelDataList -> {
-                            if (accelDataList != null && !accelDataList.isEmpty()) {
-                                long firstTimestamp = accelDataList.get(0).timestamp;
-                                setupChart(lineChartAccel, "Beschleunigung", firstTimestamp);
-                                initializeAccelDataSets(accelDataList);
-                                updateAccelChart();
-                            }
-                        });
+                .observe(this, list -> {
+                    if (list != null && !list.isEmpty()) {
+                        long first = list.get(0).timestamp;
+                        setupChart(lineChartAccel, "Beschleunigung", first);
+                        initializeAccelDataSets(list);
+                        updateAccelChart();
+                    }
+                });
     }
 
     private void observeGyroData() {
         DB.getDatabase(getApplicationContext())
                 .sensorDao()
                 .getAllGyroData()
-                .observe(
-                        this,
-                        gyroDataList -> {
-                            if (gyroDataList != null && !gyroDataList.isEmpty()) {
-                                long firstTimestamp = gyroDataList.get(0).timestamp;
-                                setupChart(lineChartGyro, "Gyroskop", firstTimestamp);
-                                initializeGyroDataSets(gyroDataList);
-                                updateAccelChart();
-                            }
-                        });
+                .observe(this, list -> {
+                    if (list != null && !list.isEmpty()) {
+                        long first = list.get(0).timestamp;
+                        setupChart(lineChartGyro, "Gyroskop", first);
+                        initializeGyroDataSets(list);
+                        updateAccelChart();
+                    }
+                });
     }
 
     private void observeMagnetData() {
         DB.getDatabase(getApplicationContext())
                 .sensorDao()
                 .getAllMagnetData()
-                .observe(
-                        this,
-                        magnetDataList -> {
-                            if (magnetDataList != null && !magnetDataList.isEmpty()) {
-                                long firstTimestamp = magnetDataList.get(0).timestamp;
-                                setupChart(lineChartMag, "Magnetfeld", firstTimestamp);
-                                initializeMagDataSets(magnetDataList);
-                                updateAccelChart();
-                            }
-                        });
+                .observe(this, list -> {
+                    if (list != null && !list.isEmpty()) {
+                        long first = list.get(0).timestamp;
+                        setupChart(lineChartMag, "Magnetfeld", first);
+                        initializeMagDataSets(list);
+                        updateAccelChart();
+                    }
+                });
     }
 
-    private void initializeAccelDataSets(List<AccelData> accelDataList) {
-        ArrayList<Entry> entriesAccelX = new ArrayList<>();
-        ArrayList<Entry> entriesAccelY = new ArrayList<>();
-        ArrayList<Entry> entriesAccelZ = new ArrayList<>();
-        ArrayList<Entry> entriesAccelTotal = new ArrayList<>();
+    // =====================================================================
+    // DATASET CONSTRUCTION FOR EACH SENSOR
+    // Converts DB rows → LineDataSet objects for charts
+    // =====================================================================
 
-        long firstTimestamp = accelDataList.get(0).timestamp;
+    private void initializeAccelDataSets(List<AccelData> list) {
+        ArrayList<Entry> xs = new ArrayList<>();
+        ArrayList<Entry> ys = new ArrayList<>();
+        ArrayList<Entry> zs = new ArrayList<>();
+        ArrayList<Entry> totals = new ArrayList<>();
 
-        for (AccelData data : accelDataList) {
-            float elapsedTime = data.timestamp - firstTimestamp;
-            entriesAccelX.add(new Entry(elapsedTime, data.accelX));
-            entriesAccelY.add(new Entry(elapsedTime, data.accelY));
-            entriesAccelZ.add(new Entry(elapsedTime, data.accelZ));
+        long first = list.get(0).timestamp;
 
-            float sum =
-                    (float)
-                            Math.sqrt(
-                                    data.accelX * data.accelX
-                                            + data.accelY * data.accelY
-                                            + data.accelZ * data.accelZ);
-            entriesAccelTotal.add(new Entry(elapsedTime, sum));
+        for (AccelData d : list) {
+            float t = d.timestamp - first;
+            xs.add(new Entry(t, d.accelX));
+            ys.add(new Entry(t, d.accelY));
+            zs.add(new Entry(t, d.accelZ));
+            totals.add(new Entry(t, (float) Math.sqrt(d.accelX*d.accelX + d.accelY*d.accelY + d.accelZ*d.accelZ)));
         }
 
-        lineDataAccelx = new LineDataSet(entriesAccelX, "X-Achse");
-        lineDataAccelx.setColor(Color.CYAN);
-        lineDataAccely = new LineDataSet(entriesAccelY, "Y-Achse");
-        lineDataAccely.setColor(Color.WHITE);
-        lineDataAccelz = new LineDataSet(entriesAccelZ, "Z-Achse");
-        lineDataAccelz.setColor(Color.GREEN);
-        lineDataAccelTotal = new LineDataSet(entriesAccelTotal, "Summe");
-        lineDataAccelTotal.setColor(Color.RED);
+        lineDataAccelx = new LineDataSet(xs, "X-Achse"); lineDataAccelx.setColor(Color.CYAN);
+        lineDataAccely = new LineDataSet(ys, "Y-Achse"); lineDataAccely.setColor(Color.WHITE);
+        lineDataAccelz = new LineDataSet(zs, "Z-Achse"); lineDataAccelz.setColor(Color.GREEN);
+        lineDataAccelTotal = new LineDataSet(totals, "Summe"); lineDataAccelTotal.setColor(Color.RED);
     }
 
-    private void initializeGyroDataSets(List<GyroData> gyroDataList) {
-        ArrayList<Entry> entriesGyroX = new ArrayList<>();
-        ArrayList<Entry> entriesGyroY = new ArrayList<>();
-        ArrayList<Entry> entriesGyroZ = new ArrayList<>();
-        ArrayList<Entry> entriesGyroTotal = new ArrayList<>();
+    private void initializeGyroDataSets(List<GyroData> list) {
+        ArrayList<Entry> xs = new ArrayList<>();
+        ArrayList<Entry> ys = new ArrayList<>();
+        ArrayList<Entry> zs = new ArrayList<>();
+        ArrayList<Entry> totals = new ArrayList<>();
 
-        long firstTimestamp = gyroDataList.get(0).timestamp;
+        long first = list.get(0).timestamp;
 
-        for (GyroData data : gyroDataList) {
-            float elapsedTime = data.timestamp - firstTimestamp;
-            entriesGyroX.add(new Entry(elapsedTime, data.gyroX));
-            entriesGyroY.add(new Entry(elapsedTime, data.gyroY));
-            entriesGyroZ.add(new Entry(elapsedTime, data.gyroZ));
-
-            float sum =
-                    (float)
-                            Math.sqrt(
-                                    data.gyroX * data.gyroX
-                                            + data.gyroY * data.gyroY
-                                            + data.gyroZ * data.gyroZ);
-            entriesGyroTotal.add(new Entry(elapsedTime, sum));
+        for (GyroData d : list) {
+            float t = d.timestamp - first;
+            xs.add(new Entry(t, d.gyroX));
+            ys.add(new Entry(t, d.gyroY));
+            zs.add(new Entry(t, d.gyroZ));
+            totals.add(new Entry(t, (float) Math.sqrt(d.gyroX*d.gyroX + d.gyroY*d.gyroY + d.gyroZ*d.gyroZ)));
         }
 
-        lineDataGyrox = new LineDataSet(entriesGyroX, "X-Achse");
-        lineDataGyrox.setColor(Color.CYAN);
-        lineDataGyroy = new LineDataSet(entriesGyroY, "Y-Achse");
-        lineDataGyroy.setColor(Color.WHITE);
-        lineDataGyroz = new LineDataSet(entriesGyroZ, "Z-Achse");
-        lineDataGyroz.setColor(Color.GREEN);
-        lineDataGyroTotal = new LineDataSet(entriesGyroTotal, "Summe");
-        lineDataGyroTotal.setColor(Color.RED);
+        lineDataGyrox = new LineDataSet(xs, "X-Achse"); lineDataGyrox.setColor(Color.CYAN);
+        lineDataGyroy = new LineDataSet(ys, "Y-Achse"); lineDataGyroy.setColor(Color.WHITE);
+        lineDataGyroz = new LineDataSet(zs, "Z-Achse"); lineDataGyroz.setColor(Color.GREEN);
+        lineDataGyroTotal = new LineDataSet(totals, "Summe"); lineDataGyroTotal.setColor(Color.RED);
     }
 
-    private void initializeMagDataSets(List<MagnetData> magnetDataList) {
-        ArrayList<Entry> entriesMagX = new ArrayList<>();
-        ArrayList<Entry> entriesMagY = new ArrayList<>();
-        ArrayList<Entry> entriesMagZ = new ArrayList<>();
-        ArrayList<Entry> entriesMagTotal = new ArrayList<>();
+    private void initializeMagDataSets(List<MagnetData> list) {
+        ArrayList<Entry> xs = new ArrayList<>();
+        ArrayList<Entry> ys = new ArrayList<>();
+        ArrayList<Entry> zs = new ArrayList<>();
+        ArrayList<Entry> totals = new ArrayList<>();
 
-        long firstTimestamp = magnetDataList.get(0).timestamp;
+        long first = list.get(0).timestamp;
 
-        for (MagnetData data : magnetDataList) {
-            float elapsedTime = data.timestamp - firstTimestamp;
-            entriesMagX.add(new Entry(elapsedTime, data.magnetX));
-            entriesMagY.add(new Entry(elapsedTime, data.magnetY));
-            entriesMagZ.add(new Entry(elapsedTime, data.magnetZ));
-
-            float sum =
-                    (float)
-                            Math.sqrt(
-                                    data.magnetX * data.magnetX
-                                            + data.magnetY * data.magnetY
-                                            + data.magnetZ * data.magnetZ);
-            entriesMagTotal.add(new Entry(elapsedTime, sum));
+        for (MagnetData d : list) {
+            float t = d.timestamp - first;
+            xs.add(new Entry(t, d.magnetX));
+            ys.add(new Entry(t, d.magnetY));
+            zs.add(new Entry(t, d.magnetZ));
+            totals.add(new Entry(t, (float) Math.sqrt(d.magnetX*d.magnetX + d.magnetY*d.magnetY + d.magnetZ*d.magnetZ)));
         }
 
-        lineDataMagx = new LineDataSet(entriesMagX, "X-Achse");
-        lineDataMagx.setColor(Color.CYAN);
-        lineDataMagy = new LineDataSet(entriesMagY, "Y-Achse");
-        lineDataMagy.setColor(Color.WHITE);
-        lineDataMagz = new LineDataSet(entriesMagZ, "Z-Achse");
-        lineDataMagz.setColor(Color.GREEN);
-        lineDataMagTotal = new LineDataSet(entriesMagTotal, "Summe");
-        lineDataMagTotal.setColor(Color.RED);
+        lineDataMagx = new LineDataSet(xs, "X-Achse"); lineDataMagx.setColor(Color.CYAN);
+        lineDataMagy = new LineDataSet(ys, "Y-Achse"); lineDataMagy.setColor(Color.WHITE);
+        lineDataMagz = new LineDataSet(zs, "Z-Achse"); lineDataMagz.setColor(Color.GREEN);
+        lineDataMagTotal = new LineDataSet(totals, "Summe"); lineDataMagTotal.setColor(Color.RED);
     }
 
+    // =====================================================================
+    // CHART UPDATE PIPELINE
+    // Combines checkbox visibility + dataset contents.
+    // =====================================================================
+
+    /**
+     * This method builds the final LineData objects for each chart,
+     * depending on which checkboxes are active.
+     */
     private void updateAccelChart() {
-        if (lineDataAccelx == null) return;
-        if (lineDataGyrox == null) return;
-        if (lineDataMagx == null) return;
 
-        LineData lineData = new LineData();
-        if (AccelXCheck.isChecked()) {
-            lineData.addDataSet(lineDataAccelx);
-        }
+        // Prevent null access before data is loaded
+        if (lineDataAccelx == null || lineDataGyrox == null || lineDataMagx == null)
+            return;
 
-        if (AccelYCheck.isChecked()) {
-            lineData.addDataSet(lineDataAccely);
-        }
+        // ------------------------ ACCEL CHART ------------------------
+        LineData accel = new LineData();
+        if (AccelXCheck.isChecked()) accel.addDataSet(lineDataAccelx);
+        if (AccelYCheck.isChecked()) accel.addDataSet(lineDataAccely);
+        if (AccelZCheck.isChecked()) accel.addDataSet(lineDataAccelz);
+        if (AccelSumCheck.isChecked()) accel.addDataSet(lineDataAccelTotal);
 
-        if (AccelZCheck.isChecked()) {
-            lineData.addDataSet(lineDataAccelz);
-        }
-
-        if (AccelSumCheck.isChecked()) {
-            lineData.addDataSet(lineDataAccelTotal);
-        }
-
-        lineChartAccel.setData(lineData);
+        lineChartAccel.setData(accel);
         lineChartAccel.invalidate();
 
-        LineData lineData2 = new LineData();
-        if (GyroXCheck.isChecked()) {
-            lineData2.addDataSet(lineDataGyrox);
-        }
+        // ------------------------ GYRO CHART ------------------------
+        LineData gyro = new LineData();
+        if (GyroXCheck.isChecked()) gyro.addDataSet(lineDataGyrox);
+        if (GyroYCheck.isChecked()) gyro.addDataSet(lineDataGyroy);
+        if (GyroZCheck.isChecked()) gyro.addDataSet(lineDataGyroz);
+        if (GyroSumCheck.isChecked()) gyro.addDataSet(lineDataGyroTotal);
 
-        if (GyroYCheck.isChecked()) {
-            lineData2.addDataSet(lineDataGyroy);
-        }
-
-        if (GyroZCheck.isChecked()) {
-            lineData2.addDataSet(lineDataGyroz);
-        }
-
-        if (GyroSumCheck.isChecked()) {
-            lineData2.addDataSet(lineDataGyroTotal);
-        }
-
-        lineChartGyro.setData(lineData2);
+        lineChartGyro.setData(gyro);
         lineChartGyro.invalidate();
 
-        LineData lineData3 = new LineData();
-        if (MagXCheck.isChecked()) {
-            lineData3.addDataSet(lineDataMagx);
-        }
+        // ------------------------ MAGNET CHART ------------------------
+        LineData mag = new LineData();
+        if (MagXCheck.isChecked()) mag.addDataSet(lineDataMagx);
+        if (MagYCheck.isChecked()) mag.addDataSet(lineDataMagy);
+        if (MagZCheck.isChecked()) mag.addDataSet(lineDataMagz);
+        if (MagSumCheck.isChecked()) mag.addDataSet(lineDataMagTotal);
 
-        if (MagYCheck.isChecked()) {
-            lineData3.addDataSet(lineDataMagy);
-        }
-
-        if (MagZCheck.isChecked()) {
-            lineData3.addDataSet(lineDataMagz);
-        }
-
-        if (MagSumCheck.isChecked()) {
-            lineData3.addDataSet(lineDataMagTotal);
-        }
-
-        lineChartMag.setData(lineData3);
+        lineChartMag.setData(mag);
         lineChartMag.invalidate();
     }
 }

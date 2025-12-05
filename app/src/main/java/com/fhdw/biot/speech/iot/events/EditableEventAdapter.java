@@ -6,6 +6,7 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Spinner;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -13,10 +14,26 @@ import com.fhdw.biot.speech.iot.R;
 
 import java.util.List;
 
+/**
+ * EditableEventAdapter
+ * ---------------------
+ * This adapter displays an EDITABLE list of event configuration items.
+ *
+ * Each row allows the user to define:
+ *   • Sensor type   (Accel / Gyro / Magnet via Spinner)
+ *   • Event type    (custom rule name)
+ *   • Threshold     (numeric trigger level)
+ *
+ * Used in NewEreignisActivity to build custom rules for generating EreignisData.
+ *
+ * Note: Not all logic is implemented yet, but all fields + delete/add row
+ *       functionality are in place.
+ */
 public class EditableEventAdapter
         extends RecyclerView.Adapter<EditableEventAdapter.EventViewHolder> {
+
     private final List<EditableSensorEvent> eventList;
-    private long nextId = 0;
+    private long nextId = 0; // Generates unique IDs for new rows
 
     public EditableEventAdapter(List<EditableSensorEvent> eventList) {
         this.eventList = eventList;
@@ -25,21 +42,24 @@ public class EditableEventAdapter
     @NonNull
     @Override
     public EventViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view =
-                LayoutInflater.from(parent.getContext())
-                        .inflate(R.layout.event_configuration_item, parent, false);
+
+        View view = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.event_configuration_item, parent, false);
+
         return new EventViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
+
         EditableSensorEvent currentEvent = eventList.get(position);
 
-        // Daten aus der Datenbank eintragen; Selects befüllen
+        // TODO: populate Spinner and input fields from DB or preset lists
 
+        // Delete row handler
         holder.btnDelete.setOnClickListener(v -> deleteEvent(position));
 
-        // *Listener für die Eingabefelder
+        // TODO: Add listeners for text changes, spinner selection, etc.
     }
 
     @Override
@@ -47,25 +67,35 @@ public class EditableEventAdapter
         return eventList.size();
     }
 
+    /**
+     * Adds a new blank rule row.
+     */
     public long addEmptyEvent() {
-        long newId = ++nextId;
-        EditableSensorEvent newEvent = new EditableSensorEvent(newId);
+        long id = ++nextId;
+        EditableSensorEvent newEvent = new EditableSensorEvent(id);
         eventList.add(newEvent);
 
         notifyItemInserted(eventList.size() - 1);
-        return newId;
+        return id;
     }
 
+    /**
+     * Deletes a rule row (and later deletes DB entry).
+     */
     public void deleteEvent(int position) {
-        if (position >= 0 && position < eventList.size()) {
-            // Eintrag aus der Datenbank löschen
+        if (position < 0 || position >= eventList.size()) return;
 
-            eventList.remove(position);
-            notifyItemRemoved(position);
-        }
+        // TODO: Remove from DB if persistent
+
+        eventList.remove(position);
+        notifyItemRemoved(position);
     }
 
+    /**
+     * ViewHolder for editable event configuration rows.
+     */
     public static class EventViewHolder extends RecyclerView.ViewHolder {
+
         public ImageButton btnDelete;
         public Spinner spinnerSensorType;
         public EditText eventType;
@@ -73,10 +103,11 @@ public class EditableEventAdapter
 
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
-            btnDelete = itemView.findViewById(R.id.btn_delete_event);
+
+            btnDelete        = itemView.findViewById(R.id.btn_delete_event);
             spinnerSensorType = itemView.findViewById(R.id.spinner_sensor_type);
-            eventType = itemView.findViewById(R.id.spinner_event_type);
-            treshholdValue = itemView.findViewById(R.id.et_threshold_value);
+            eventType        = itemView.findViewById(R.id.spinner_event_type);
+            treshholdValue   = itemView.findViewById(R.id.et_threshold_value);
         }
     }
 }
