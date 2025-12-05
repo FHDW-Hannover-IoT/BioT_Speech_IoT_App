@@ -31,6 +31,7 @@ import database.dao.SensorDao;
 import database.dao.ValueSensorDAO;
 import database.entities.AccelData;
 import database.entities.GyroData;
+import database.entities.MagnetData;
 import database.entities.ValueSensor;
 
 /**
@@ -45,10 +46,11 @@ import database.entities.ValueSensor;
  *  - SensorDataSimulator → mqttHandler.publish(...)
  *
  * Subscriber side (this Activity):
- *  - mqttHandler.subscribe("Sensor/Bewegung" / "Sensor/Gyro" / "Sensor/Zeit")
- *  - mqttHandler → onMessageReceived(...) → handleMovement / handleGyro / handleTime
+ *  - mqttHandler.subscribe("Sensor/Bewegung" / "Sensor/Gyro" / "Sensor/Magnet")
+ *  - mqttHandler → onMessageReceived(...) →
+ *        handleMovement / handleGyro / handleMagnet
  *  - UI TextViews are updated
- *  - DB entities (AccelData / GyroData / ValueSensor) are stored.
+ *  - DB entities (AccelData / GyroData / MagnetData / ValueSensor) are stored.
  */
 public class MainActivity extends AppCompatActivity {
 
@@ -69,18 +71,17 @@ public class MainActivity extends AppCompatActivity {
 
     // ---- ROOM DAOs ----------------------------------------------------------
 
-    private SensorDao sensorDao;           // accel / gyro tables etc.
+    private SensorDao sensorDao;           // accel / gyro / magnet tables etc.
     private ValueSensorDAO valueSensorDao; // combined ValueSensor table
 
     // ---- UI elements --------------------------------------------------------
-
     // We reuse your existing TextViews from the sensor app:
     //  - Bewegung (accelerometer-like) → accelX/Y/ZValue
-    //  - Gyro                            → gyroX/Y/ZValue
-    //  - Zeit timestamp                  → we show in accelZValue for demo (or add a dedicated TextView).
+    //  - Gyro                          → gyroX/Y/ZValue
+    //  - Magnet                        → magX/Y/ZValue
     private TextView accelXValue, accelYValue, accelZValue;
     private TextView gyroXValue, gyroYValue, gyroZValue;
-    private TextView magXValue, magYValue, magZValue; // can be used for time or left unused
+    private TextView magXValue, magYValue, magZValue;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -174,8 +175,8 @@ public class MainActivity extends AppCompatActivity {
                         case "Sensor/Gyro":
                             handleGyroMessage(message);
                             break;
-                        case "Sensor/Zeit":
-                            handleTimeMessage(message);
+                        case "Sensor/Magnet":
+                            handleMagnetMessage(message);
                             break;
                         default:
                             Log.w(TAG, "Unhandled topic: " + topic);
@@ -198,7 +199,7 @@ public class MainActivity extends AppCompatActivity {
 
                 mqttHandler.subscribe("Sensor/Bewegung");
                 mqttHandler.subscribe("Sensor/Gyro");
-                mqttHandler.subscribe("Sensor/Zeit");
+                mqttHandler.subscribe("Sensor/Magnet");
 
                 // just for debugging:
                 loadDatabaseValues();
@@ -326,16 +327,41 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /** Handle "Sensor/Zeit" payload: plain timestamp string. */
-    private void handleTimeMessage(String message) {
-        // UI: for now, just print it into magXValue (or change to a dedicated TextView)
-        magXValue.setText(message);
+    /** Handle "Sensor/Magnet" payload: CSV "x,y,z". */
+    private void handleMagnetMessage(String message) {
+        String[] m = message.split(",");
+        if (m.length < 3) {
+            Log.w(TAG, "Magnet: not enough values: " + message);
+            return;
+        }
 
-        // DB: store in ValueSensor.value7
-        ValueSensor vs = new ValueSensor();
-        vs.value7 = message;
+        try {
+            float x = Float.parseFloat(m[0].trim());
+            float y = Float.parseFloat(m[1].trim());
+            float z = Float.parseFloat(m[2].trim());
 
-        DB.databaseWriteExecutor.execute(() -> valueSensorDao.insert(vs));
+            // UI – show magnet vector components
+            magXValue.setText(getString(R.string.magnet_x, x));
+            magYValue.setText(getString(R.string.magnet_y, y));
+            magZValue.setText(getString(R.string.magnet_z, z));
+
+            long now = System.currentTimeMillis();
+
+            // DB: magnet_data row
+            MagnetData magnetData = new MagnetData();
+            magnetData.timestamp = now;
+            magnetData.magnetX = x;
+            magnetData.magnetY = y;
+            magnetData.magnetZ = z;
+
+            // If you later extend ValueSensor with magnet fields, you can also fill them here.
+            DB.databaseWriteExecutor.execute(() -> {
+                sensorDao.insert(magnetData);
+            });
+
+        } catch (NumberFormatException e) {
+            Log.e(TAG, "Magnet parse error: " + e.getMessage(), e);
+        }
     }
 
     // ------------------------------------------------------------------------

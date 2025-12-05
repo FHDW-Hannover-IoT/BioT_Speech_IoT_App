@@ -35,7 +35,7 @@ import java.util.concurrent.Executors;
                 ValueSensor.class,
                 Sensor.class
         },
-        version = 2,           // keep the version that matches your existing DB_Impl
+        version = 3,           // keep the version that matches your existing DB_Impl
         exportSchema = false
 )
 public abstract class DB extends RoomDatabase {
