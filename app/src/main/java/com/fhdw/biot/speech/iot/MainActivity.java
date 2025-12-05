@@ -10,6 +10,13 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import database.DB;
+import database.dao.SensorDao;
+import database.dao.ValueSensorDAO;
+import database.entities.MagnetData;
+import database.entities.GyroData;
+import database.entities.AccelData;
+import database.entities.ValueSensor;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -18,60 +25,64 @@ import androidx.core.view.WindowInsetsCompat;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
-    private SensorDao sensorDao;
+    // ---- ROOM: DAOs ---------------------------------------------------------
+    private SensorDao sensorDao;          // per-sensor tables (Accel / Gyro / Magnet / Ereignis)
+    private ValueSensorDAO valueSensorDao; // combined ValueSensor table (like in old app)
 
+    // ---- Android sensors ----------------------------------------------------
     public SensorManager sensorManager;
     public Sensor accelerometer;
     private Sensor gyroscope;
     private Sensor magnetometer;
 
+    // ---- UI elements --------------------------------------------------------
     private TextView accelXValue, accelYValue, accelZValue;
     private TextView gyroXValue, gyroYValue, gyroZValue;
     private TextView magXValue, magYValue, magZValue;
 
+    // ---- event thresholds / timing -----------------------------------------
     private float accelEventThreshold = 5;
     private float gyroEventThreshold = 5;
     private float magEventThreshold = 10;
+
     private long lastAccelEventTime = System.currentTimeMillis();
     private long lastGyroEventTime = System.currentTimeMillis();
     private long lastMagEventTime = System.currentTimeMillis();
-    private int timeBetweenEvents = 5000;
-    private char[] axis = {'x', 'y', 'z'};
+
+    private int timeBetweenEvents = 5000;   // ms
+    private final char[] axis = {'x', 'y', 'z'};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+
+        // Ensure content is not under system bars
         ViewCompat.setOnApplyWindowInsetsListener(
                 findViewById(R.id.main),
                 (v, insets) -> {
                     Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
                     v.setPadding(
-                            systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+                            systemBars.left,
+                            systemBars.top,
+                            systemBars.right,
+                            systemBars.bottom);
                     return insets;
                 });
 
+        // ----- Navigation buttons -------------------------------------------
         Button buttonGyro = findViewById(R.id.btnGyro);
         buttonGyro.setOnClickListener(
-                view -> {
-                    Intent intent = new Intent(MainActivity.this, GyroActivity.class);
-                    startActivity(intent);
-                });
+                view -> startActivity(new Intent(MainActivity.this, GyroActivity.class)));
 
         Button buttonAccel = findViewById(R.id.btnAccel);
         buttonAccel.setOnClickListener(
-                view -> {
-                    Intent intent = new Intent(MainActivity.this, AccelActivity.class);
-                    startActivity(intent);
-                });
+                view -> startActivity(new Intent(MainActivity.this, AccelActivity.class)));
 
         Button buttonMagnet = findViewById(R.id.btnMagnet);
         buttonMagnet.setOnClickListener(
-                view -> {
-                    Intent intent = new Intent(MainActivity.this, MagnetActivity.class);
-                    startActivity(intent);
-                });
+                view -> startActivity(new Intent(MainActivity.this, MagnetActivity.class)));
 
         ImageButton ereignisButton = findViewById(R.id.notification_button);
         ereignisButton.setOnClickListener(
@@ -83,16 +94,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         Button graphButton = findViewById(R.id.graphenansicht);
         graphButton.setOnClickListener(
-                view -> {
-                    Intent intent = new Intent(MainActivity.this, MainGraphActivity.class);
-                    startActivity(intent);
-                });
+                view -> startActivity(new Intent(MainActivity.this, MainGraphActivity.class)));
 
+        // ----- Sensor setup --------------------------------------------------
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
+        // UI bindings for live values
         accelXValue = findViewById(R.id.accelXValue);
         accelYValue = findViewById(R.id.accelYValue);
         accelZValue = findViewById(R.id.accelZValue);
@@ -105,8 +115,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         magYValue = findViewById(R.id.magYValue);
         magZValue = findViewById(R.id.magZValue);
 
+        // ----- ROOM: obtain DB / DAOs ---------------------------------------
         DB db = DB.getDatabase(this);
         sensorDao = db.sensorDao();
+        valueSensorDao = db.valueSensorDao();   // <- new DAO for ValueSensor table
     }
 
     @Override
@@ -120,6 +132,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     protected void onPause() {
         super.onPause();
+        // Optionally unregister if you want to stop recording in background
         // sensorManager.unregisterListener(this);
     }
 
@@ -127,101 +140,155 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     public void onSensorChanged(SensorEvent event) {
         switch (event.sensor.getType()) {
-            case Sensor.TYPE_ACCELEROMETER:
+
+            // -----------------------------------------------------------------
+            // ACCELEROMETER
+            // -----------------------------------------------------------------
+            case Sensor.TYPE_ACCELEROMETER: {
                 accelXValue.setText(getString(R.string.beschleunigung_x, event.values[0]));
                 accelYValue.setText(getString(R.string.beschleunigung_y, event.values[1]));
                 accelZValue.setText(getString(R.string.beschleunigung_z, event.values[2]));
 
+                long now = System.currentTimeMillis();
+
+                // Entity for accel_data table
                 AccelData accelData = new AccelData();
+                accelData.timestamp = now;
                 accelData.accelX = event.values[0];
                 accelData.accelY = event.values[1];
                 accelData.accelZ = event.values[2];
-                accelData.timestamp = System.currentTimeMillis();
 
-                for (int i = 0; i < 3; i++) {
-                    if (Math.abs(event.values[i]) > accelEventThreshold
-                            && System.currentTimeMillis()
-                                    > lastAccelEventTime + timeBetweenEvents) {
-                        lastAccelEventTime = System.currentTimeMillis();
-                        SensorEreignis accel_event =
-                                new SensorEreignis(
-                                        accelData.timestamp,
-                                        "ACCEL",
-                                        event.values[i],
-                                        "accelEvent_" + accelData.timestamp,
-                                        this,
-                                        axis[i]);
-                        DB.databaseWriteExecutor.execute(
-                                () -> sensorDao.insert(accel_event.getEreignisData()));
+                // Write to accel_data + events + ValueSensor in background
+                DB.databaseWriteExecutor.execute(() -> {
+                    // store raw accel data
+                    sensorDao.insert(accelData);
+
+                    // threshold-based event rows
+                    for (int i = 0; i < 3; i++) {
+                        if (Math.abs(event.values[i]) > accelEventThreshold &&
+                                now > lastAccelEventTime + timeBetweenEvents) {
+
+                            lastAccelEventTime = now;
+                            SensorEreignis accel_event =
+                                    new SensorEreignis(
+                                            accelData.timestamp,
+                                            "ACCEL",
+                                            event.values[i],
+                                            "accelEvent_" + accelData.timestamp,
+                                            MainActivity.this,
+                                            axis[i]);
+
+                            sensorDao.insert(accel_event.getEreignisData());
+                        }
                     }
-                }
 
-                DB.databaseWriteExecutor.execute(() -> sensorDao.insert(accelData));
-
+                    // also store combined row in ValueSensor (old app style)
+                    ValueSensor vs = new ValueSensor();
+                    vs.value1 = event.values[0];
+                    vs.value2 = event.values[1];
+                    vs.value3 = event.values[2];
+                    valueSensorDao.insert(vs);
+                });
                 break;
-            case Sensor.TYPE_GYROSCOPE:
+            }
+
+            // -----------------------------------------------------------------
+            // GYROSCOPE
+            // -----------------------------------------------------------------
+            case Sensor.TYPE_GYROSCOPE: {
                 gyroXValue.setText(getString(R.string.gyro_x, event.values[0]));
                 gyroYValue.setText(getString(R.string.gyro_y, event.values[1]));
                 gyroZValue.setText(getString(R.string.gyro_z, event.values[2]));
+
+                long now = System.currentTimeMillis();
+
                 GyroData gyroData = new GyroData();
+                gyroData.timestamp = now;
                 gyroData.gyroX = event.values[0];
                 gyroData.gyroY = event.values[1];
                 gyroData.gyroZ = event.values[2];
-                gyroData.timestamp = System.currentTimeMillis();
 
-                for (int i = 0; i < 3; i++) {
-                    if (Math.abs(event.values[i]) > gyroEventThreshold
-                            && System.currentTimeMillis() > lastGyroEventTime + timeBetweenEvents) {
-                        lastGyroEventTime = System.currentTimeMillis();
-                        SensorEreignis gyro_event =
-                                new SensorEreignis(
-                                        gyroData.timestamp,
-                                        "GYRO",
-                                        event.values[i],
-                                        "gyroEvent_" + gyroData.timestamp,
-                                        this,
-                                        axis[i]);
-                        DB.databaseWriteExecutor.execute(
-                                () -> sensorDao.insert(gyro_event.getEreignisData()));
+                DB.databaseWriteExecutor.execute(() -> {
+                    sensorDao.insert(gyroData);
+
+                    for (int i = 0; i < 3; i++) {
+                        if (Math.abs(event.values[i]) > gyroEventThreshold &&
+                                now > lastGyroEventTime + timeBetweenEvents) {
+
+                            lastGyroEventTime = now;
+                            SensorEreignis gyro_event =
+                                    new SensorEreignis(
+                                            gyroData.timestamp,
+                                            "GYRO",
+                                            event.values[i],
+                                            "gyroEvent_" + gyroData.timestamp,
+                                            MainActivity.this,
+                                            axis[i]);
+
+                            sensorDao.insert(gyro_event.getEreignisData());
+                        }
                     }
-                }
 
-                DB.databaseWriteExecutor.execute(() -> sensorDao.insert(gyroData));
+                    // also store combined row in ValueSensor
+                    ValueSensor vs = new ValueSensor();
+                    vs.value4 = event.values[0];
+                    vs.value5 = event.values[1];
+                    vs.value6 = event.values[2];
+                    valueSensorDao.insert(vs);
+                });
                 break;
-            case Sensor.TYPE_MAGNETIC_FIELD:
+            }
+
+            // -----------------------------------------------------------------
+            // MAGNETIC FIELD
+            // -----------------------------------------------------------------
+            case Sensor.TYPE_MAGNETIC_FIELD: {
                 magXValue.setText(getString(R.string.magnet_x, event.values[0]));
                 magYValue.setText(getString(R.string.magnet_y, event.values[1]));
                 magZValue.setText(getString(R.string.magnet_z, event.values[2]));
+
+                long now = System.currentTimeMillis();
+
                 MagnetData magnetData = new MagnetData();
+                magnetData.timestamp = now;
                 magnetData.magnetX = event.values[0];
                 magnetData.magnetY = event.values[1];
                 magnetData.magnetZ = event.values[2];
-                magnetData.timestamp = System.currentTimeMillis();
 
-                for (int i = 0; i < 3; i++) {
-                    if (Math.abs(event.values[i]) > magEventThreshold
-                            && System.currentTimeMillis() > lastMagEventTime + timeBetweenEvents) {
-                        lastMagEventTime = System.currentTimeMillis();
-                        SensorEreignis mag_event =
-                                new SensorEreignis(
-                                        magnetData.timestamp,
-                                        "MAGNET",
-                                        event.values[i],
-                                        "magEvent_" + magnetData.timestamp,
-                                        this,
-                                        axis[i]);
-                        DB.databaseWriteExecutor.execute(
-                                () -> sensorDao.insert(mag_event.getEreignisData()));
+                DB.databaseWriteExecutor.execute(() -> {
+                    sensorDao.insert(magnetData);
+
+                    for (int i = 0; i < 3; i++) {
+                        if (Math.abs(event.values[i]) > magEventThreshold &&
+                                now > lastMagEventTime + timeBetweenEvents) {
+
+                            lastMagEventTime = now;
+                            SensorEreignis mag_event =
+                                    new SensorEreignis(
+                                            magnetData.timestamp,
+                                            "MAGNET",
+                                            event.values[i],
+                                            "magEvent_" + magnetData.timestamp,
+                                            MainActivity.this,
+                                            axis[i]);
+
+                            sensorDao.insert(mag_event.getEreignisData());
+                        }
                     }
-                }
 
-                DB.databaseWriteExecutor.execute(() -> sensorDao.insert(magnetData));
+                    // Optional: also store timestamp in ValueSensor.Zeit
+                    ValueSensor vs = new ValueSensor();
+                    // store millis as string; you can format to ISO if you prefer
+                    vs.value7 = String.valueOf(now);
+                    valueSensorDao.insert(vs);
+                });
                 break;
+            }
         }
     }
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        // Do something here if sensor accuracy changes.
+        // React to accuracy changes if you need to
     }
 }

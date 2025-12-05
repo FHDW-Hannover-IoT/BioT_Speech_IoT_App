@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.Date;
 import java.util.List;
+import database.entities.EreignisData;
 
 public class MyEventAdapter extends RecyclerView.Adapter<MyEventAdapter.EventViewHolder> {
 

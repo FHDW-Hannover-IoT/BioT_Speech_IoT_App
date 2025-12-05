@@ -1,8 +1,8 @@
-package com.fhdw.biot.speech.iot;
+package database.entities;
 
-import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
+import androidx.room.ColumnInfo;
 
 @Entity(tableName = "sensor")
 public class ValueSensor {

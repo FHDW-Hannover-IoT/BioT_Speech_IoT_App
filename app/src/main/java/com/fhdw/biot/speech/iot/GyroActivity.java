@@ -13,6 +13,8 @@ import com.github.mikephil.charting.data.Entry;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import database.entities.GyroData;
+import database.DB;
 
 public class GyroActivity extends BaseChartActivity {
 

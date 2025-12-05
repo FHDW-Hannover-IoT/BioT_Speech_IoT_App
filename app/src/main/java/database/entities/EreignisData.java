@@ -1,4 +1,4 @@
-package com.fhdw.biot.speech.iot;
+package database.entities;
 
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;

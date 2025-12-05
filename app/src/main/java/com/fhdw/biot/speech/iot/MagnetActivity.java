@@ -8,11 +8,14 @@ import android.widget.ImageButton;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import database.DB;
+import database.entities.MagnetData;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+
 
 public class MagnetActivity extends BaseChartActivity {
 

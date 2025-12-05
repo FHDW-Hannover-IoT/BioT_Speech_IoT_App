@@ -17,6 +17,10 @@ import com.github.mikephil.charting.data.LineDataSet;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import database.entities.AccelData;
+import database.entities.GyroData;
+import database.entities.MagnetData;
+import database.DB;
 
 public class MainGraphActivity extends BaseChartActivity {
 

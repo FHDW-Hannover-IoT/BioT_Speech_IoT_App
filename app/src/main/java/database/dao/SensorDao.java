@@ -1,10 +1,14 @@
-package com.fhdw.biot.speech.iot;
+package database.dao;
 
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
 import java.util.List;
+import database.entities.AccelData;
+import database.entities.MagnetData;
+import database.entities.GyroData;
+import database.entities.EreignisData;
 
 // DAta Access Object
 @Dao

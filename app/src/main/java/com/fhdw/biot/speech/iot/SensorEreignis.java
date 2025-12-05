@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.os.Build;
 import android.util.Log;
 import androidx.core.app.NotificationCompat;
+import database.entities.EreignisData;
 
 public class SensorEreignis {
     private long timestamp;
