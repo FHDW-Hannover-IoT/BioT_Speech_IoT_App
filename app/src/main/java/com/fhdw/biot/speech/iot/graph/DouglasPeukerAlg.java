@@ -1,38 +1,31 @@
 package com.fhdw.biot.speech.iot.graph;
 
 import com.fhdw.biot.speech.iot.sensor.SensorPoint;
-
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * DouglasPeukerAlg
- * ----------------
- * PURPOSE:
- *  The Douglas–Peucker algorithm reduces the number of points in a line
- *  while preserving the overall shape.
+ * DouglasPeukerAlg ---------------- PURPOSE: The Douglas–Peucker algorithm reduces the number of
+ * points in a line while preserving the overall shape.
  *
- * WHY THIS IS IMPORTANT IN YOUR APP:
- *  • Sensor data can easily reach thousands of points.
- *  • Plotting too many points slows down charts and UI rendering.
- *  • This algorithm keeps important shape points and removes noise.
+ * <p>WHY THIS IS IMPORTANT IN YOUR APP: • Sensor data can easily reach thousands of points. •
+ * Plotting too many points slows down charts and UI rendering. • This algorithm keeps important
+ * shape points and removes noise.
  *
- * HOW IT WORKS (simplified):
- *  1. Draw a line between the first and last data point.
- *  2. Find the point that is *furthest away* from that line.
- *  3. If that distance > epsilon (threshold) → keep splitting recursively.
- *  4. Else: the entire section is considered "flat enough" → reduce to 2 points.
+ * <p>HOW IT WORKS (simplified): 1. Draw a line between the first and last data point. 2. Find the
+ * point that is *furthest away* from that line. 3. If that distance > epsilon (threshold) → keep
+ * splitting recursively. 4. Else: the entire section is considered "flat enough" → reduce to 2
+ * points.
  *
- * GENERIC TYPE T:
- *  The algorithm supports any class implementing SensorPoint
- *  (AccelData, GyroData, MagnetData, custom sensor types, etc.)
+ * <p>GENERIC TYPE T: The algorithm supports any class implementing SensorPoint (AccelData,
+ * GyroData, MagnetData, custom sensor types, etc.)
  */
 public class DouglasPeukerAlg {
 
     /**
      * Public entry point.
      *
-     * @param list    Full list of data points.
+     * @param list Full list of data points.
      * @param epsilon Tolerance threshold (higher = more aggressive simplification).
      */
     public static <T extends SensorPoint> List<T> simplify(List<T> list, float epsilon) {
@@ -43,9 +36,9 @@ public class DouglasPeukerAlg {
     /**
      * Recursive Douglas–Peucker implementation.
      *
-     * @param pts   All points
+     * @param pts All points
      * @param start Index of first point in segment
-     * @param end   Index of last point in segment
+     * @param end Index of last point in segment
      * @param epsilon Threshhold for keeping detail
      */
     private static <T extends SensorPoint> List<T> dp(
@@ -92,8 +85,7 @@ public class DouglasPeukerAlg {
     /**
      * Compute perpendicular distance of point p from line AB.
      *
-     * X-axis = timestamp.
-     * Y-axis = magnitude of (x,y,z vector).
+     * <p>X-axis = timestamp. Y-axis = magnitude of (x,y,z vector).
      */
     private static float perpendicularDistance(SensorPoint p, SensorPoint a, SensorPoint b) {
 
@@ -124,14 +116,8 @@ public class DouglasPeukerAlg {
         return numerator / denominator;
     }
 
-    /**
-     * Magnitude of a 3D acceleration/gyro/magnet vector.
-     * sqrt(x² + y² + z²)
-     */
+    /** Magnitude of a 3D acceleration/gyro/magnet vector. sqrt(x² + y² + z²) */
     private static float magnitude(SensorPoint p) {
-        return (float) Math.sqrt(
-                p.getX() * p.getX() +
-                        p.getY() * p.getY() +
-                        p.getZ() * p.getZ());
+        return (float) Math.sqrt(p.getX() * p.getX() + p.getY() * p.getY() + p.getZ() * p.getZ());
     }
 }

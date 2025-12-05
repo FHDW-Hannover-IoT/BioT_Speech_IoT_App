@@ -6,9 +6,7 @@ import static org.mockito.Mockito.*;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
-
 import com.fhdw.biot.speech.iot.events.SensorEreignis;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;

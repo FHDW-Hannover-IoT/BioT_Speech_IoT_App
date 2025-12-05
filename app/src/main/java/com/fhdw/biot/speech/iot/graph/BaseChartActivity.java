@@ -2,37 +2,29 @@ package com.fhdw.biot.speech.iot.graph;
 
 import android.graphics.Color;
 import androidx.appcompat.app.AppCompatActivity;
-
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Description;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
-
 import java.util.ArrayList;
 
 /**
- * BaseChartActivity
- * -----------------
- * WHY THIS CLASS EXISTS:
- *  Every sensor Activity (AccelActivity, GyroActivity, MagnetActivity) uses:
- *      • the same MPAndroidChart styling
- *      • the same logic to insert data into the chart
- *      • the same X-axis formatting rules
+ * BaseChartActivity ----------------- WHY THIS CLASS EXISTS: Every sensor Activity (AccelActivity,
+ * GyroActivity, MagnetActivity) uses: • the same MPAndroidChart styling • the same logic to insert
+ * data into the chart • the same X-axis formatting rules
  *
- * By placing the shared functionality here:
- *  → we avoid duplicated code
- *  → all sensor charts maintain a consistent visual style
- *  → adding new sensors becomes trivial
+ * <p>By placing the shared functionality here: → we avoid duplicated code → all sensor charts
+ * maintain a consistent visual style → adding new sensors becomes trivial
  */
 public abstract class BaseChartActivity extends AppCompatActivity {
 
     /**
      * Configure the chart BEFORE inserting data.
      *
-     * @param chart     The LineChart being prepared.
-     * @param label     Title shown as chart description ("X-Achse", "Y-Achse", etc.).
+     * @param chart The LineChart being prepared.
+     * @param label Title shown as chart description ("X-Achse", "Y-Achse", etc.).
      * @param startTime First sensor timestamp → allows converting X-axis values into seconds.
      */
     protected void setupChart(LineChart chart, String label, long startTime) {
@@ -68,9 +60,9 @@ public abstract class BaseChartActivity extends AppCompatActivity {
     /**
      * Insert a dataset into the chart.
      *
-     * @param entries   List of (x,y) pairs representing time vs sensor value.
-     * @param label     The line name inside the legend.
-     * @param color     Color of the line.
+     * @param entries List of (x,y) pairs representing time vs sensor value.
+     * @param label The line name inside the legend.
+     * @param color Color of the line.
      */
     protected void setData(LineChart chart, ArrayList<Entry> entries, String label, int color) {
 

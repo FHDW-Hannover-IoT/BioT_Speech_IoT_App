@@ -6,28 +6,22 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Spinner;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.fhdw.biot.speech.iot.R;
-
 import java.util.List;
 
 /**
- * EditableEventAdapter
- * ---------------------
- * This adapter displays an EDITABLE list of event configuration items.
+ * EditableEventAdapter --------------------- This adapter displays an EDITABLE list of event
+ * configuration items.
  *
- * Each row allows the user to define:
- *   • Sensor type   (Accel / Gyro / Magnet via Spinner)
- *   • Event type    (custom rule name)
- *   • Threshold     (numeric trigger level)
+ * <p>Each row allows the user to define: • Sensor type (Accel / Gyro / Magnet via Spinner) • Event
+ * type (custom rule name) • Threshold (numeric trigger level)
  *
- * Used in NewEreignisActivity to build custom rules for generating EreignisData.
+ * <p>Used in NewEreignisActivity to build custom rules for generating EreignisData.
  *
- * Note: Not all logic is implemented yet, but all fields + delete/add row
- *       functionality are in place.
+ * <p>Note: Not all logic is implemented yet, but all fields + delete/add row functionality are in
+ * place.
  */
 public class EditableEventAdapter
         extends RecyclerView.Adapter<EditableEventAdapter.EventViewHolder> {
@@ -43,8 +37,9 @@ public class EditableEventAdapter
     @Override
     public EventViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
 
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.event_configuration_item, parent, false);
+        View view =
+                LayoutInflater.from(parent.getContext())
+                        .inflate(R.layout.event_configuration_item, parent, false);
 
         return new EventViewHolder(view);
     }
@@ -67,9 +62,7 @@ public class EditableEventAdapter
         return eventList.size();
     }
 
-    /**
-     * Adds a new blank rule row.
-     */
+    /** Adds a new blank rule row. */
     public long addEmptyEvent() {
         long id = ++nextId;
         EditableSensorEvent newEvent = new EditableSensorEvent(id);
@@ -79,9 +72,7 @@ public class EditableEventAdapter
         return id;
     }
 
-    /**
-     * Deletes a rule row (and later deletes DB entry).
-     */
+    /** Deletes a rule row (and later deletes DB entry). */
     public void deleteEvent(int position) {
         if (position < 0 || position >= eventList.size()) return;
 
@@ -91,9 +82,7 @@ public class EditableEventAdapter
         notifyItemRemoved(position);
     }
 
-    /**
-     * ViewHolder for editable event configuration rows.
-     */
+    /** ViewHolder for editable event configuration rows. */
     public static class EventViewHolder extends RecyclerView.ViewHolder {
 
         public ImageButton btnDelete;
@@ -104,10 +93,10 @@ public class EditableEventAdapter
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
 
-            btnDelete        = itemView.findViewById(R.id.btn_delete_event);
+            btnDelete = itemView.findViewById(R.id.btn_delete_event);
             spinnerSensorType = itemView.findViewById(R.id.spinner_sensor_type);
-            eventType        = itemView.findViewById(R.id.spinner_event_type);
-            treshholdValue   = itemView.findViewById(R.id.et_threshold_value);
+            eventType = itemView.findViewById(R.id.spinner_event_type);
+            treshholdValue = itemView.findViewById(R.id.et_threshold_value);
         }
     }
 }

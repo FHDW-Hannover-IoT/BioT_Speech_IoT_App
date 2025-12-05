@@ -2,7 +2,6 @@ package database.entities;
 
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
-
 import com.fhdw.biot.speech.iot.sensor.SensorPoint;
 
 @Entity(tableName = "accel_data")
@@ -17,14 +16,22 @@ public class AccelData implements SensorPoint {
     public float accelZ;
 
     @Override
-    public long getTimestamp() { return timestamp; }
+    public long getTimestamp() {
+        return timestamp;
+    }
 
     @Override
-    public float getX() { return accelX; }
+    public float getX() {
+        return accelX;
+    }
 
     @Override
-    public float getY() { return accelY; }
+    public float getY() {
+        return accelY;
+    }
 
     @Override
-    public float getZ() { return accelZ; }
+    public float getZ() {
+        return accelZ;
+    }
 }

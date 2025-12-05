@@ -11,7 +11,6 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorManager;
 // import androidx.test.core.app.ApplicationProvider;
 import com.fhdw.biot.speech.iot.main.MainActivity;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

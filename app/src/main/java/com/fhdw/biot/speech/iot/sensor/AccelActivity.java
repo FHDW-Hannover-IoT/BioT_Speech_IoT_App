@@ -5,39 +5,31 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ImageButton;
-
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-
-import com.fhdw.biot.speech.iot.graph.BaseChartActivity;
-import com.fhdw.biot.speech.iot.util.DatePickerHandler;
+import androidx.lifecycle.LiveData;
 import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.events.EreignisActivity;
+import com.fhdw.biot.speech.iot.graph.BaseChartActivity;
 import com.fhdw.biot.speech.iot.main.MainActivity;
+import com.fhdw.biot.speech.iot.util.DatePickerHandler;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
-
+import database.DB;
+import database.entities.AccelData;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 
-import database.entities.AccelData;
-import database.DB;
-
 /**
- * AccelActivity
- * -------------
- * Screen that visualizes accelerometer data in three separate line charts
- * (X, Y, Z axes) and lets the user filter by date range or "last 10 minutes".
+ * AccelActivity ------------- Screen that visualizes accelerometer data in three separate line
+ * charts (X, Y, Z axes) and lets the user filter by date range or "last 10 minutes".
  *
- * Responsibilities:
- *  - Navigation between sensor screens and main screen.
- *  - Fetching accel data from Room via DB.sensorDao().
- *  - Applying time filters via date pickers.
- *  - Mapping DB entities → MPAndroidChart entries.
- *  - Delegating chart styling to BaseChartActivity.
+ * <p>Responsibilities: - Navigation between sensor screens and main screen. - Fetching accel data
+ * from Room via DB.sensorDao(). - Applying time filters via date pickers. - Mapping DB entities →
+ * MPAndroidChart entries. - Delegating chart styling to BaseChartActivity.
  */
 public class AccelActivity extends BaseChartActivity {
 
@@ -49,6 +41,7 @@ public class AccelActivity extends BaseChartActivity {
 
     /** Selected date range for filtering. */
     private Calendar dateFromCalendar;
+
     private Calendar dateToCalendar;
 
     /** Date filter buttons ("von" / "bis" for X, Y, Z charts). */
@@ -56,6 +49,8 @@ public class AccelActivity extends BaseChartActivity {
 
     /** Quick filter button: show only last 10 minutes. */
     private Button btnFilterLast10Min;
+
+    private LiveData<List<AccelData>> currentLiveData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,32 +73,36 @@ public class AccelActivity extends BaseChartActivity {
 
         // Go to previous sensor screen: MagnetActivity
         Button buttonMagnet = findViewById(R.id.btnPrevMagnet);
-        buttonMagnet.setOnClickListener(view -> {
-            Intent intent = new Intent(AccelActivity.this, MagnetActivity.class);
-            startActivity(intent);
-        });
+        buttonMagnet.setOnClickListener(
+                view -> {
+                    Intent intent = new Intent(AccelActivity.this, MagnetActivity.class);
+                    startActivity(intent);
+                });
 
         // Go to next sensor screen: GyroActivity
         Button buttonGyro = findViewById(R.id.btnNextGyro);
-        buttonGyro.setOnClickListener(view -> {
-            Intent intent = new Intent(AccelActivity.this, GyroActivity.class);
-            startActivity(intent);
-        });
+        buttonGyro.setOnClickListener(
+                view -> {
+                    Intent intent = new Intent(AccelActivity.this, GyroActivity.class);
+                    startActivity(intent);
+                });
 
         // Home button: return to main values / MQTT screen
         ImageButton buttonHome = findViewById(R.id.home_button);
-        buttonHome.setOnClickListener(view -> {
-            Intent intent = new Intent(AccelActivity.this, MainActivity.class);
-            startActivity(intent);
-        });
+        buttonHome.setOnClickListener(
+                view -> {
+                    Intent intent = new Intent(AccelActivity.this, MainActivity.class);
+                    startActivity(intent);
+                });
 
         // Ereignis button: open list of events filtered for ACCEL
         ImageButton ereignisButton = findViewById(R.id.notification_button);
-        ereignisButton.setOnClickListener(view -> {
-            Intent intent = new Intent(AccelActivity.this, EreignisActivity.class);
-            intent.putExtra("SENSOR_FILTER", "ACCEL");
-            startActivity(intent);
-        });
+        ereignisButton.setOnClickListener(
+                view -> {
+                    Intent intent = new Intent(AccelActivity.this, EreignisActivity.class);
+                    intent.putExtra("SENSOR_FILTER", "ACCEL");
+                    startActivity(intent);
+                });
 
         // Helper for hooking DatePickers to buttons (used below).
         DatePickerHandler datePickerHandler = new DatePickerHandler(AccelActivity.this);
@@ -135,25 +134,28 @@ public class AccelActivity extends BaseChartActivity {
 
         // Reset zoom/pan for each chart and clear date labels on buttons.
         ImageButton resetAccel = findViewById(R.id.resetX);
-        resetAccel.setOnClickListener(view -> {
-            lineChartAccelX.fitScreen();
-            xBisButton.setText("");
-            xVonButton.setText("");
-        });
+        resetAccel.setOnClickListener(
+                view -> {
+                    lineChartAccelX.fitScreen();
+                    xBisButton.setText("");
+                    xVonButton.setText("");
+                });
 
         ImageButton resetGyro = findViewById(R.id.resetY);
-        resetGyro.setOnClickListener(view -> {
-            lineChartAccelY.fitScreen();
-            yBisButton.setText("");
-            yVonButton.setText("");
-        });
+        resetGyro.setOnClickListener(
+                view -> {
+                    lineChartAccelY.fitScreen();
+                    yBisButton.setText("");
+                    yVonButton.setText("");
+                });
 
         ImageButton resetMagnet = findViewById(R.id.resetZ);
-        resetMagnet.setOnClickListener(view -> {
-            lineChartAccelZ.fitScreen();
-            zBisButton.setText("");
-            zVonButton.setText("");
-        });
+        resetMagnet.setOnClickListener(
+                view -> {
+                    lineChartAccelZ.fitScreen();
+                    zBisButton.setText("");
+                    zVonButton.setText("");
+                });
 
         // Initial "empty" chart configuration; actual data will come from DB.
         setupChart(lineChartAccelX, "X-Achse", 0);
@@ -162,28 +164,6 @@ public class AccelActivity extends BaseChartActivity {
 
         // Configure date pickers and default date range.
         setupDatePickers();
-
-        // --------------------------------------------------------------------
-        // Observe LiveData from Room and update charts in real time
-        // --------------------------------------------------------------------
-        DB.getDatabase(getApplicationContext())
-                .sensorDao()
-                .getAllAccelData()
-                .observe(
-                        this,
-                        accelDataList -> {
-                            if (accelDataList != null && !accelDataList.isEmpty()) {
-                                long firstTimestamp = accelDataList.get(0).timestamp;
-
-                                // Use earliest timestamp as X-axis base for "seconds since start".
-                                setupChart(lineChartAccelX, "X-Achse", firstTimestamp);
-                                setupChart(lineChartAccelY, "Y-Achse", firstTimestamp);
-                                setupChart(lineChartAccelZ, "Z-Achse", firstTimestamp);
-
-                                // Map DB rows to chart entries and render.
-                                displayDataInCharts(accelDataList);
-                            }
-                        });
     }
 
     // ------------------------------------------------------------------------
@@ -191,8 +171,7 @@ public class AccelActivity extends BaseChartActivity {
     // ------------------------------------------------------------------------
 
     /**
-     * Initializes the default date range for the filters.
-     * "Von" is set to the oldest accel sample;
+     * Initializes the default date range for the filters. "Von" is set to the oldest accel sample;
      * "Bis" is set to "today".
      */
     private void setupDatePickers() {
@@ -216,11 +195,10 @@ public class AccelActivity extends BaseChartActivity {
 
         // Attach DatePickers to "bis" buttons (initially today).
         setupToDatePickers(xBisButton, yBisButton, zBisButton);
+        filterLastTenMinutes();
     }
 
-    /**
-     * Wires up DatePickers for all "von" buttons and sets their initial text.
-     */
+    /** Wires up DatePickers for all "von" buttons and sets their initial text. */
     private void setupFromDatePickers(Button xVonButton, Button yVonButton, Button zVonButton) {
         DatePickerHandler.createForButton(
                 xVonButton,
@@ -253,9 +231,7 @@ public class AccelActivity extends BaseChartActivity {
         zVonButton.setText(formatCalendarDate(dateFromCalendar));
     }
 
-    /**
-     * Wires up DatePickers for all "bis" buttons and sets their initial text.
-     */
+    /** Wires up DatePickers for all "bis" buttons and sets their initial text. */
     private void setupToDatePickers(Button xBisButton, Button yBisButton, Button zBisButton) {
         DatePickerHandler.createForButton(
                 xBisButton,
@@ -288,8 +264,8 @@ public class AccelActivity extends BaseChartActivity {
     }
 
     /**
-     * Convenience filter: sets the date range to "now minus 10 minutes" to "now"
-     * and refreshes the charts immediately.
+     * Convenience filter: sets the date range to "now minus 10 minutes" to "now" and refreshes the
+     * charts immediately.
      */
     private void filterLastTenMinutes() {
         long now = System.currentTimeMillis();
@@ -306,9 +282,7 @@ public class AccelActivity extends BaseChartActivity {
         updateChartsWithDateFilter();
     }
 
-    /**
-     * Updates all six date filter buttons to match the current from/to calendars.
-     */
+    /** Updates all six date filter buttons to match the current from/to calendars. */
     private void syncDateButtonTexts() {
         xVonButton.setText(makeDateTimeString(dateFromCalendar));
         yVonButton.setText(makeDateTimeString(dateFromCalendar));
@@ -321,12 +295,16 @@ public class AccelActivity extends BaseChartActivity {
     }
 
     /**
-     * Re-queries the DB using the current [dateFromCalendar, dateToCalendar] range
-     * and updates all three charts with the filtered accel data.
+     * Re-queries the DB using the current [dateFromCalendar, dateToCalendar] range and updates all
+     * three charts with the filtered accel data.
      */
     private void updateChartsWithDateFilter() {
         if (dateFromCalendar == null || dateToCalendar == null) {
             return;
+        }
+
+        if (currentLiveData != null) {
+            currentLiveData.removeObservers(this);
         }
 
         // Extend "bis" to the end of the chosen day (23:59:59), so full day is included.
@@ -336,34 +314,35 @@ public class AccelActivity extends BaseChartActivity {
         adjustedToCalendar.set(Calendar.MINUTE, 59);
         adjustedToCalendar.set(Calendar.SECOND, 59);
 
-        DB.getDatabase(getApplicationContext())
-                .sensorDao()
-                .getAccelDataBetween(
-                        dateFromCalendar.getTimeInMillis(), adjustedToCalendar.getTimeInMillis())
-                .observe(
-                        this,
-                        filteredData -> {
-                            if (filteredData != null && !filteredData.isEmpty()) {
-                                long firstTimestamp = filteredData.get(0).timestamp;
+        currentLiveData =
+                DB.getDatabase(getApplicationContext())
+                        .sensorDao()
+                        .getAccelDataBetween(
+                                dateFromCalendar.getTimeInMillis(),
+                                adjustedToCalendar.getTimeInMillis());
 
-                                // Use earliest row in range as X-axis start.
-                                setupChart(lineChartAccelX, "X-Achse", firstTimestamp);
-                                setupChart(lineChartAccelY, "Y-Achse", firstTimestamp);
-                                setupChart(lineChartAccelZ, "Z-Achse", firstTimestamp);
+        currentLiveData.observe(
+                this,
+                filteredData -> {
+                    if (filteredData != null && !filteredData.isEmpty()) {
+                        long firstTimestamp = filteredData.get(0).timestamp;
 
-                                displayDataInCharts(filteredData);
-                            } else {
-                                // No data in this range → clear charts to avoid stale plots.
-                                lineChartAccelX.clear();
-                                lineChartAccelY.clear();
-                                lineChartAccelZ.clear();
-                            }
-                        });
+                        // Use earliest row in range as X-axis start.
+                        setupChart(lineChartAccelX, "X-Achse", firstTimestamp);
+                        setupChart(lineChartAccelY, "Y-Achse", firstTimestamp);
+                        setupChart(lineChartAccelZ, "Z-Achse", firstTimestamp);
+
+                        displayDataInCharts(filteredData);
+                    } else {
+                        // No data in this range → clear charts to avoid stale plots.
+                        lineChartAccelX.clear();
+                        lineChartAccelY.clear();
+                        lineChartAccelZ.clear();
+                    }
+                });
     }
 
-    /**
-     * Formats a Calendar into "dd.MM.yyyy" for showing in date filter buttons.
-     */
+    /** Formats a Calendar into "dd.MM.yyyy" for showing in date filter buttons. */
     private String formatCalendarDate(Calendar calendar) {
         return String.format(
                 java.util.Locale.GERMANY,
@@ -373,9 +352,7 @@ public class AccelActivity extends BaseChartActivity {
                 calendar.get(Calendar.YEAR));
     }
 
-    /**
-     * Formats a Calendar into "dd.MM.yyyy" (no time) – used for the quick-filter labels.
-     */
+    /** Formats a Calendar into "dd.MM.yyyy" (no time) – used for the quick-filter labels. */
     private String makeDateTimeString(Calendar calendar) {
         return String.format(
                 Locale.GERMAN,
@@ -390,10 +367,10 @@ public class AccelActivity extends BaseChartActivity {
     // ------------------------------------------------------------------------
 
     /**
-     * Converts a list of AccelData entities into three sets of MPAndroidChart
-     * entries (X/Y/Z) and renders them on the respective charts.
+     * Converts a list of AccelData entities into three sets of MPAndroidChart entries (X/Y/Z) and
+     * renders them on the respective charts.
      *
-     * X-axis values are "elapsed milliseconds since first sample".
+     * <p>X-axis values are "elapsed milliseconds since first sample".
      */
     private void displayDataInCharts(List<AccelData> accelDataList) {
         if (accelDataList.isEmpty()) {

@@ -7,41 +7,27 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.util.Log;
-
 import androidx.core.app.NotificationCompat;
-
 import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.main.MainActivity;
-
 import database.entities.EreignisData;
 
 /**
- * SensorEreignis
- * ---------------
- * Represents a *single triggered event* in memory.
+ * SensorEreignis --------------- Represents a *single triggered event* in memory.
  *
- * Responsibilities:
- *   1. Holds the event information:
- *        - timestamp   (when the condition was met)
- *        - sensorType  (ACCEL, GYRO, MAGNET, ...)
- *        - value       (sensor value that caused the event)
- *        - id          (identifier / correlation id)
- *        - axis        (X, Y, or Z)
+ * <p>Responsibilities: 1. Holds the event information: - timestamp (when the condition was met) -
+ * sensorType (ACCEL, GYRO, MAGNET, ...) - value (sensor value that caused the event) - id
+ * (identifier / correlation id) - axis (X, Y, or Z)
  *
- *   2. Creates a matching EreignisData object for persistence
- *      in the Room database.
+ * <p>2. Creates a matching EreignisData object for persistence in the Room database.
  *
- *   3. Immediately shows a notification in the Android status bar
- *      to inform the user that an event has occurred.
+ * <p>3. Immediately shows a notification in the Android status bar to inform the user that an event
+ * has occurred.
  *
- * Typical usage:
- *   - Some logic (e.g., in MainActivity or a future rule engine) detects:
- *        "Accel X > threshold"  → event triggered
- *   - It creates a new SensorEreignis(...)
- *   - The constructor:
- *        → stores the fields
- *        → triggers showNotification()
- *   - The caller then uses getEreignisData() to insert into DB.
+ * <p>Typical usage: - Some logic (e.g., in MainActivity or a future rule engine) detects: "Accel X
+ * > threshold" → event triggered - It creates a new SensorEreignis(...) - The constructor: → stores
+ * the fields → triggers showNotification() - The caller then uses getEreignisData() to insert into
+ * DB.
  */
 public class SensorEreignis {
 
@@ -66,20 +52,15 @@ public class SensorEreignis {
     /**
      * Builds a new SensorEreignis and directly shows a notification.
      *
-     * @param timestamp  Time of event (usually System.currentTimeMillis()).
+     * @param timestamp Time of event (usually System.currentTimeMillis()).
      * @param sensorType Logical sensor ID, e.g. "ACCEL", "GYRO", ...
-     * @param value      The sensor reading that triggered the event.
-     * @param id         Arbitrary identifier for this event.
-     * @param context    Android Context used for notifications.
-     * @param axis       'X', 'Y', or 'Z' depending on which axis exceeded threshold.
+     * @param value The sensor reading that triggered the event.
+     * @param id Arbitrary identifier for this event.
+     * @param context Android Context used for notifications.
+     * @param axis 'X', 'Y', or 'Z' depending on which axis exceeded threshold.
      */
     public SensorEreignis(
-            long timestamp,
-            String sensorType,
-            float value,
-            String id,
-            Context context,
-            char axis) {
+            long timestamp, String sensorType, float value, String id, Context context, char axis) {
 
         this.timestamp = timestamp;
         this.sensorType = sensorType;
@@ -115,48 +96,43 @@ public class SensorEreignis {
     }
 
     /**
-     * Creates a EreignisData entity filled with the current event data.
-     * This object can be inserted into the Room database.
+     * Creates a EreignisData entity filled with the current event data. This object can be inserted
+     * into the Room database.
      *
      * @return EreignisData instance mirroring this SensorEreignis.
      */
     public EreignisData getEreignisData() {
         EreignisData ereignisData = new EreignisData();
         ereignisData.sensorType = this.sensorType;
-        ereignisData.value      = this.value;
-        ereignisData.timestamp  = this.timestamp;
-        ereignisData.axis       = this.axis;
+        ereignisData.value = this.value;
+        ereignisData.timestamp = this.timestamp;
+        ereignisData.axis = this.axis;
 
-        Log.d("CREATE_EREIGNIS_DATA",
-                "creating EreignisData for: " + this.sensorType);
+        Log.d("CREATE_EREIGNIS_DATA", "creating EreignisData for: " + this.sensorType);
 
         return ereignisData;
     }
 
     /**
-     * Builds and shows an Android notification to inform the user
-     * that a sensor event has occurred.
+     * Builds and shows an Android notification to inform the user that a sensor event has occurred.
      *
-     * @param context  Context used to access NotificationManager.
-     * @param title    Title text of the notification.
-     * @param message  Body text of the notification.
-     * @param intent   Intent launched when the user taps the notification.
-     * @param reqCode  Request code to differentiate PendingIntents / notifications.
+     * @param context Context used to access NotificationManager.
+     * @param title Title text of the notification.
+     * @param message Body text of the notification.
+     * @param intent Intent launched when the user taps the notification.
+     * @param reqCode Request code to differentiate PendingIntents / notifications.
      */
     public void showNotification(
-            Context context,
-            String title,
-            String message,
-            Intent intent,
-            int reqCode) {
+            Context context, String title, String message, Intent intent, int reqCode) {
 
         // Wrap the target activity (MainActivity) into a PendingIntent
         // so that it can be launched from the notification.
-        PendingIntent pendingIntent = PendingIntent.getActivity(
-                context,
-                reqCode,
-                intent,
-                PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent pendingIntent =
+                PendingIntent.getActivity(
+                        context,
+                        reqCode,
+                        intent,
+                        PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
 
         // Static channel ID used by this app. On Android 8+, notifications
         // must be associated with a channel.
@@ -168,8 +144,8 @@ public class SensorEreignis {
                         .setSmallIcon(R.drawable.outline_circle_notifications_24)
                         .setContentTitle(title)
                         .setContentText(message)
-                        .setAutoCancel(true)       // Dismiss when tapped
-                        .setContentIntent(pendingIntent);  // Open MainActivity on tap
+                        .setAutoCancel(true) // Dismiss when tapped
+                        .setContentIntent(pendingIntent); // Open MainActivity on tap
 
         // Get system service for posting the notification
         NotificationManager notificationManager =

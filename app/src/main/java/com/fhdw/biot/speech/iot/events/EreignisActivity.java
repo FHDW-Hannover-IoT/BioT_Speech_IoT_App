@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageButton;
 import android.widget.TextView;
-
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -13,32 +12,23 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.main.MainActivity;
-
+import database.DB;
+import database.entities.EreignisData;
 import java.util.ArrayList;
 import java.util.List;
 
-import database.DB;
-import database.entities.EreignisData;
-
 /**
- * EreignisActivity
- * ----------------
- * Displays ALL previously detected events stored in the Room database.
+ * EreignisActivity ---------------- Displays ALL previously detected events stored in the Room
+ * database.
  *
- * Features:
- *   ✔ Displays full list of events (ACCEL, GYRO, MAGNET)
- *   ✔ Supports filtering based on originating screen (e.g., Accel → only ACCEL events)
- *   ✔ Supports sorting by:
- *        - Sensor type
- *        - Event type (future field)
- *        - Value (threshold-exceeding)
- *        - Timestamp (time of detection)
- *   ✔ Includes button to create new event configurations via NewEreignisActivity
+ * <p>Features: ✔ Displays full list of events (ACCEL, GYRO, MAGNET) ✔ Supports filtering based on
+ * originating screen (e.g., Accel → only ACCEL events) ✔ Supports sorting by: - Sensor type - Event
+ * type (future field) - Value (threshold-exceeding) - Timestamp (time of detection) ✔ Includes
+ * button to create new event configurations via NewEreignisActivity
  *
- * This screen is essentially the "Event Log" of the entire system.
+ * <p>This screen is essentially the "Event Log" of the entire system.
  */
 public class EreignisActivity extends AppCompatActivity {
 
@@ -70,18 +60,18 @@ public class EreignisActivity extends AppCompatActivity {
 
         // Home button → navigate back to main sensor dashboard
         ImageButton buttonHome = findViewById(R.id.home_button);
-        buttonHome.setOnClickListener(v ->
-                startActivity(new Intent(EreignisActivity.this, MainActivity.class)));
+        buttonHome.setOnClickListener(
+                v -> startActivity(new Intent(EreignisActivity.this, MainActivity.class)));
 
         // Create new event configuration
         ImageButton editEreignisseButton = findViewById(R.id.new_event);
-        editEreignisseButton.setOnClickListener(v ->
-                startActivity(new Intent(EreignisActivity.this, NewEreignisActivity.class)));
+        editEreignisseButton.setOnClickListener(
+                v -> startActivity(new Intent(EreignisActivity.this, NewEreignisActivity.class)));
 
         // Sorting controls
-        btnSortSensor    = findViewById(R.id.btn_sort_sensor);
-        btnSortType      = findViewById(R.id.btn_sort_type);
-        btnSortValue     = findViewById(R.id.btn_sort_value);
+        btnSortSensor = findViewById(R.id.btn_sort_sensor);
+        btnSortType = findViewById(R.id.btn_sort_type);
+        btnSortValue = findViewById(R.id.btn_sort_value);
         btnSortTimestamp = findViewById(R.id.btn_sort_timestamp);
 
         btnSortSensor.setOnClickListener(v -> sortEvents("SENSOR"));
@@ -105,53 +95,57 @@ public class EreignisActivity extends AppCompatActivity {
         loadEventData(sensorFilter);
     }
 
-    /**
-     * Loads event data from ROOM → optionally filtered by sensor category.
-     */
+    /** Loads event data from ROOM → optionally filtered by sensor category. */
     private void loadEventData(String filter) {
-        DB.databaseWriteExecutor.execute(() -> {
+        DB.databaseWriteExecutor.execute(
+                () -> {
+                    List<EreignisData> allEventsList =
+                            DB.getDatabase(getApplicationContext())
+                                    .sensorDao()
+                                    .getAllEreignisData();
 
-            List<EreignisData> allEventsList =
-                    DB.getDatabase(getApplicationContext())
-                            .sensorDao()
-                            .getAllEreignisData();
+                    runOnUiThread(
+                            () -> {
+                                if (allEventsList == null) {
+                                    Log.e("ERROR", "Event list returned null!");
+                                    return;
+                                }
 
-            runOnUiThread(() -> {
-                if (allEventsList == null) {
-                    Log.e("ERROR", "Event list returned null!");
-                    return;
-                }
+                                filteredEvents.clear();
 
-                filteredEvents.clear();
+                                if ("ALL".equals(filter)) {
+                                    filteredEvents.addAll(allEventsList);
+                                    headerTextView.setText("Ereignisse");
+                                } else {
+                                    // Filter by sensor type
+                                    for (EreignisData event : allEventsList) {
+                                        if (event.sensorType.equals(filter)) {
+                                            filteredEvents.add(event);
+                                        }
+                                    }
 
-                if ("ALL".equals(filter)) {
-                    filteredEvents.addAll(allEventsList);
-                    headerTextView.setText("Ereignisse");
-                } else {
-                    // Filter by sensor type
-                    for (EreignisData event : allEventsList) {
-                        if (event.sensorType.equals(filter)) {
-                            filteredEvents.add(event);
-                        }
-                    }
+                                    // Adjust screen header text
+                                    switch (filter) {
+                                        case "ACCEL":
+                                            headerTextView.setText("Ereignisse Beschleunigung");
+                                            break;
+                                        case "MAGNET":
+                                            headerTextView.setText("Ereignisse Magnetfeld");
+                                            break;
+                                        case "GYRO":
+                                            headerTextView.setText("Ereignisse Gyroskop");
+                                            break;
+                                        default:
+                                            headerTextView.setText("Ereignisse");
+                                    }
+                                }
 
-                    // Adjust screen header text
-                    switch (filter) {
-                        case "ACCEL": headerTextView.setText("Ereignisse Beschleunigung"); break;
-                        case "MAGNET": headerTextView.setText("Ereignisse Magnetfeld"); break;
-                        case "GYRO": headerTextView.setText("Ereignisse Gyroskop"); break;
-                        default: headerTextView.setText("Ereignisse");
-                    }
-                }
-
-                adapter.notifyDataSetChanged();
-            });
-        });
+                                adapter.notifyDataSetChanged();
+                            });
+                });
     }
 
-    /**
-     * Sorts events based on column clicked by user.
-     */
+    /** Sorts events based on column clicked by user. */
     private void sortEvents(String sortKey) {
 
         // Toggle between ascending / descending if same column clicked twice
@@ -162,25 +156,26 @@ public class EreignisActivity extends AppCompatActivity {
             currentSortKey = sortKey;
         }
 
-        filteredEvents.sort((e1, e2) -> {
-            int cmp = 0;
+        filteredEvents.sort(
+                (e1, e2) -> {
+                    int cmp = 0;
 
-            switch (sortKey) {
-                case "TYPE":
-                    cmp = e1.getSensorType().compareTo(e2.getSensorType());
-                    break;
+                    switch (sortKey) {
+                        case "TYPE":
+                            cmp = e1.getSensorType().compareTo(e2.getSensorType());
+                            break;
 
-                case "VALUE":
-                    cmp = Float.compare(e1.getValue(), e2.getValue());
-                    break;
+                        case "VALUE":
+                            cmp = Float.compare(e1.getValue(), e2.getValue());
+                            break;
 
-                case "TIMESTAMP":
-                    cmp = Long.compare(e1.getTimestamp(), e2.getTimestamp());
-                    break;
-            }
+                        case "TIMESTAMP":
+                            cmp = Long.compare(e1.getTimestamp(), e2.getTimestamp());
+                            break;
+                    }
 
-            return isSortAscending ? cmp : -cmp;
-        });
+                    return isSortAscending ? cmp : -cmp;
+                });
 
         adapter.notifyDataSetChanged();
     }

@@ -5,38 +5,30 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ImageButton;
-
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-
-import database.DB;
-import database.entities.MagnetData;
-
-import com.fhdw.biot.speech.iot.graph.BaseChartActivity;
-import com.fhdw.biot.speech.iot.util.DatePickerHandler;
 import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.events.EreignisActivity;
+import com.fhdw.biot.speech.iot.graph.BaseChartActivity;
 import com.fhdw.biot.speech.iot.main.MainActivity;
+import com.fhdw.biot.speech.iot.util.DatePickerHandler;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
-
+import database.DB;
+import database.entities.MagnetData;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
 /**
- * MagnetActivity
- * --------------
- * Screen that visualizes magnetometer sensor data in three separate line charts
- * (X, Y, Z axes) and lets the user filter the visible range by date.
+ * MagnetActivity -------------- Screen that visualizes magnetometer sensor data in three separate
+ * line charts (X, Y, Z axes) and lets the user filter the visible range by date.
  *
- * Responsibilities:
- *  - Navigation between other sensor screens (Gyro / Accel) and the main screen.
- *  - Fetching magnetometer data from the Room database.
- *  - Providing date-range filtering via DatePickerHandler.
- *  - Mapping MagnetData rows into MPAndroidChart entries and rendering them.
- *  - Reusing BaseChartActivity for common chart styling / behaviour.
+ * <p>Responsibilities: - Navigation between other sensor screens (Gyro / Accel) and the main
+ * screen. - Fetching magnetometer data from the Room database. - Providing date-range filtering via
+ * DatePickerHandler. - Mapping MagnetData rows into MPAndroidChart entries and rendering them. -
+ * Reusing BaseChartActivity for common chart styling / behaviour.
  */
 public class MagnetActivity extends BaseChartActivity {
 
@@ -45,6 +37,7 @@ public class MagnetActivity extends BaseChartActivity {
 
     /** Selected date range used when querying the database. */
     private Calendar dateFromCalendar;
+
     private Calendar dateToCalendar;
 
     /** Buttons used to show / pick "from" and "to" dates for each axis. */
@@ -75,32 +68,36 @@ public class MagnetActivity extends BaseChartActivity {
 
         // Go back to the Gyro screen (previous sensor).
         Button buttonGyro = findViewById(R.id.btnPrevGyro);
-        buttonGyro.setOnClickListener(view -> {
-            Intent intent = new Intent(MagnetActivity.this, GyroActivity.class);
-            startActivity(intent);
-        });
+        buttonGyro.setOnClickListener(
+                view -> {
+                    Intent intent = new Intent(MagnetActivity.this, GyroActivity.class);
+                    startActivity(intent);
+                });
 
         // Go forward to the Accel screen (next sensor).
         Button buttonAccel = findViewById(R.id.btnNextAccel);
-        buttonAccel.setOnClickListener(view -> {
-            Intent intent = new Intent(MagnetActivity.this, AccelActivity.class);
-            startActivity(intent);
-        });
+        buttonAccel.setOnClickListener(
+                view -> {
+                    Intent intent = new Intent(MagnetActivity.this, AccelActivity.class);
+                    startActivity(intent);
+                });
 
         // Home button: go back to main MQTT / values screen.
         ImageButton buttonHome = findViewById(R.id.home_button);
-        buttonHome.setOnClickListener(view -> {
-            Intent intent = new Intent(MagnetActivity.this, MainActivity.class);
-            startActivity(intent);
-        });
+        buttonHome.setOnClickListener(
+                view -> {
+                    Intent intent = new Intent(MagnetActivity.this, MainActivity.class);
+                    startActivity(intent);
+                });
 
         // Ereignis button: open event list, filtered to magnetometer events.
         ImageButton ereignisButton = findViewById(R.id.notification_button);
-        ereignisButton.setOnClickListener(view -> {
-            Intent intent = new Intent(MagnetActivity.this, EreignisActivity.class);
-            intent.putExtra("SENSOR_FILTER", "MAGNET");
-            startActivity(intent);
-        });
+        ereignisButton.setOnClickListener(
+                view -> {
+                    Intent intent = new Intent(MagnetActivity.this, EreignisActivity.class);
+                    intent.putExtra("SENSOR_FILTER", "MAGNET");
+                    startActivity(intent);
+                });
 
         // Date picker helper (used to wire up the date buttons).
         DatePickerHandler datePickerHandler = new DatePickerHandler(MagnetActivity.this);
@@ -130,27 +127,30 @@ public class MagnetActivity extends BaseChartActivity {
 
         // Reset X-axis chart zoom/pan and clear the date labels for X.
         ImageButton resetAccel = findViewById(R.id.resetX);
-        resetAccel.setOnClickListener(view -> {
-            lineChartMagnetX.fitScreen();
-            xBisButton.setText("");
-            xVonButton.setText("");
-        });
+        resetAccel.setOnClickListener(
+                view -> {
+                    lineChartMagnetX.fitScreen();
+                    xBisButton.setText("");
+                    xVonButton.setText("");
+                });
 
         // Reset Y-axis chart zoom/pan and clear corresponding date labels.
         ImageButton resetGyro = findViewById(R.id.resetY);
-        resetGyro.setOnClickListener(view -> {
-            lineChartMagnetY.fitScreen();
-            yBisButton.setText("");
-            zVonButton.setText("");
-        });
+        resetGyro.setOnClickListener(
+                view -> {
+                    lineChartMagnetY.fitScreen();
+                    yBisButton.setText("");
+                    zVonButton.setText("");
+                });
 
         // Reset Z-axis chart zoom/pan and clear its date labels.
         ImageButton resetMagnet = findViewById(R.id.resetZ);
-        resetMagnet.setOnClickListener(view -> {
-            lineChartMagnetZ.fitScreen();
-            zBisButton.setText("");
-            zVonButton.setText("");
-        });
+        resetMagnet.setOnClickListener(
+                view -> {
+                    lineChartMagnetZ.fitScreen();
+                    zBisButton.setText("");
+                    zVonButton.setText("");
+                });
 
         // --------------------------------------------------------------------
         // Initial chart setup (before any data is loaded)
@@ -196,10 +196,8 @@ public class MagnetActivity extends BaseChartActivity {
     /**
      * Initializes the date range and wires up the "von" / "bis" date pickers.
      *
-     * Behaviour:
-     *  - "from" date initially set to the oldest magnetometer sample in DB.
-     *  - "to" date initially set to today.
-     *  - On any date change, the charts are re-filtered.
+     * <p>Behaviour: - "from" date initially set to the oldest magnetometer sample in DB. - "to"
+     * date initially set to today. - On any date change, the charts are re-filtered.
      */
     private void setupDatePickers() {
 
@@ -228,10 +226,8 @@ public class MagnetActivity extends BaseChartActivity {
     /**
      * Attaches DatePickers to the three "von" buttons and sets their initial text.
      *
-     * For each:
-     *  - opens a calendar dialog,
-     *  - updates {@link #dateFromCalendar},
-     *  - triggers {@link #updateChartsWithDateFilter()}.
+     * <p>For each: - opens a calendar dialog, - updates {@link #dateFromCalendar}, - triggers
+     * {@link #updateChartsWithDateFilter()}.
      */
     private void setupFromDatePickers(Button xVonButton, Button yVonButton, Button zVonButton) {
         DatePickerHandler.createForButton(
@@ -265,8 +261,8 @@ public class MagnetActivity extends BaseChartActivity {
     }
 
     /**
-     * Attaches DatePickers to the three "bis" buttons and sets their initial text
-     * to the current value of {@link #dateToCalendar} (today).
+     * Attaches DatePickers to the three "bis" buttons and sets their initial text to the current
+     * value of {@link #dateToCalendar} (today).
      */
     private void setupToDatePickers(Button xBisButton, Button yBisButton, Button zBisButton) {
         DatePickerHandler.createForButton(
@@ -304,10 +300,10 @@ public class MagnetActivity extends BaseChartActivity {
     // ------------------------------------------------------------------------
 
     /**
-     * Re-queries the database for the selected [from, to] date range and
-     * updates all three magnetometer charts with the results.
+     * Re-queries the database for the selected [from, to] date range and updates all three
+     * magnetometer charts with the results.
      *
-     * If there is no data for the current range, all charts are cleared.
+     * <p>If there is no data for the current range, all charts are cleared.
      */
     private void updateChartsWithDateFilter() {
         if (dateFromCalendar == null || dateToCalendar == null) {
@@ -347,9 +343,7 @@ public class MagnetActivity extends BaseChartActivity {
                         });
     }
 
-    /**
-     * Formats a Calendar into "dd.MM.yyyy" for button labels.
-     */
+    /** Formats a Calendar into "dd.MM.yyyy" for button labels. */
     private String formatCalendarDate(Calendar calendar) {
         return String.format(
                 java.util.Locale.GERMANY,
@@ -364,11 +358,11 @@ public class MagnetActivity extends BaseChartActivity {
     // ------------------------------------------------------------------------
 
     /**
-     * Converts a list of {@link MagnetData} rows into three separate sets
-     * of MPAndroidChart entries (X, Y, Z) and renders them.
+     * Converts a list of {@link MagnetData} rows into three separate sets of MPAndroidChart entries
+     * (X, Y, Z) and renders them.
      *
-     * X-axis values = "elapsed milliseconds since firstTimestamp",
-     * so the charts show time-relative data instead of absolute wall-clock time.
+     * <p>X-axis values = "elapsed milliseconds since firstTimestamp", so the charts show
+     * time-relative data instead of absolute wall-clock time.
      */
     private void displayDataInCharts(List<MagnetData> magnetDataList) {
         if (magnetDataList == null || magnetDataList.isEmpty()) {

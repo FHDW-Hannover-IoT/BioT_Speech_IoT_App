@@ -4,11 +4,11 @@ import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
-import java.util.List;
 import database.entities.AccelData;
-import database.entities.MagnetData;
-import database.entities.GyroData;
 import database.entities.EreignisData;
+import database.entities.GyroData;
+import database.entities.MagnetData;
+import java.util.List;
 
 // DAta Access Object
 @Dao

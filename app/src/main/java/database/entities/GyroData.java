@@ -2,7 +2,6 @@ package database.entities;
 
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
-
 import com.fhdw.biot.speech.iot.sensor.SensorPoint;
 
 @Entity(tableName = "gyro_data")
@@ -17,14 +16,22 @@ public class GyroData implements SensorPoint {
     public float gyroZ;
 
     @Override
-    public long getTimestamp() { return timestamp; }
+    public long getTimestamp() {
+        return timestamp;
+    }
 
     @Override
-    public float getX() { return gyroX; }
+    public float getX() {
+        return gyroX;
+    }
 
     @Override
-    public float getY() { return gyroY; }
+    public float getY() {
+        return gyroY;
+    }
 
     @Override
-    public float getZ() { return gyroZ; }
+    public float getZ() {
+        return gyroZ;
+    }
 }

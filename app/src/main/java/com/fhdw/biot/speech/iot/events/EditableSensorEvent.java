@@ -1,18 +1,14 @@
 package com.fhdw.biot.speech.iot.events;
 
 /**
- * EditableSensorEvent
- * --------------------
- * Represents one editable rule configuration row.
+ * EditableSensorEvent -------------------- Represents one editable rule configuration row.
  *
- * Fields:
- *   id            → internal identifier for adapter tracking
- *   sensorType    → Accel / Gyro / Magnet (default: Accel)
- *   eventType     → "Overshoot", "Fall", "Shake", etc.
- *   thresholdValue → numeric threshold that triggers the event
+ * <p>Fields: id → internal identifier for adapter tracking sensorType → Accel / Gyro / Magnet
+ * (default: Accel) eventType → "Overshoot", "Fall", "Shake", etc. thresholdValue → numeric
+ * threshold that triggers the event
  *
- * These objects are NOT the final events stored in the database.
- * Instead, they are templates used to *generate* sensor thresholds.
+ * <p>These objects are NOT the final events stored in the database. Instead, they are templates
+ * used to *generate* sensor thresholds.
  */
 public class EditableSensorEvent {
 

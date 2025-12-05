@@ -5,38 +5,30 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ImageButton;
-
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-
-import com.fhdw.biot.speech.iot.graph.BaseChartActivity;
-import com.fhdw.biot.speech.iot.util.DatePickerHandler;
 import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.events.EreignisActivity;
+import com.fhdw.biot.speech.iot.graph.BaseChartActivity;
 import com.fhdw.biot.speech.iot.main.MainActivity;
+import com.fhdw.biot.speech.iot.util.DatePickerHandler;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
-
+import database.DB;
+import database.entities.GyroData;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
-import database.entities.GyroData;
-import database.DB;
-
 /**
- * GyroActivity
- * ------------
- * Screen that visualizes gyroscope sensor data in three separate line charts
- * (X, Y, Z axes) and lets the user filter the visible range by date.
+ * GyroActivity ------------ Screen that visualizes gyroscope sensor data in three separate line
+ * charts (X, Y, Z axes) and lets the user filter the visible range by date.
  *
- * Responsibilities:
- *  - Navigation between sensor screens (Accel / Magnet) and main screen.
- *  - Connecting to Room (DB.sensorDao()) to load stored GyroData.
- *  - Handling from/to date selection via DatePickerHandler.
- *  - Mapping GyroData → MPAndroidChart entries and rendering them.
- *  - Using BaseChartActivity for common chart styling/behaviour.
+ * <p>Responsibilities: - Navigation between sensor screens (Accel / Magnet) and main screen. -
+ * Connecting to Room (DB.sensorDao()) to load stored GyroData. - Handling from/to date selection
+ * via DatePickerHandler. - Mapping GyroData → MPAndroidChart entries and rendering them. - Using
+ * BaseChartActivity for common chart styling/behaviour.
  */
 public class GyroActivity extends BaseChartActivity {
 
@@ -45,6 +37,7 @@ public class GyroActivity extends BaseChartActivity {
 
     /** Selected date range used when querying the database. */
     private Calendar dateFromCalendar;
+
     private Calendar dateToCalendar;
 
     /** Buttons that display and modify the filter range ("von" / "bis" per axis). */
@@ -78,32 +71,36 @@ public class GyroActivity extends BaseChartActivity {
 
         // Move to previous sensor screen: accelerometer charts.
         Button buttonAccel = findViewById(R.id.btnPrevAccel);
-        buttonAccel.setOnClickListener(view -> {
-            Intent intent = new Intent(GyroActivity.this, AccelActivity.class);
-            startActivity(intent);
-        });
+        buttonAccel.setOnClickListener(
+                view -> {
+                    Intent intent = new Intent(GyroActivity.this, AccelActivity.class);
+                    startActivity(intent);
+                });
 
         // Move to next sensor screen: magnetometer charts.
         Button buttonMagnet = findViewById(R.id.btnNextMagnet);
-        buttonMagnet.setOnClickListener(view -> {
-            Intent intent = new Intent(GyroActivity.this, MagnetActivity.class);
-            startActivity(intent);
-        });
+        buttonMagnet.setOnClickListener(
+                view -> {
+                    Intent intent = new Intent(GyroActivity.this, MagnetActivity.class);
+                    startActivity(intent);
+                });
 
         // Home button: return to the main values / MQTT screen.
         ImageButton buttonHome = findViewById(R.id.home_button);
-        buttonHome.setOnClickListener(view -> {
-            Intent intent = new Intent(GyroActivity.this, MainActivity.class);
-            startActivity(intent);
-        });
+        buttonHome.setOnClickListener(
+                view -> {
+                    Intent intent = new Intent(GyroActivity.this, MainActivity.class);
+                    startActivity(intent);
+                });
 
         // Ereignis button: open list of stored events, pre-filtered to GYRO events.
         ImageButton ereignisButton = findViewById(R.id.notification_button);
-        ereignisButton.setOnClickListener(view -> {
-            Intent intent = new Intent(GyroActivity.this, EreignisActivity.class);
-            intent.putExtra("SENSOR_FILTER", "GYRO");
-            startActivity(intent);
-        });
+        ereignisButton.setOnClickListener(
+                view -> {
+                    Intent intent = new Intent(GyroActivity.this, EreignisActivity.class);
+                    intent.putExtra("SENSOR_FILTER", "GYRO");
+                    startActivity(intent);
+                });
 
         // --------------------------------------------------------------------
         // Chart references
@@ -133,27 +130,30 @@ public class GyroActivity extends BaseChartActivity {
 
         // Reset X-axis chart zoom/pan and clear its date labels.
         ImageButton resetAccel = findViewById(R.id.resetX);
-        resetAccel.setOnClickListener(view -> {
-            lineChartGyroX.fitScreen();
-            xBisButton.setText("");
-            xVonButton.setText("");
-        });
+        resetAccel.setOnClickListener(
+                view -> {
+                    lineChartGyroX.fitScreen();
+                    xBisButton.setText("");
+                    xVonButton.setText("");
+                });
 
         // Reset Y-axis chart zoom/pan and clear date labels.
         ImageButton resetGyro = findViewById(R.id.resetY);
-        resetGyro.setOnClickListener(view -> {
-            lineChartGyroY.fitScreen();
-            yBisButton.setText("");
-            zVonButton.setText("");
-        });
+        resetGyro.setOnClickListener(
+                view -> {
+                    lineChartGyroY.fitScreen();
+                    yBisButton.setText("");
+                    zVonButton.setText("");
+                });
 
         // Reset Z-axis chart zoom/pan and clear date labels.
         ImageButton resetMagnet = findViewById(R.id.resetZ);
-        resetMagnet.setOnClickListener(view -> {
-            lineChartGyroZ.fitScreen();
-            zBisButton.setText("");
-            zVonButton.setText("");
-        });
+        resetMagnet.setOnClickListener(
+                view -> {
+                    lineChartGyroZ.fitScreen();
+                    zBisButton.setText("");
+                    zVonButton.setText("");
+                });
 
         // --------------------------------------------------------------------
         // Initial chart setup (before any data is loaded)
@@ -200,10 +200,8 @@ public class GyroActivity extends BaseChartActivity {
     /**
      * Initializes date range state and wires up DatePickers to the buttons.
      *
-     * Behaviour:
-     *  - "from" date initially = oldest stored gyro sample in the database.
-     *  - "to" date initially   = today.
-     *  - whenever the user picks a date, charts are re-filtered.
+     * <p>Behaviour: - "from" date initially = oldest stored gyro sample in the database. - "to"
+     * date initially = today. - whenever the user picks a date, charts are re-filtered.
      */
     private void setupDatePickers() {
 
@@ -230,13 +228,11 @@ public class GyroActivity extends BaseChartActivity {
     }
 
     /**
-     * Attaches DatePickers to the three "von" buttons and sets their texts
-     * to the current value of {@link #dateFromCalendar}.
+     * Attaches DatePickers to the three "von" buttons and sets their texts to the current value of
+     * {@link #dateFromCalendar}.
      *
-     * For each button:
-     *  - opens a calendar dialog,
-     *  - updates {@link #dateFromCalendar},
-     *  - calls {@link #updateChartsWithDateFilter()} so the data refreshes.
+     * <p>For each button: - opens a calendar dialog, - updates {@link #dateFromCalendar}, - calls
+     * {@link #updateChartsWithDateFilter()} so the data refreshes.
      */
     private void setupFromDatePickers(Button xVonButton, Button yVonButton, Button zVonButton) {
         DatePickerHandler.createForButton(
@@ -270,10 +266,10 @@ public class GyroActivity extends BaseChartActivity {
     }
 
     /**
-     * Attaches DatePickers to the three "bis" buttons and sets their texts
-     * to the current value of {@link #dateToCalendar} (initially today).
+     * Attaches DatePickers to the three "bis" buttons and sets their texts to the current value of
+     * {@link #dateToCalendar} (initially today).
      *
-     * Similar to {@link #setupFromDatePickers}, but updates the upper bound.
+     * <p>Similar to {@link #setupFromDatePickers}, but updates the upper bound.
      */
     private void setupToDatePickers(Button xBisButton, Button yBisButton, Button zBisButton) {
         DatePickerHandler.createForButton(
@@ -311,10 +307,10 @@ public class GyroActivity extends BaseChartActivity {
     // ------------------------------------------------------------------------
 
     /**
-     * Re-queries the database with the currently selected [from, to] date range
-     * and updates all three gyroscope charts with the result.
+     * Re-queries the database with the currently selected [from, to] date range and updates all
+     * three gyroscope charts with the result.
      *
-     * If there are no values in the selected range, the charts are cleared.
+     * <p>If there are no values in the selected range, the charts are cleared.
      */
     private void updateChartsWithDateFilter() {
         if (dateFromCalendar == null || dateToCalendar == null) {
@@ -355,9 +351,7 @@ public class GyroActivity extends BaseChartActivity {
                         });
     }
 
-    /**
-     * Formats the given Calendar as "dd.MM.yyyy" for button labels.
-     */
+    /** Formats the given Calendar as "dd.MM.yyyy" for button labels. */
     private String formatCalendarDate(Calendar calendar) {
         return String.format(
                 java.util.Locale.GERMANY,
@@ -372,11 +366,11 @@ public class GyroActivity extends BaseChartActivity {
     // ------------------------------------------------------------------------
 
     /**
-     * Converts a list of {@link GyroData} rows into three separate MPAndroidChart
-     * datasets (X, Y, Z axes) and renders them on the charts.
+     * Converts a list of {@link GyroData} rows into three separate MPAndroidChart datasets (X, Y, Z
+     * axes) and renders them on the charts.
      *
-     * X-axis values are "elapsed milliseconds since firstTimestamp",
-     * so the charts show time-relative data instead of absolute timestamps.
+     * <p>X-axis values are "elapsed milliseconds since firstTimestamp", so the charts show
+     * time-relative data instead of absolute timestamps.
      */
     private void displayDataInCharts(List<GyroData> gyroDataList) {
         if (gyroDataList == null || gyroDataList.isEmpty()) {

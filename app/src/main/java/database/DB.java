@@ -1,33 +1,29 @@
 package database;
 
 import android.content.Context;
-
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
-
 import database.dao.SensorDao;
 import database.dao.ValueSensorDAO;
 import database.entities.AccelData;
+import database.entities.EreignisData;
 import database.entities.GyroData;
 import database.entities.MagnetData;
-import database.entities.EreignisData;
 import database.entities.ValueSensor;
-
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @Database(
         entities = {
-                AccelData.class,
-                GyroData.class,
-                MagnetData.class,
-                EreignisData.class,
-                ValueSensor.class
+            AccelData.class,
+            GyroData.class,
+            MagnetData.class,
+            EreignisData.class,
+            ValueSensor.class
         },
-        version = 2,           // keep the version that matches your existing DB_Impl
-        exportSchema = false
-)
+        version = 2, // keep the version that matches your existing DB_Impl
+        exportSchema = false)
 public abstract class DB extends RoomDatabase {
 
     // --- DAOs that Room must generate ---
@@ -51,8 +47,7 @@ public abstract class DB extends RoomDatabase {
                             Room.databaseBuilder(
                                             context.getApplicationContext(),
                                             DB.class,
-                                            "sensor_database"
-                                    )
+                                            "sensor_database")
                                     .fallbackToDestructiveMigration()
                                     .build();
                 }
