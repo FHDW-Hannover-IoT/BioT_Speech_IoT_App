@@ -3,7 +3,7 @@ package database.entities;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
-import com.fhdw.biot.speech.iot.SensorPoint;
+import com.fhdw.biot.speech.iot.sensor.SensorPoint;
 
 @Entity(tableName = "magnet_data")
 public class MagnetData implements SensorPoint {

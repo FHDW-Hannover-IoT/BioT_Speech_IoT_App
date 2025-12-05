@@ -1,4 +1,4 @@
-package com.fhdw.biot.speech.iot;
+package com.fhdw.biot.speech.iot.sensor;
 
 public interface SensorPoint {
     long getTimestamp();

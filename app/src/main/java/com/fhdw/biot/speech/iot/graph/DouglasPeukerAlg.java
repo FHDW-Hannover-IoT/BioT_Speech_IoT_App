@@ -1,4 +1,6 @@
-package com.fhdw.biot.speech.iot;
+package com.fhdw.biot.speech.iot.graph;
+
+import com.fhdw.biot.speech.iot.sensor.SensorPoint;
 
 import java.util.ArrayList;
 import java.util.List;

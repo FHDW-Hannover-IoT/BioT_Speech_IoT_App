@@ -1,4 +1,4 @@
-package com.fhdw.biot.speech.iot;
+package com.fhdw.biot.speech.iot.events;
 
 public class EditableSensorEvent {
     public long id;

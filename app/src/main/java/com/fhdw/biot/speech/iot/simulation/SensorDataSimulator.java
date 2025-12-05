@@ -1,6 +1,8 @@
-package com.fhdw.biot.speech.iot;
+package com.fhdw.biot.speech.iot.simulation;
 
 import android.util.Log;
+
+import com.fhdw.biot.speech.iot.mqtt.MqttHandler;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

@@ -1,4 +1,4 @@
-package com.fhdw.biot.speech.iot;
+package com.fhdw.biot.speech.iot.graph;
 
 import android.content.Intent;
 import android.graphics.Color;
@@ -10,6 +10,14 @@ import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import com.fhdw.biot.speech.iot.util.DatePickerHandler;
+import com.fhdw.biot.speech.iot.R;
+import com.fhdw.biot.speech.iot.main.MainActivity;
+import com.fhdw.biot.speech.iot.sensor.AccelActivity;
+import com.fhdw.biot.speech.iot.events.EreignisActivity;
+import com.fhdw.biot.speech.iot.sensor.GyroActivity;
+import com.fhdw.biot.speech.iot.sensor.MagnetActivity;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;

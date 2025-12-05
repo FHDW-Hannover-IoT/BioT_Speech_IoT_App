@@ -1,4 +1,4 @@
-package com.fhdw.biot.speech.iot;
+package com.fhdw.biot.speech.iot.events;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,6 +8,9 @@ import android.widget.ImageButton;
 import android.widget.Spinner;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.fhdw.biot.speech.iot.R;
+
 import java.util.List;
 
 public class EditableEventAdapter

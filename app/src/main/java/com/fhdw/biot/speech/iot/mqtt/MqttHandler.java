@@ -1,4 +1,4 @@
-package com.fhdw.biot.speech.iot;
+package com.fhdw.biot.speech.iot.mqtt;
 
 import org.eclipse.paho.mqttv5.client.MqttAsyncClient;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;

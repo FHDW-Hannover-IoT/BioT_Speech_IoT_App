@@ -1,4 +1,4 @@
-package com.fhdw.biot.speech.iot;
+package com.fhdw.biot.speech.iot.sensor;
 
 import android.content.Intent;
 import android.graphics.Color;
@@ -8,28 +8,35 @@ import android.widget.ImageButton;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import database.DB;
-import database.entities.MagnetData;
+
+import com.fhdw.biot.speech.iot.graph.BaseChartActivity;
+import com.fhdw.biot.speech.iot.util.DatePickerHandler;
+import com.fhdw.biot.speech.iot.R;
+import com.fhdw.biot.speech.iot.events.EreignisActivity;
+import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import database.entities.GyroData;
+import database.DB;
 
+public class GyroActivity extends BaseChartActivity {
 
-public class MagnetActivity extends BaseChartActivity {
-
-    private LineChart lineChartMagnetX, lineChartMagnetY, lineChartMagnetZ;
+    private LineChart lineChartGyroX, lineChartGyroY, lineChartGyroZ;
     private Calendar dateFromCalendar;
     private Calendar dateToCalendar;
     private Button xVonButton, xBisButton, yVonButton, yBisButton, zVonButton, zBisButton;
 
+    private long startTime = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_magnetfeld);
+        setContentView(R.layout.activity_gyroskop);
         ViewCompat.setOnApplyWindowInsetsListener(
-                findViewById(R.id.magnet),
+                findViewById(R.id.gyro),
                 (v, insets) -> {
                     Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
                     v.setPadding(
@@ -37,36 +44,40 @@ public class MagnetActivity extends BaseChartActivity {
                     return insets;
                 });
 
-        Button buttonGyro = findViewById(R.id.btnPrevGyro);
-        buttonGyro.setOnClickListener(
+        Button buttonAccel = findViewById(R.id.btnPrevAccel);
+        buttonAccel.setOnClickListener(
                 view -> {
-                    Intent intent = new Intent(MagnetActivity.this, GyroActivity.class);
+                    Intent intent = new Intent(GyroActivity.this, AccelActivity.class);
                     startActivity(intent);
                 });
 
-        Button buttonAccel = findViewById(R.id.btnNextAccel);
-        buttonAccel.setOnClickListener(
+        Button buttonMagnet = findViewById(R.id.btnNextMagnet);
+        buttonMagnet.setOnClickListener(
                 view -> {
-                    Intent intent = new Intent(MagnetActivity.this, AccelActivity.class);
+                    Intent intent = new Intent(GyroActivity.this, MagnetActivity.class);
                     startActivity(intent);
                 });
 
         ImageButton buttonHome = findViewById(R.id.home_button);
         buttonHome.setOnClickListener(
                 view -> {
-                    Intent intent = new Intent(MagnetActivity.this, MainActivity.class);
+                    Intent intent = new Intent(GyroActivity.this, MainActivity.class);
                     startActivity(intent);
                 });
 
         ImageButton ereignisButton = findViewById(R.id.notification_button);
         ereignisButton.setOnClickListener(
                 view -> {
-                    Intent intent = new Intent(MagnetActivity.this, EreignisActivity.class);
-                    intent.putExtra("SENSOR_FILTER", "MAGNET");
+                    Intent intent = new Intent(GyroActivity.this, EreignisActivity.class);
+                    intent.putExtra("SENSOR_FILTER", "GYRO");
                     startActivity(intent);
                 });
 
-        DatePickerHandler datePickerHandler = new DatePickerHandler(MagnetActivity.this);
+        lineChartGyroX = findViewById(R.id.lineChartGyroX);
+        lineChartGyroY = findViewById(R.id.lineChartGyroY);
+        lineChartGyroZ = findViewById(R.id.lineChartGyroZ);
+
+        DatePickerHandler datePickerHandler = new DatePickerHandler(GyroActivity.this);
 
         xBisButton = findViewById(R.id.button_x_bis);
 
@@ -80,14 +91,10 @@ public class MagnetActivity extends BaseChartActivity {
 
         zVonButton = findViewById(R.id.button_z_von);
 
-        lineChartMagnetX = findViewById(R.id.lineChartMagnetX);
-        lineChartMagnetY = findViewById(R.id.lineChartMagnetY);
-        lineChartMagnetZ = findViewById(R.id.lineChartMagnetZ);
-
         ImageButton resetAccel = findViewById(R.id.resetX);
         resetAccel.setOnClickListener(
                 view -> {
-                    lineChartMagnetX.fitScreen();
+                    lineChartGyroX.fitScreen();
                     xBisButton.setText("");
                     xVonButton.setText("");
                 });
@@ -95,7 +102,7 @@ public class MagnetActivity extends BaseChartActivity {
         ImageButton resetGyro = findViewById(R.id.resetY);
         resetGyro.setOnClickListener(
                 view -> {
-                    lineChartMagnetY.fitScreen();
+                    lineChartGyroY.fitScreen();
                     yBisButton.setText("");
                     zVonButton.setText("");
                 });
@@ -103,15 +110,15 @@ public class MagnetActivity extends BaseChartActivity {
         ImageButton resetMagnet = findViewById(R.id.resetZ);
         resetMagnet.setOnClickListener(
                 view -> {
-                    lineChartMagnetZ.fitScreen();
+                    lineChartGyroZ.fitScreen();
                     zBisButton.setText("");
                     zVonButton.setText("");
                 });
 
         // Initial chart setup
-        setupChart(lineChartMagnetX, "X-Achse", 0);
-        setupChart(lineChartMagnetY, "Y-Achse", 0);
-        setupChart(lineChartMagnetZ, "Z-Achse", 0);
+        setupChart(lineChartGyroX, "X-Achse", 0);
+        setupChart(lineChartGyroY, "Y-Achse", 0);
+        setupChart(lineChartGyroZ, "Z-Achse", 0);
 
         // Setup DatePickers
         setupDatePickers();
@@ -119,41 +126,37 @@ public class MagnetActivity extends BaseChartActivity {
         // Observe LiveData and update charts automatically
         DB.getDatabase(getApplicationContext())
                 .sensorDao()
-                .getAllMagnetData()
+                .getAllGyroData()
                 .observe(
                         this,
-                        magnetDataList -> {
-                            if (magnetDataList != null && !magnetDataList.isEmpty()) {
-                                long firstTimestamp = magnetDataList.get(0).timestamp;
-                                setupChart(lineChartMagnetX, "X-Achse", firstTimestamp);
-                                setupChart(lineChartMagnetY, "Y-Achse", firstTimestamp);
-                                setupChart(lineChartMagnetZ, "Z-Achse", firstTimestamp);
-                                displayDataInCharts(magnetDataList);
+                        gyroDataList -> {
+                            if (gyroDataList != null && !gyroDataList.isEmpty()) {
+                                long firstTimestamp = gyroDataList.get(0).timestamp;
+                                setupChart(lineChartGyroX, "X-Achse", firstTimestamp);
+                                setupChart(lineChartGyroY, "Y-Achse", firstTimestamp);
+                                setupChart(lineChartGyroZ, "Z-Achse", firstTimestamp);
+                                displayDataInCharts(gyroDataList);
                             }
                         });
     }
 
     private void setupDatePickers() {
 
-        // Initialisiere die Calendar-Objekte
         dateFromCalendar = Calendar.getInstance();
         dateToCalendar = Calendar.getInstance();
 
-        // Beobachte das älteste Datum aus der Datenbank
         DB.getDatabase(getApplicationContext())
                 .sensorDao()
-                .getOldestMagnetTimestamp()
+                .getOldestGyroTimestamp()
                 .observe(
                         this,
                         oldestTimestamp -> {
                             if (oldestTimestamp != null && oldestTimestamp > 0) {
                                 dateFromCalendar.setTimeInMillis(oldestTimestamp);
-                                // Setze das "von"-Datum auf das älteste Datum
                                 setupFromDatePickers(xVonButton, yVonButton, zVonButton);
                             }
                         });
 
-        // Setze das "bis"-Datum auf das aktuelle Datum
         setupToDatePickers(xBisButton, yBisButton, zBisButton);
     }
 
@@ -164,7 +167,7 @@ public class MagnetActivity extends BaseChartActivity {
                     dateFromCalendar = calendar;
                     updateChartsWithDateFilter();
                 },
-                MagnetActivity.this);
+                GyroActivity.this);
 
         DatePickerHandler.createForButton(
                 yVonButton,
@@ -172,7 +175,7 @@ public class MagnetActivity extends BaseChartActivity {
                     dateFromCalendar = calendar;
                     updateChartsWithDateFilter();
                 },
-                MagnetActivity.this);
+                GyroActivity.this);
 
         DatePickerHandler.createForButton(
                 zVonButton,
@@ -180,8 +183,9 @@ public class MagnetActivity extends BaseChartActivity {
                     dateFromCalendar = calendar;
                     updateChartsWithDateFilter();
                 },
-                MagnetActivity.this);
+                GyroActivity.this);
 
+        // Setze anfängliches Datum
         xVonButton.setText(formatCalendarDate(dateFromCalendar));
         yVonButton.setText(formatCalendarDate(dateFromCalendar));
         zVonButton.setText(formatCalendarDate(dateFromCalendar));
@@ -194,7 +198,7 @@ public class MagnetActivity extends BaseChartActivity {
                     dateToCalendar = calendar;
                     updateChartsWithDateFilter();
                 },
-                MagnetActivity.this);
+                GyroActivity.this);
 
         DatePickerHandler.createForButton(
                 yBisButton,
@@ -202,7 +206,7 @@ public class MagnetActivity extends BaseChartActivity {
                     dateToCalendar = calendar;
                     updateChartsWithDateFilter();
                 },
-                MagnetActivity.this);
+                GyroActivity.this);
 
         DatePickerHandler.createForButton(
                 zBisButton,
@@ -210,8 +214,9 @@ public class MagnetActivity extends BaseChartActivity {
                     dateToCalendar = calendar;
                     updateChartsWithDateFilter();
                 },
-                MagnetActivity.this);
+                GyroActivity.this);
 
+        // Setze anfängliches Datum (heute)
         xBisButton.setText(formatCalendarDate(dateToCalendar));
         yBisButton.setText(formatCalendarDate(dateToCalendar));
         zBisButton.setText(formatCalendarDate(dateToCalendar));
@@ -222,6 +227,7 @@ public class MagnetActivity extends BaseChartActivity {
             return;
         }
 
+        // Setze "bis"-Datum auf Ende des Tages, um den ganzen Tag zu erfassen
         Calendar adjustedToCalendar = (Calendar) dateToCalendar.clone();
         adjustedToCalendar.add(Calendar.DAY_OF_MONTH, 0);
         adjustedToCalendar.set(Calendar.HOUR_OF_DAY, 23);
@@ -230,21 +236,22 @@ public class MagnetActivity extends BaseChartActivity {
 
         DB.getDatabase(getApplicationContext())
                 .sensorDao()
-                .getMagnetDataBetween(
+                .getGyroDataBetween(
                         dateFromCalendar.getTimeInMillis(), adjustedToCalendar.getTimeInMillis())
                 .observe(
                         this,
                         filteredData -> {
                             if (filteredData != null && !filteredData.isEmpty()) {
                                 long firstTimestamp = filteredData.get(0).timestamp;
-                                setupChart(lineChartMagnetX, "X-Achse", firstTimestamp);
-                                setupChart(lineChartMagnetY, "Y-Achse", firstTimestamp);
-                                setupChart(lineChartMagnetZ, "Z-Achse", firstTimestamp);
+                                setupChart(lineChartGyroX, "X-Achse", firstTimestamp);
+                                setupChart(lineChartGyroY, "Y-Achse", firstTimestamp);
+                                setupChart(lineChartGyroZ, "Z-Achse", firstTimestamp);
                                 displayDataInCharts(filteredData);
                             } else {
-                                lineChartMagnetX.clear();
-                                lineChartMagnetY.clear();
-                                lineChartMagnetZ.clear();
+                                // Leere Charts, wenn kein Datum im Bereich vorhanden
+                                lineChartGyroX.clear();
+                                lineChartGyroY.clear();
+                                lineChartGyroZ.clear();
                             }
                         });
     }
@@ -258,8 +265,8 @@ public class MagnetActivity extends BaseChartActivity {
                 calendar.get(Calendar.YEAR));
     }
 
-    private void displayDataInCharts(List<MagnetData> magnetDataList) {
-        if (magnetDataList == null || magnetDataList.isEmpty()) {
+    private void displayDataInCharts(List<GyroData> gyroDataList) {
+        if (gyroDataList == null || gyroDataList.isEmpty()) {
             return;
         }
 
@@ -267,17 +274,17 @@ public class MagnetActivity extends BaseChartActivity {
         ArrayList<Entry> entriesY = new ArrayList<>();
         ArrayList<Entry> entriesZ = new ArrayList<>();
 
-        long firstTimestamp = magnetDataList.get(0).timestamp;
+        long firstTimestamp = gyroDataList.get(0).timestamp;
 
-        for (MagnetData data : magnetDataList) {
+        for (GyroData data : gyroDataList) {
             float elapsedTime = data.timestamp - firstTimestamp;
-            entriesX.add(new Entry(elapsedTime, data.magnetX));
-            entriesY.add(new Entry(elapsedTime, data.magnetY));
-            entriesZ.add(new Entry(elapsedTime, data.magnetZ));
+            entriesX.add(new Entry(elapsedTime, data.gyroX));
+            entriesY.add(new Entry(elapsedTime, data.gyroY));
+            entriesZ.add(new Entry(elapsedTime, data.gyroZ));
         }
 
-        setData(lineChartMagnetX, entriesX, "X-Achse", Color.WHITE);
-        setData(lineChartMagnetY, entriesY, "Y-Achse", Color.WHITE);
-        setData(lineChartMagnetZ, entriesZ, "Z-Achse", Color.WHITE);
+        setData(lineChartGyroX, entriesX, "X-Achse", Color.WHITE);
+        setData(lineChartGyroY, entriesY, "Y-Achse", Color.WHITE);
+        setData(lineChartGyroZ, entriesZ, "Z-Achse", Color.WHITE);
     }
 }

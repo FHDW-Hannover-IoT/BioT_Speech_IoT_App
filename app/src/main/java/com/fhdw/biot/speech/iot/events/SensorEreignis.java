@@ -1,4 +1,4 @@
-package com.fhdw.biot.speech.iot;
+package com.fhdw.biot.speech.iot.events;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -8,6 +8,10 @@ import android.content.Intent;
 import android.os.Build;
 import android.util.Log;
 import androidx.core.app.NotificationCompat;
+
+import com.fhdw.biot.speech.iot.R;
+import com.fhdw.biot.speech.iot.main.MainActivity;
+
 import database.entities.EreignisData;
 
 public class SensorEreignis {

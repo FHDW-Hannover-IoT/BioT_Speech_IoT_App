@@ -1,4 +1,4 @@
-package com.fhdw.biot.speech.iot;
+package com.fhdw.biot.speech.iot.main;
 
 import android.os.Bundle;
 import android.util.Log;
@@ -12,6 +12,15 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import com.fhdw.biot.speech.iot.sensor.AccelActivity;
+import com.fhdw.biot.speech.iot.events.EreignisActivity;
+import com.fhdw.biot.speech.iot.sensor.GyroActivity;
+import com.fhdw.biot.speech.iot.sensor.MagnetActivity;
+import com.fhdw.biot.speech.iot.graph.MainGraphActivity;
+import com.fhdw.biot.speech.iot.mqtt.MqttHandler;
+import com.fhdw.biot.speech.iot.R;
+import com.fhdw.biot.speech.iot.simulation.SensorDataSimulator;
 
 import java.util.List;
 import java.util.Locale;

@@ -1,4 +1,4 @@
-package com.fhdw.biot.speech.iot;
+package com.fhdw.biot.speech.iot.sensor;
 
 import android.content.Intent;
 import android.graphics.Color;
@@ -8,6 +8,12 @@ import android.widget.ImageButton;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import com.fhdw.biot.speech.iot.graph.BaseChartActivity;
+import com.fhdw.biot.speech.iot.util.DatePickerHandler;
+import com.fhdw.biot.speech.iot.R;
+import com.fhdw.biot.speech.iot.events.EreignisActivity;
+import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
 import java.util.ArrayList;

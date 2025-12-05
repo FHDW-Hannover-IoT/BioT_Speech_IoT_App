@@ -1,4 +1,4 @@
-package com.fhdw.biot.speech.iot;
+package com.fhdw.biot.speech.iot.events;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -12,6 +12,10 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.fhdw.biot.speech.iot.R;
+import com.fhdw.biot.speech.iot.main.MainActivity;
+
 import java.util.ArrayList;
 import java.util.List;
 import database.DB;

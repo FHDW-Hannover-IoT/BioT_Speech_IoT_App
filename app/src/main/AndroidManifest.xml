@@ -13,7 +13,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.BiotSpeechIoT">
         <activity
-            android:name=".MainActivity"
+            android:name=".main.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -21,12 +21,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".AccelActivity" />
-        <activity android:name=".GyroActivity" />
-        <activity android:name=".MagnetActivity" />
-        <activity android:name=".EreignisActivity" />
-        <activity android:name=".MainGraphActivity" />
-        <activity android:name=".NewEreignisActivity" />
+        <activity android:name=".sensor.AccelActivity" />
+        <activity android:name=".sensor.GyroActivity" />
+        <activity android:name=".sensor.MagnetActivity" />
+        <activity android:name=".events.EreignisActivity" />
+        <activity android:name=".graph.MainGraphActivity" />
+        <activity android:name=".events.NewEreignisActivity" />
 
     </application>
 
