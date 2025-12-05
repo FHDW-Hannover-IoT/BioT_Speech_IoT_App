@@ -1,7 +1,9 @@
 package com.fhdw.biot.speech.iot.events;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ImageButton;
 
 import androidx.activity.EdgeToEdge;
@@ -17,6 +19,10 @@ import com.fhdw.biot.speech.iot.main.MainActivity;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
+import database.DB;
+import database.entities.Sensor;
 
 /**
  * NewEreignisActivity
@@ -53,6 +59,8 @@ public class NewEreignisActivity extends AppCompatActivity {
 
     // In-memory list of event-rule configurations
     private List<EditableSensorEvent> editableEventList;
+
+    public List<Sensor> sensors = loadAvailableSensors();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,5 +120,25 @@ public class NewEreignisActivity extends AppCompatActivity {
             // Scroll RecyclerView to the last item so user sees the new row.
             recyclerView.scrollToPosition(editableEventList.size() - 1);
         });
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    private List<Sensor> loadAvailableSensors() {
+        AtomicReference<List<Sensor>> allEventsList = new AtomicReference<>();
+            DB.databaseWriteExecutor.execute(() -> {
+                allEventsList.set(DB.getDatabase(getApplicationContext())
+                        .sensorDao()
+                        .getAllKnownSensors());
+
+            runOnUiThread(() -> {
+                if (allEventsList.get() == null) {
+                    Log.e("ERROR", "Event list returned null!");
+                    return;
+                }
+
+                adapter.notifyDataSetChanged();
+            });
+        });
+        return allEventsList.get();
     }
 }

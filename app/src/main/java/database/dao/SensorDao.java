@@ -9,6 +9,7 @@ import database.entities.AccelData;
 import database.entities.MagnetData;
 import database.entities.GyroData;
 import database.entities.EreignisData;
+import database.entities.Sensor;
 
 // DAta Access Object
 @Dao
@@ -24,6 +25,9 @@ public interface SensorDao {
 
     @Insert
     void insert(EreignisData data);
+
+    @Insert
+    void insert(Sensor sensor);
 
     @Query("SELECT * FROM accel_data Order By timestamp ASC")
     LiveData<List<AccelData>> getAllAccelData();
@@ -58,4 +62,7 @@ public interface SensorDao {
 
     @Query("SELECT * FROM ereignis_data ORDER BY timestamp ASC")
     List<EreignisData> getAllEreignisData();
+
+    @Query("SELECT * FROM knownSensors Order By sensorID ASC")
+    List<Sensor> getAllKnownSensors();
 }
