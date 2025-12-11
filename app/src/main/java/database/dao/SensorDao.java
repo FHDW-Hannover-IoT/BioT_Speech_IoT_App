@@ -6,9 +6,9 @@ import androidx.room.Insert;
 import androidx.room.Query;
 import database.entities.AccelData;
 import database.entities.EreignisData;
-import database.entities.Sensor;
 import database.entities.GyroData;
 import database.entities.MagnetData;
+import database.entities.Sensor;
 import java.util.List;
 
 // DAta Access Object

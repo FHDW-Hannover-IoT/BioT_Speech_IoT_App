@@ -2,9 +2,6 @@ package com.fhdw.biot.speech.iot.simulation;
 
 import android.util.Log;
 import com.fhdw.biot.speech.iot.mqtt.MqttHandler;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.Executors;
@@ -13,26 +10,19 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * SensorDataSimulator
- * -------------------
- * Periodically generates *fake* sensor values and publishes them via MQTT.
- * Purpose:
- *  - Let you test the app UI + DB + MQTT pipeline without real hardware.
- * Topics being published:
- *  - "Sensor/Bewegung" : CSV "x,y,z" → interpreted as accelerometer-like values.
- *  - "Sensor/Gyro"     : CSV "x,y,z" → interpreted as gyro-like values.
- *  - "Sensor/Magnet"   : CSV "x,y,z" → interpreted as magnetometer values.
- * Data flow:
- *  - Timer (ScheduledExecutorService) fires.
- *  - Simulator generates random payloads.
- *  - Calls {@link MqttHandler#publish(String, String, boolean)} for each topic.
- *  - Broker receives PUBLISH and forwards to any subscribers.
- *  - Our own client is subscribed, so messages arrive in
- *      MqttHandler → MainActivity → TextViews + Room DB.
+ * SensorDataSimulator ------------------- Periodically generates *fake* sensor values and publishes
+ * them via MQTT. Purpose: - Let you test the app UI + DB + MQTT pipeline without real hardware.
+ * Topics being published: - "Sensor/Bewegung" : CSV "x,y,z" → interpreted as accelerometer-like
+ * values. - "Sensor/Gyro" : CSV "x,y,z" → interpreted as gyro-like values. - "Sensor/Magnet" : CSV
+ * "x,y,z" → interpreted as magnetometer values. Data flow: - Timer (ScheduledExecutorService)
+ * fires. - Simulator generates random payloads. - Calls {@link MqttHandler#publish(String, String,
+ * boolean)} for each topic. - Broker receives PUBLISH and forwards to any subscribers. - Our own
+ * client is subscribed, so messages arrive in MqttHandler → MainActivity → TextViews + Room DB.
  */
 public class SensorDataSimulator {
 
     private static final String TAG = "SensorDataSimulator";
+
     /**
      * Reference to the app's MQTT wrapper. Used only for publish calls; it must already be
      * connected.
@@ -130,32 +120,33 @@ public class SensorDataSimulator {
                                                 randomFloat(-5f, 5f),
                                                 randomFloat(-5f, 5f));
 
-                // -------- Fake Magnet data: 3 random floats in some range -----
-                // You can adapt the range to realistic µT units; here just demo values.
-                String magnetPayload = String.format(
-                        Locale.US,
-                        "%.3f,%.3f,%.3f",
-                        randomFloat(-50f, 50f),
-                        randomFloat(-50f, 50f),
-                        randomFloat(-50f, 50f)
-                );
+                                // -------- Fake Magnet data: 3 random floats in some range -----
+                                // You can adapt the range to realistic µT units; here just demo
+                                // values.
+                                String magnetPayload =
+                                        String.format(
+                                                Locale.US,
+                                                "%.3f,%.3f,%.3f",
+                                                randomFloat(-50f, 50f),
+                                                randomFloat(-50f, 50f),
+                                                randomFloat(-50f, 50f));
 
-                // Log what we're about to send (visible in Logcat).
-                Log.i(TAG, "Simulator publish Bewegung: " + bewegungPayload);
-                Log.i(TAG, "Simulator publish Gyro    : " + gyroPayload);
-                Log.i(TAG, "Simulator publish Magnet  : " + magnetPayload);
+                                // Log what we're about to send (visible in Logcat).
+                                Log.i(TAG, "Simulator publish Bewegung: " + bewegungPayload);
+                                Log.i(TAG, "Simulator publish Gyro    : " + gyroPayload);
+                                Log.i(TAG, "Simulator publish Magnet  : " + magnetPayload);
 
-                /*
-                 * Publish to MQTT.
-                 *
-                 * - These calls go to MqttHandler.publish(...), which starts
-                 *   its own background threads for the actual network I/O.
-                 * - retained = false → broker does NOT store the last value.
-                 *   We want a pure real-time stream here.
-                 */
-                mqttHandler.publish("Sensor/Bewegung", bewegungPayload, false);
-                mqttHandler.publish("Sensor/Gyro", gyroPayload, false);
-                mqttHandler.publish("Sensor/Magnet", magnetPayload, false);
+                                /*
+                                 * Publish to MQTT.
+                                 *
+                                 * - These calls go to MqttHandler.publish(...), which starts
+                                 *   its own background threads for the actual network I/O.
+                                 * - retained = false → broker does NOT store the last value.
+                                 *   We want a pure real-time stream here.
+                                 */
+                                mqttHandler.publish("Sensor/Bewegung", bewegungPayload, false);
+                                mqttHandler.publish("Sensor/Gyro", gyroPayload, false);
+                                mqttHandler.publish("Sensor/Magnet", magnetPayload, false);
 
                             } catch (Exception e) {
                                 Log.e(TAG, "Simulator error: " + e.getMessage(), e);

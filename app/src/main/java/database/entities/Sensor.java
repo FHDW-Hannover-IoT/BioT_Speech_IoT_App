@@ -10,7 +10,16 @@ public class Sensor {
 
     public String sensorName;
 
-    public String getSensorName(){return sensorName;}
-    public int getSensorID(){return sensorID;}
-    public Sensor setSensorName(String name){sensorName = name; return this;}
+    public String getSensorName() {
+        return sensorName;
+    }
+
+    public int getSensorID() {
+        return sensorID;
+    }
+
+    public Sensor setSensorName(String name) {
+        sensorName = name;
+        return this;
+    }
 }

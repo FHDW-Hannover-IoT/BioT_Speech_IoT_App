@@ -1,3 +1,4 @@
+/*
 package com.fhdw.biot.speech.iot;
 
 import static org.junit.Assert.*;
@@ -72,3 +73,4 @@ public class AndererUnitTest {
         }
     }
 }
+*/

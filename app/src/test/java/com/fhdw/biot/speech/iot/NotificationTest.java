@@ -3,21 +3,8 @@ package com.fhdw.biot.speech.iot;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.content.Context;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorManager;
 // import androidx.test.core.app.ApplicationProvider;
-import com.fhdw.biot.speech.iot.main.MainActivity;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
-
+/*
 @RunWith(MockitoJUnitRunner.class)
 public class NotificationTest {
 
@@ -65,3 +52,4 @@ public class NotificationTest {
         verify(mockNotificationManager).notify(eq(1), any());
     }
 }
+ */

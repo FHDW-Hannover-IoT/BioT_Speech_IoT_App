@@ -14,12 +14,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.main.MainActivity;
+import database.DB;
+import database.entities.Sensor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-
-import database.DB;
-import database.entities.Sensor;
 
 /**
  * NewEreignisActivity -------------------- Screen where the user can define *event rules*
@@ -113,20 +112,23 @@ public class NewEreignisActivity extends AppCompatActivity {
     @SuppressLint("NotifyDataSetChanged")
     private List<Sensor> loadAvailableSensors() {
         AtomicReference<List<Sensor>> allEventsList = new AtomicReference<>();
-            DB.databaseWriteExecutor.execute(() -> {
-                allEventsList.set(DB.getDatabase(getApplicationContext())
-                        .sensorDao()
-                        .getAllKnownSensors());
+        DB.databaseWriteExecutor.execute(
+                () -> {
+                    allEventsList.set(
+                            DB.getDatabase(getApplicationContext())
+                                    .sensorDao()
+                                    .getAllKnownSensors());
 
-            runOnUiThread(() -> {
-                if (allEventsList.get() == null) {
-                    Log.e("ERROR", "Event list returned null!");
-                    return;
-                }
+                    runOnUiThread(
+                            () -> {
+                                if (allEventsList.get() == null) {
+                                    Log.e("ERROR", "Event list returned null!");
+                                    return;
+                                }
 
-                adapter.notifyDataSetChanged();
-            });
-        });
+                                adapter.notifyDataSetChanged();
+                            });
+                });
         return allEventsList.get();
     }
 }
