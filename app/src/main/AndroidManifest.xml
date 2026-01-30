@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application
         android:allowBackup="true"
@@ -12,7 +13,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.BiotSpeechIoT">
         <activity
-            android:name=".MainActivity"
+            android:name=".main.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -20,6 +21,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".sensor.AccelActivity" />
+        <activity android:name=".sensor.GyroActivity" />
+        <activity android:name=".sensor.MagnetActivity" />
+        <activity android:name=".events.EreignisActivity" />
+        <activity android:name=".graph.MainGraphActivity" />
+        <activity android:name=".events.NewEreignisActivity" />
+
     </application>
 
 </manifest>

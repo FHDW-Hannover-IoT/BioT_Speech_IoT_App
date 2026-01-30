@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">BiotSpeechIoT</string>
+    <string name="beschleunigung_x">X: %1$.2f</string>
+    <string name="beschleunigung_y">Y: %1$.2f</string>
+    <string name="beschleunigung_z">Z: %1$.2f</string>
+    <string name="gyro_x">X: %1$.2f</string>
+    <string name="gyro_y">Y: %1$.2f</string>
+    <string name="gyro_z">Z: %1$.2f</string>
+    <string name="magnet_x">X: %1$.2f</string>
+    <string name="magnet_y">Y: %1$.2f</string>
+    <string name="magnet_z">Z: %1$.2f</string>
+    <string name="ereignisse_title">Ereignisse</string>
 </resources>

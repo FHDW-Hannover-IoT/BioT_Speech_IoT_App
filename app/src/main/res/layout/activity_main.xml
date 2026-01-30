@@ -1,19 +1,247 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:id="@+id/main"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@color/background"
+        tools:context=".main.MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:background="@color/header">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <TextView
+            android:id="@+id/headerText"
+            android:layout_width="0dp"
+            android:layout_weight="30"
+            android:layout_height="80dp"
+            android:background="@color/header"
+            android:gravity="center_vertical|center_horizontal"
+            android:paddingStart="40dp"
+            android:text="Sensordaten"
+            android:textColor="@color/text"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/notification_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:src="@drawable/outline_circle_notifications_24"
+            android:background="@color/header"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            android:paddingBottom="15dp"
+            android:color="@color/text"/>
+    </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/contentArea"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    android:id="@+id/accelTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Beschleunigungssensor"
+                    android:textColor="@color/text"
+                    android:textStyle="bold"
+                    android:textSize="20sp"
+                    android:paddingBottom="4dp" />
+
+                <TextView
+                    android:id="@+id/accelXValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/beschleunigung_x"
+                    android:textColor="@color/highlight"
+                    android:layout_gravity="center"
+                    android:textSize="28sp" />
+
+                <TextView
+                    android:id="@+id/accelYValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/beschleunigung_y"
+                    android:textColor="@color/highlight"
+                    android:layout_gravity="center"
+                    android:textSize="28sp" />
+
+                <TextView
+                    android:id="@+id/accelZValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/beschleunigung_z"
+                    android:textColor="@color/highlight"
+                    android:layout_gravity="center"
+                    android:textSize="28sp" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/button" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    android:id="@+id/gyroTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Gyroskop"
+                    android:textColor="@color/text"
+                    android:textStyle="bold"
+                    android:textSize="20sp"
+                    android:paddingBottom="4dp" />
+
+                <TextView
+                    android:id="@+id/gyroXValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/gyro_x"
+                    android:textColor="@color/highlight"
+                    android:layout_gravity="center"
+                    android:textSize="28sp" />
+
+                <TextView
+                    android:id="@+id/gyroYValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/gyro_y"
+                    android:textColor="@color/highlight"
+                    android:layout_gravity="center"
+                    android:textSize="28sp" />
+
+                <TextView
+                    android:id="@+id/gyroZValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/gyro_z"
+                    android:textColor="@color/highlight"
+                    android:layout_gravity="center"
+                    android:textSize="28sp" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/button" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    android:id="@+id/magTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Magnetfeldsensor"
+                    android:textColor="@color/text"
+                    android:textStyle="bold"
+                    android:textSize="20sp"
+                    android:paddingBottom="4dp" />
+
+                <TextView
+                    android:id="@+id/magXValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/magnet_x"
+                    android:textColor="@color/highlight"
+                    android:layout_gravity="center"
+                    android:textSize="28sp" />
+
+                <TextView
+                    android:id="@+id/magYValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/magnet_y"
+                    android:textColor="@color/highlight"
+                    android:layout_gravity="center"
+                    android:textSize="28sp" />
+
+                <TextView
+                    android:id="@+id/magZValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/magnet_z"
+                    android:textColor="@color/highlight"
+                    android:layout_gravity="center"
+                    android:textSize="28sp" />
+            </LinearLayout>
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Zur Grapenansicht"
+                android:layout_marginTop="30dp"
+                android:backgroundTint="@color/button"
+                android:textColor="@color/background"
+                android:id="@+id/graphenansicht"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/footerBar"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:background="@color/header">
+
+            <Button
+                android:id="@+id/btnAccel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Accel"
+                android:textColor="@color/background"
+                android:layout_margin="4dp"
+                android:backgroundTint="@color/button"
+                android:textSize="15sp" />
+
+            <Button
+                android:id="@+id/btnGyro"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Gyroskop"
+                android:textColor="@color/background"
+                android:layout_margin="4dp"
+                android:backgroundTint="@color/button"
+                android:textSize="15sp"/>
+
+            <Button
+                android:id="@+id/btnMagnet"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Magnetfeld"
+                android:textColor="@color/background"
+                android:layout_margin="4dp"
+                android:backgroundTint="@color/button"
+                android:textSize="15sp"/>
+        </LinearLayout>
+    </LinearLayout>

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:id="@+id/ereignisse"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/background"
+    tools:context=".main.MainActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/header">
+
+        <ImageButton
+            android:id="@+id/home_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:src="@drawable/baseline_home_24"
+            android:contentDescription="Zur Startseite"
+            android:background="@color/header"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="16dp"
+            android:paddingBottom="15dp"
+            android:color="@color/text"/>
+
+        <TextView
+            android:id="@+id/headerText"
+            android:layout_width="0dp"
+            android:layout_weight="30"
+            android:layout_height="80dp"
+            android:background="@color/header"
+            android:gravity="center_vertical|center_horizontal"
+            android:padding="17dp"
+            android:text="@string/ereignisse_title"
+            android:textColor="@color/text"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:layout_width="24dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:contentDescription="Zur Startseite"
+            android:background="@color/header"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            android:paddingBottom="15dp"
+            android:color="@color/text"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/sort_header_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:layout_marginBottom="5dp"
+        android:layout_marginTop="5dp"
+        android:background="@color/button"
+        android:elevation="2dp">
+
+        <TextView
+            android:id="@+id/btn_sort_type"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="TYP"
+            android:textColor="@color/background"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:padding="4dp"
+            android:background="?attr/selectableItemBackground"/>
+
+        <TextView
+            android:id="@+id/btn_sort_sensor"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="SENSOR"
+            android:textColor="@color/background"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:gravity="start"
+            android:padding="4dp"
+            android:background="?attr/selectableItemBackground"/>
+
+        <TextView
+            android:id="@+id/btn_sort_value"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="WERT"
+            android:textColor="@color/background"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:padding="4dp"
+            android:background="?attr/selectableItemBackground"/>
+
+        <TextView
+            android:id="@+id/btn_sort_timestamp"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="ZEIT"
+            android:textColor="@color/background"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:padding="4dp"
+            android:background="?attr/selectableItemBackground"/>
+
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/my_table_recyclerview"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
+    <ImageButton
+        android:id="@+id/new_event"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:src="@drawable/outline_add_circle_24"
+        android:contentDescription="Zur Startseite"
+        android:background="@color/background"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:paddingBottom="16dp"
+        android:color="@color/text"/>
+</LinearLayout>

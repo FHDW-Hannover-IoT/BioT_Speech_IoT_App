@@ -8,6 +8,11 @@ material = "1.13.0"
 activity = "1.10.0"
 constraintlayout = "2.2.1"
 spotless = "8.0.0"
+roomRuntime = "2.5.1"
+roomCompiler = "2.5.1"
+roomKtx = "2.5.1"
+firebaseFirestore = "26.0.2"
+mockitoCore = "5.18.0"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -17,6 +22,11 @@ appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "a
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "roomRuntime" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomCompiler" }
+room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
+firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore", version.ref = "firebaseFirestore" }
+mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockitoCore" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

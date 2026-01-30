@@ -1,5 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
+    id("org.jetbrains.kotlin.android") version "1.9.22"
+    id("com.google.devtools.ksp") version "1.9.22-1.0.17"
+
 }
 
 android {
@@ -8,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId "com.fhdw.biot.speech.iot"
-        minSdk 34
+        minSdk 29
         targetSdk 35
         versionCode 1
         versionName "1.0"
@@ -53,7 +56,15 @@ dependencies {
     implementation libs.material
     implementation libs.activity
     implementation libs.constraintlayout
+    implementation libs.room.runtime
+    implementation libs.room.ktx
+    implementation libs.firebase.firestore
+    implementation libs.mockito.core
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
+    implementation "org.eclipse.paho:org.eclipse.paho.mqttv5.client:1.2.5"
+    implementation "org.eclipse.paho:org.eclipse.paho.android.service:1.1.1"
+    implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
+    annotationProcessor libs.room.compiler
 }
