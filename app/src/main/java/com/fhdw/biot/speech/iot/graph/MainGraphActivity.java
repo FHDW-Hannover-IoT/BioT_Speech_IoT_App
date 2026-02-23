@@ -3,6 +3,8 @@ package com.fhdw.biot.speech.iot.graph;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.Button;
 import android.widget.CheckBox;
 import androidx.activity.EdgeToEdge;
@@ -84,6 +86,10 @@ public class MainGraphActivity extends BaseChartActivity {
     private Button btnFilterLast10Min;
 
     private long startTime = 0; // initial timestamp for axis formatting (seconds)
+
+    private Handler slidingWindowHandler = new Handler(Looper.getMainLooper());
+    private Runnable slidingWindowRunnable;
+    private boolean isTenMinuteFilterActive = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -249,6 +255,7 @@ public class MainGraphActivity extends BaseChartActivity {
     private void setupToDatePickers() {
         DatePickerHandler.OnDateSelectedListener listener =
                 cal -> {
+                    stopSlidingWindow();
                     dateToCalendar = cal;
                     updateChartsWithDateFilter();
                 };
@@ -370,19 +377,38 @@ public class MainGraphActivity extends BaseChartActivity {
             box.setOnCheckedChangeListener((button, isChecked) -> updateAccelChart());
     }
 
+    /**
+     * Convenience filter: sets the date range to "now minus 10 minutes" to "now", refreshes the
+     * charts immediately and updates it every 5 seconds.
+     */
     private void filterLastTenMinutes() {
-        long now = System.currentTimeMillis();
-        long tenMinutesAgo = now - (10 * 60 * 1000);
+        isTenMinuteFilterActive = true;
+        slidingWindowHandler.removeCallbacks(slidingWindowRunnable);
+        slidingWindowRunnable =
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        if (!isTenMinuteFilterActive) return;
 
-        dateToCalendar = Calendar.getInstance();
-        dateToCalendar.setTimeInMillis(now);
+                        long now = System.currentTimeMillis();
+                        long tenMinutesAgo = now - (10 * 60 * 1000);
 
-        dateFromCalendar = Calendar.getInstance();
-        dateFromCalendar.setTimeInMillis(tenMinutesAgo);
+                        dateToCalendar.setTimeInMillis(now);
+                        dateFromCalendar.setTimeInMillis(tenMinutesAgo);
+                        syncDateButtonTexts();
+                        updateChartsWithDateFilter();
+                        slidingWindowHandler.postDelayed(this, 5000);
+                    }
+                };
 
-        // Reflect the new range in the button labels.
-        syncDateButtonTexts();
-        updateChartsWithDateFilter();
+        slidingWindowHandler.post(slidingWindowRunnable);
+    }
+
+    private void stopSlidingWindow() {
+        isTenMinuteFilterActive = false;
+        if (slidingWindowHandler != null && slidingWindowRunnable != null) {
+            slidingWindowHandler.removeCallbacks(slidingWindowRunnable);
+        }
     }
 
     /** Updates all six date filter buttons to match the current from/to calendars. */
@@ -489,12 +515,16 @@ public class MainGraphActivity extends BaseChartActivity {
 
         lineDataAccelx = new LineDataSet(xs, "X-Achse");
         lineDataAccelx.setColor(Color.CYAN);
+        lineDataAccelx.setDrawCircles(false);
         lineDataAccely = new LineDataSet(ys, "Y-Achse");
         lineDataAccely.setColor(Color.WHITE);
+        lineDataAccely.setDrawCircles(false);
         lineDataAccelz = new LineDataSet(zs, "Z-Achse");
         lineDataAccelz.setColor(Color.GREEN);
+        lineDataAccelz.setDrawCircles(false);
         lineDataAccelTotal = new LineDataSet(totals, "Summe");
         lineDataAccelTotal.setColor(Color.RED);
+        lineDataAccelTotal.setDrawCircles(false);
     }
 
     private void initializeGyroDataSets(List<GyroData> list) {
@@ -522,12 +552,16 @@ public class MainGraphActivity extends BaseChartActivity {
 
         lineDataGyrox = new LineDataSet(xs, "X-Achse");
         lineDataGyrox.setColor(Color.CYAN);
+        lineDataGyrox.setDrawCircles(false);
         lineDataGyroy = new LineDataSet(ys, "Y-Achse");
         lineDataGyroy.setColor(Color.WHITE);
+        lineDataGyroy.setDrawCircles(false);
         lineDataGyroz = new LineDataSet(zs, "Z-Achse");
         lineDataGyroz.setColor(Color.GREEN);
+        lineDataGyroz.setDrawCircles(false);
         lineDataGyroTotal = new LineDataSet(totals, "Summe");
         lineDataGyroTotal.setColor(Color.RED);
+        lineDataGyroTotal.setDrawCircles(false);
     }
 
     private void initializeMagDataSets(List<MagnetData> list) {
@@ -555,12 +589,16 @@ public class MainGraphActivity extends BaseChartActivity {
 
         lineDataMagx = new LineDataSet(xs, "X-Achse");
         lineDataMagx.setColor(Color.CYAN);
+        lineDataMagx.setDrawCircles(false);
         lineDataMagy = new LineDataSet(ys, "Y-Achse");
         lineDataMagy.setColor(Color.WHITE);
+        lineDataMagy.setDrawCircles(false);
         lineDataMagz = new LineDataSet(zs, "Z-Achse");
         lineDataMagz.setColor(Color.GREEN);
+        lineDataMagz.setDrawCircles(false);
         lineDataMagTotal = new LineDataSet(totals, "Summe");
         lineDataMagTotal.setColor(Color.RED);
+        lineDataMagTotal.setDrawCircles(false);
     }
 
     // =====================================================================
@@ -624,5 +662,11 @@ public class MainGraphActivity extends BaseChartActivity {
                 lineChartMag.clear();
             }
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopSlidingWindow();
     }
 }

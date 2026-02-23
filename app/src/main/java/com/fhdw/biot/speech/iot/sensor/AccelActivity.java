@@ -3,6 +3,8 @@ package com.fhdw.biot.speech.iot.sensor;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.Button;
 import android.widget.ImageButton;
 import androidx.core.graphics.Insets;
@@ -51,6 +53,10 @@ public class AccelActivity extends BaseChartActivity {
     private Button btnFilterLast10Min;
 
     private LiveData<List<AccelData>> currentLiveData;
+
+    private Handler slidingWindowHandler = new Handler(Looper.getMainLooper());
+    private Runnable slidingWindowRunnable;
+    private boolean isTenMinuteFilterActive = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -236,6 +242,7 @@ public class AccelActivity extends BaseChartActivity {
         DatePickerHandler.createForButton(
                 xBisButton,
                 calendar -> {
+                    stopSlidingWindow();
                     dateToCalendar = calendar;
                     updateChartsWithDateFilter();
                 },
@@ -244,6 +251,7 @@ public class AccelActivity extends BaseChartActivity {
         DatePickerHandler.createForButton(
                 yBisButton,
                 calendar -> {
+                    stopSlidingWindow();
                     dateToCalendar = calendar;
                     updateChartsWithDateFilter();
                 },
@@ -252,6 +260,7 @@ public class AccelActivity extends BaseChartActivity {
         DatePickerHandler.createForButton(
                 zBisButton,
                 calendar -> {
+                    stopSlidingWindow();
                     dateToCalendar = calendar;
                     updateChartsWithDateFilter();
                 },
@@ -264,22 +273,37 @@ public class AccelActivity extends BaseChartActivity {
     }
 
     /**
-     * Convenience filter: sets the date range to "now minus 10 minutes" to "now" and refreshes the
-     * charts immediately.
+     * Convenience filter: sets the date range to "now minus 10 minutes" to "now", refreshes the
+     * charts immediately and updates it every 5 seconds.
      */
     private void filterLastTenMinutes() {
-        long now = System.currentTimeMillis();
-        long tenMinutesAgo = now - (10 * 60 * 1000);
+        isTenMinuteFilterActive = true;
+        slidingWindowHandler.removeCallbacks(slidingWindowRunnable);
+        slidingWindowRunnable =
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        if (!isTenMinuteFilterActive) return;
 
-        dateToCalendar = Calendar.getInstance();
-        dateToCalendar.setTimeInMillis(now);
+                        long now = System.currentTimeMillis();
+                        long tenMinutesAgo = now - (10 * 60 * 1000);
 
-        dateFromCalendar = Calendar.getInstance();
-        dateFromCalendar.setTimeInMillis(tenMinutesAgo);
+                        dateToCalendar.setTimeInMillis(now);
+                        dateFromCalendar.setTimeInMillis(tenMinutesAgo);
+                        syncDateButtonTexts();
+                        updateChartsWithDateFilter();
+                        slidingWindowHandler.postDelayed(this, 5000);
+                    }
+                };
 
-        // Reflect the new range in the button labels.
-        syncDateButtonTexts();
-        updateChartsWithDateFilter();
+        slidingWindowHandler.post(slidingWindowRunnable);
+    }
+
+    private void stopSlidingWindow() {
+        isTenMinuteFilterActive = false;
+        if (slidingWindowHandler != null && slidingWindowRunnable != null) {
+            slidingWindowHandler.removeCallbacks(slidingWindowRunnable);
+        }
     }
 
     /** Updates all six date filter buttons to match the current from/to calendars. */
@@ -395,5 +419,11 @@ public class AccelActivity extends BaseChartActivity {
         setData(lineChartAccelX, entriesX, "X-Achse", Color.WHITE);
         setData(lineChartAccelY, entriesY, "Y-Achse", Color.WHITE);
         setData(lineChartAccelZ, entriesZ, "Z-Achse", Color.WHITE);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopSlidingWindow();
     }
 }

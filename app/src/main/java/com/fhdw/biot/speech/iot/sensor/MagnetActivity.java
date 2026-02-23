@@ -3,6 +3,8 @@ package com.fhdw.biot.speech.iot.sensor;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.Button;
 import android.widget.ImageButton;
 import androidx.core.graphics.Insets;
@@ -20,6 +22,7 @@ import database.entities.MagnetData;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * MagnetActivity -------------- Screen that visualizes magnetometer sensor data in three separate
@@ -42,6 +45,13 @@ public class MagnetActivity extends BaseChartActivity {
 
     /** Buttons used to show / pick "from" and "to" dates for each axis. */
     private Button xVonButton, xBisButton, yVonButton, yBisButton, zVonButton, zBisButton;
+
+    /** Quick filter button: show only last 10 minutes. */
+    private Button btnFilterLast10Min;
+
+    private Handler slidingWindowHandler = new Handler(Looper.getMainLooper());
+    private Runnable slidingWindowRunnable;
+    private boolean isTenMinuteFilterActive = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -113,6 +123,10 @@ public class MagnetActivity extends BaseChartActivity {
 
         zBisButton = findViewById(R.id.button_z_bis);
         zVonButton = findViewById(R.id.button_z_von);
+
+        // Quick filter: show last 10 minutes worth of accel data.
+        btnFilterLast10Min = findViewById(R.id.btn_x_10min);
+        btnFilterLast10Min.setOnClickListener(view -> filterLastTenMinutes());
 
         // --------------------------------------------------------------------
         // Chart references
@@ -268,6 +282,7 @@ public class MagnetActivity extends BaseChartActivity {
         DatePickerHandler.createForButton(
                 xBisButton,
                 calendar -> {
+                    stopSlidingWindow();
                     dateToCalendar = calendar;
                     updateChartsWithDateFilter();
                 },
@@ -276,6 +291,7 @@ public class MagnetActivity extends BaseChartActivity {
         DatePickerHandler.createForButton(
                 yBisButton,
                 calendar -> {
+                    stopSlidingWindow();
                     dateToCalendar = calendar;
                     updateChartsWithDateFilter();
                 },
@@ -284,6 +300,7 @@ public class MagnetActivity extends BaseChartActivity {
         DatePickerHandler.createForButton(
                 zBisButton,
                 calendar -> {
+                    stopSlidingWindow();
                     dateToCalendar = calendar;
                     updateChartsWithDateFilter();
                 },
@@ -293,6 +310,52 @@ public class MagnetActivity extends BaseChartActivity {
         xBisButton.setText(formatCalendarDate(dateToCalendar));
         yBisButton.setText(formatCalendarDate(dateToCalendar));
         zBisButton.setText(formatCalendarDate(dateToCalendar));
+    }
+
+    /**
+     * Convenience filter: sets the date range to "now minus 10 minutes" to "now", refreshes the
+     * charts immediately and updates it every 5 seconds.
+     */
+    private void filterLastTenMinutes() {
+        isTenMinuteFilterActive = true;
+        slidingWindowHandler.removeCallbacks(slidingWindowRunnable);
+        slidingWindowRunnable =
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        if (!isTenMinuteFilterActive) return;
+
+                        long now = System.currentTimeMillis();
+                        long tenMinutesAgo = now - (10 * 60 * 1000);
+
+                        dateToCalendar.setTimeInMillis(now);
+                        dateFromCalendar.setTimeInMillis(tenMinutesAgo);
+                        syncDateButtonTexts();
+                        updateChartsWithDateFilter();
+                        slidingWindowHandler.postDelayed(this, 5000);
+                    }
+                };
+
+        slidingWindowHandler.post(slidingWindowRunnable);
+    }
+
+    private void stopSlidingWindow() {
+        isTenMinuteFilterActive = false;
+        if (slidingWindowHandler != null && slidingWindowRunnable != null) {
+            slidingWindowHandler.removeCallbacks(slidingWindowRunnable);
+        }
+    }
+
+    /** Updates all six date filter buttons to match the current from/to calendars. */
+    private void syncDateButtonTexts() {
+        xVonButton.setText(makeDateTimeString(dateFromCalendar));
+        yVonButton.setText(makeDateTimeString(dateFromCalendar));
+        zVonButton.setText(makeDateTimeString(dateFromCalendar));
+
+        // "Bis"-Buttons
+        xBisButton.setText(makeDateTimeString(dateToCalendar));
+        yBisButton.setText(makeDateTimeString(dateToCalendar));
+        zBisButton.setText(makeDateTimeString(dateToCalendar));
     }
 
     // ------------------------------------------------------------------------
@@ -353,6 +416,16 @@ public class MagnetActivity extends BaseChartActivity {
                 calendar.get(Calendar.YEAR));
     }
 
+    /** Formats a Calendar into "dd.MM.yyyy" (no time) – used for the quick-filter labels. */
+    private String makeDateTimeString(Calendar calendar) {
+        return String.format(
+                Locale.GERMAN,
+                "%02d.%02d.%04d",
+                calendar.get(Calendar.DAY_OF_MONTH),
+                calendar.get(Calendar.MONTH) + 1,
+                calendar.get(Calendar.YEAR));
+    }
+
     // ------------------------------------------------------------------------
     // Data → chart mapping
     // ------------------------------------------------------------------------
@@ -388,5 +461,11 @@ public class MagnetActivity extends BaseChartActivity {
         setData(lineChartMagnetX, entriesX, "X-Achse", Color.WHITE);
         setData(lineChartMagnetY, entriesY, "Y-Achse", Color.WHITE);
         setData(lineChartMagnetZ, entriesZ, "Z-Achse", Color.WHITE);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopSlidingWindow();
     }
 }

@@ -114,6 +114,20 @@
                 android:id="@+id/resetX"
                 />
 
+            <Button
+                android:layout_width="50dp"
+                android:layout_height="30dp"
+                android:text="10 Min"
+                android:textSize="10sp"
+                android:textColor="@color/background"
+                android:backgroundTint="@color/button"
+                android:id="@+id/btn_x_10min"
+                android:layout_marginStart="60dp"
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp"
+                android:paddingBottom="0dp"
+                android:paddingTop="0dp"/>
+
         </LinearLayout>
 
         <com.github.mikephil.charting.charts.LineChart

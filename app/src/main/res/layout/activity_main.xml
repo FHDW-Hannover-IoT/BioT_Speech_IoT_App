@@ -13,6 +13,18 @@
         android:layout_height="wrap_content"
         android:background="@color/header">
 
+        <ImageButton
+            android:id="@+id/settings_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:src="@drawable/outline_settings_24"
+            android:background="@color/header"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="16dp"
+            android:paddingBottom="15dp"
+            android:color="@color/text"/>
+
         <TextView
             android:id="@+id/headerText"
             android:layout_width="0dp"
@@ -20,7 +32,6 @@
             android:layout_height="80dp"
             android:background="@color/header"
             android:gravity="center_vertical|center_horizontal"
-            android:paddingStart="40dp"
             android:text="Sensordaten"
             android:textColor="@color/text"
             android:textSize="28sp"

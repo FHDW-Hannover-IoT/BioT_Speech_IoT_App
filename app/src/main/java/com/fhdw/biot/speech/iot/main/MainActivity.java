@@ -18,6 +18,7 @@ import com.fhdw.biot.speech.iot.mqtt.MqttHandler;
 import com.fhdw.biot.speech.iot.sensor.AccelActivity;
 import com.fhdw.biot.speech.iot.sensor.GyroActivity;
 import com.fhdw.biot.speech.iot.sensor.MagnetActivity;
+import com.fhdw.biot.speech.iot.settings.SettingsActivity;
 import com.fhdw.biot.speech.iot.simulation.SensorDataSimulator;
 import database.DB;
 import database.dao.SensorDao;
@@ -125,6 +126,13 @@ public class MainActivity extends AppCompatActivity {
                         startActivity(
                                 new android.content.Intent(
                                         MainActivity.this, MainGraphActivity.class)));
+
+        ImageButton settingsButton = findViewById(R.id.settings_button);
+        settingsButton.setOnClickListener(
+                view ->
+                        startActivity(
+                                new android.content.Intent(
+                                        MainActivity.this, SettingsActivity.class)));
 
         // ---- bind TextViews -------------------------------------------------
         accelXValue = findViewById(R.id.accelXValue);
