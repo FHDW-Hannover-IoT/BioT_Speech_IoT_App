@@ -44,7 +44,9 @@ public class SettingsActivity extends AppCompatActivity {
 
         SharedPreferences prefs = getSharedPreferences("GraphSettings", MODE_PRIVATE);
 
-        swActive.setChecked(prefs.getBoolean("dp_enabled", false));
+        boolean wasEnabled = prefs.getBoolean("dp_enabled", false);
+        swActive.setChecked(wasEnabled);
+        
         float savedEpsilon = prefs.getFloat("dp_epsilon", 0.5f);
         sbEpsilon.setProgress((int) (savedEpsilon * 20));
         tvEpsilon.setText("Epsilon (Schwellenwert): " + savedEpsilon);
@@ -52,6 +54,12 @@ public class SettingsActivity extends AppCompatActivity {
         swActive.setOnCheckedChangeListener(
                 (buttonView, isChecked) -> {
                     prefs.edit().putBoolean("dp_enabled", isChecked).apply();
+                    
+                    // When user enables algorithm for first time, reset manual flag
+                    // so epsilon gets auto-calculated from next data load
+                    if (isChecked && !wasEnabled) {
+                        prefs.edit().putBoolean("dp_epsilon_manual", false).apply();
+                    }
                 });
 
         sbEpsilon.setOnSeekBarChangeListener(
@@ -60,7 +68,14 @@ public class SettingsActivity extends AppCompatActivity {
                     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                         float val = progress / 20f; // Wandelt 0-100 in 0.0-5.0 um
                         tvEpsilon.setText("Epsilon (Schwellenwert): " + val);
-                        prefs.edit().putFloat("dp_epsilon", val).apply();
+                        
+                        // Only save if user manually moved the slider (fromUser=true)
+                        // Ignore programmatic updates from initialization
+                        if (fromUser) {
+                            prefs.edit().putFloat("dp_epsilon", val).apply();
+                            // Mark that user manually changed epsilon
+                            prefs.edit().putBoolean("dp_epsilon_manual", true).apply();
+                        }
                     }
 
                     @Override
