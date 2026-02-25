@@ -7,29 +7,27 @@ import java.util.List;
 
 /**
  * EpsilonCalculator --------- Utility class for calculating the epsilon value for the
- * Douglas-Peucker algorithm. The epsilon can be either:
- * 1. User-customized (via Settings SeekBar)
+ * Douglas-Peucker algorithm. The epsilon can be either: 1. User-customized (via Settings SeekBar)
  * 2. Dynamically computed based on the average of all graph values (magnitudes of sensor vectors)
  *
  * <p>PURPOSE: The Douglas-Peucker algorithm needs a threshold (epsilon) to determine whether a
  * curve segment is "flat enough" to simplify. Instead of using a fixed value, we compute it based
  * on the actual data distribution. This makes the algorithm adaptive to different sensor scales.
  *
- * <p>STRATEGY: 1. Check if user has customized epsilon in Settings. 2. If yes, use that value.
- * 3. If no, calculate the default from average magnitude.
+ * <p>STRATEGY: 1. Check if user has customized epsilon in Settings. 2. If yes, use that value. 3.
+ * If no, calculate the default from average magnitude.
  */
 public class EpsilonCalculator {
 
     /**
      * Calculate the epsilon value for enabled algorithm.
-     * 
-     * BEHAVIOR:
-     * 1. If user manually changed value → use that value
-     * 2. If first time enabled → calculate automatically from data, save it, use it
-     * 3. If new data with auto mode → keep using previously calculated value
      *
-     * NOTE: This method is only called when the algorithm is ENABLED.
-     * When disabled, MainGraphActivity doesn't call this and uses raw data.
+     * <p>BEHAVIOR: 1. If user manually changed value → use that value 2. If first time enabled →
+     * calculate automatically from data, save it, use it 3. If new data with auto mode → keep using
+     * previously calculated value
+     *
+     * <p>NOTE: This method is only called when the algorithm is ENABLED. When disabled,
+     * MainGraphActivity doesn't call this and uses raw data.
      *
      * @param context Android context (for accessing SharedPreferences).
      * @param dataPoints List of sensor data points (AccelData, GyroData, MagnetData, etc.)
@@ -37,23 +35,24 @@ public class EpsilonCalculator {
      */
     public static float calculateEpsilon(Context context, List<? extends SensorPoint> dataPoints) {
         if (context != null) {
-            SharedPreferences prefs = context.getSharedPreferences("GraphSettings", Context.MODE_PRIVATE);
-            
+            SharedPreferences prefs =
+                    context.getSharedPreferences("GraphSettings", Context.MODE_PRIVATE);
+
             // Check if user manually changed the epsilon value
             boolean isManual = prefs.getBoolean("dp_epsilon_manual", false);
             float savedEpsilon = prefs.getFloat("dp_epsilon", -1.0f);
-            
+
             // If user manually set a value, always use it
             if (isManual && savedEpsilon > 0) {
                 return savedEpsilon;
             }
-            
+
             // If not manual, calculate fresh and save it
             float calculatedEpsilon = calculateDefaultEpsilon(dataPoints);
             prefs.edit().putFloat("dp_epsilon", calculatedEpsilon).apply();
             return calculatedEpsilon;
         }
-        
+
         // Fallback if context is null
         return calculateDefaultEpsilon(dataPoints);
     }
