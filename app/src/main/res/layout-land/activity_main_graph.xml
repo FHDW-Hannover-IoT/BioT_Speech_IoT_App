@@ -13,6 +13,18 @@
         android:layout_height="wrap_content"
         android:background="@color/header">
 
+        <ImageButton
+            android:id="@+id/settings_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:src="@drawable/outline_settings_24"
+            android:background="@color/header"
+            android:layout_marginTop="16dp"
+            android:layout_marginStart="16dp"
+            android:paddingBottom="15dp"
+            android:color="@color/text"/>
+
         <TextView
             android:id="@+id/headerText"
             android:layout_width="0dp"
@@ -20,7 +32,6 @@
             android:layout_height="80dp"
             android:background="@color/header"
             android:gravity="center_vertical|center_horizontal"
-            android:paddingStart="40dp"
             android:text="Sensordaten"
             android:textColor="@color/text"
             android:textSize="28sp"
@@ -111,7 +122,7 @@
                     android:text="10 Min"
                     android:textSize="10sp"
                     android:textColor="@color/background"
-                    android:backgroundTint="@color/button"
+                    android:backgroundTint="@color/header"
                     android:id="@+id/btn_x_10min"
                     android:layout_marginStart="360dp"
                     android:paddingStart="0dp"
@@ -137,6 +148,7 @@
                     android:layout_height="wrap_content"
                     android:text="x-Achse"
                     android:textColor="@color/text"
+                    android:checked="true"
                     android:id="@+id/AccelxCheck"/>
 
                 <CheckBox
@@ -144,6 +156,7 @@
                     android:layout_height="wrap_content"
                     android:text="y-Achse"
                     android:textColor="@color/text"
+                    android:checked="true"
                     android:id="@+id/AccelyCheck"/>
 
                 <CheckBox
@@ -151,6 +164,7 @@
                     android:layout_height="wrap_content"
                     android:text="z-Achse"
                     android:textColor="@color/text"
+                    android:checked="true"
                     android:id="@+id/AccelzCheck"/>
 
                 <CheckBox
@@ -158,65 +172,11 @@
                     android:layout_height="wrap_content"
                     android:text="Summe"
                     android:textColor="@color/text"
+                    android:checked="true"
                     android:id="@+id/AccelSumCheck"/>
 
             </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Von: "
-                    android:textColor="@color/text"/>
-
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="30dp"
-                    android:text=""
-                    android:textSize="10dp"
-                    android:textColor="@color/background"
-                    android:backgroundTint="@color/button"
-                    android:id="@+id/button_Gyro_von"
-                    android:paddingStart="0dp"
-                    android:paddingEnd="0dp"
-                    android:paddingBottom="0dp"
-                    android:paddingTop="0dp"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Bis: "
-                    android:textColor="@color/text"
-                    android:layout_marginStart="10dp"/>
-
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="30dp"
-                    android:text=""
-                    android:textSize="10dp"
-                    android:textColor="@color/background"
-                    android:backgroundTint="@color/button"
-                    android:id="@+id/button_Gyro_bis"
-                    android:paddingStart="0dp"
-                    android:paddingEnd="0dp"
-                    android:paddingBottom="0dp"
-                    android:paddingTop="0dp"/>
-
-                <ImageButton
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:src="@drawable/outline_reset_focus_24"
-                    android:background="@color/background"
-                    android:layout_marginStart="10dp"
-                    android:paddingTop="3dp"
-                    android:id="@+id/resetGyro"
-                    />
-
-            </LinearLayout>
 
             <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/lineChartGyro"
@@ -234,6 +194,7 @@
                     android:layout_height="wrap_content"
                     android:text="x-Achse"
                     android:textColor="@color/text"
+                    android:checked="true"
                     android:id="@+id/GyroxCheck"/>
 
                 <CheckBox
@@ -241,6 +202,7 @@
                     android:layout_height="wrap_content"
                     android:text="y-Achse"
                     android:textColor="@color/text"
+                    android:checked="true"
                     android:id="@+id/GyroyCheck"/>
 
                 <CheckBox
@@ -248,6 +210,7 @@
                     android:layout_height="wrap_content"
                     android:text="z-Achse"
                     android:textColor="@color/text"
+                    android:checked="true"
                     android:id="@+id/GyrozCheck"/>
 
                 <CheckBox
@@ -255,63 +218,8 @@
                     android:layout_height="wrap_content"
                     android:text="Summe"
                     android:textColor="@color/text"
+                    android:checked="true"
                     android:id="@+id/GyroSumCheck"/>
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Von: "
-                    android:textColor="@color/text"/>
-
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="30dp"
-                    android:text=""
-                    android:textSize="10dp"
-                    android:textColor="@color/background"
-                    android:backgroundTint="@color/button"
-                    android:id="@+id/button_Mag_von"
-                    android:paddingStart="0dp"
-                    android:paddingEnd="0dp"
-                    android:paddingBottom="0dp"
-                    android:paddingTop="0dp"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Bis: "
-                    android:textColor="@color/text"
-                    android:layout_marginStart="10dp"/>
-
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="30dp"
-                    android:text=""
-                    android:textSize="10dp"
-                    android:textColor="@color/background"
-                    android:backgroundTint="@color/button"
-                    android:id="@+id/button_Mag_bis"
-                    android:paddingStart="0dp"
-                    android:paddingEnd="0dp"
-                    android:paddingBottom="0dp"
-                    android:paddingTop="0dp"/>
-
-                <ImageButton
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:src="@drawable/outline_reset_focus_24"
-                    android:background="@color/background"
-                    android:layout_marginStart="10dp"
-                    android:paddingTop="3dp"
-                    android:id="@+id/resetMagnet"
-                    />
 
             </LinearLayout>
 
@@ -331,6 +239,7 @@
                     android:layout_height="wrap_content"
                     android:text="x-Achse"
                     android:textColor="@color/text"
+                    android:checked="true"
                     android:id="@+id/MagxCheck"/>
 
                 <CheckBox
@@ -338,6 +247,7 @@
                     android:layout_height="wrap_content"
                     android:text="y-Achse"
                     android:textColor="@color/text"
+                    android:checked="true"
                     android:id="@+id/MagyCheck"/>
 
                 <CheckBox
@@ -345,6 +255,7 @@
                     android:layout_height="wrap_content"
                     android:text="z-Achse"
                     android:textColor="@color/text"
+                    android:checked="true"
                     android:id="@+id/MagzCheck"/>
 
                 <CheckBox
@@ -352,6 +263,7 @@
                     android:layout_height="wrap_content"
                     android:text="Summe"
                     android:textColor="@color/text"
+                    android:checked="true"
                     android:id="@+id/MagSumCheck"/>
 
             </LinearLayout>

@@ -3,11 +3,15 @@ package com.fhdw.biot.speech.iot.sensor;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.Button;
 import android.widget.ImageButton;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.LiveData;
 import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.events.EreignisActivity;
 import com.fhdw.biot.speech.iot.graph.BaseChartActivity;
@@ -20,6 +24,7 @@ import database.entities.MagnetData;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * MagnetActivity -------------- Screen that visualizes magnetometer sensor data in three separate
@@ -41,7 +46,18 @@ public class MagnetActivity extends BaseChartActivity {
     private Calendar dateToCalendar;
 
     /** Buttons used to show / pick "from" and "to" dates for each axis. */
-    private Button xVonButton, xBisButton, yVonButton, yBisButton, zVonButton, zBisButton;
+    private Button xVonButton, xBisButton;
+
+    /** Quick filter button: show only last 10 minutes. */
+    private Button btnFilterLast10Min;
+
+    private LiveData<List<MagnetData>> currentLiveData;
+
+    private Handler slidingWindowHandler = new Handler(Looper.getMainLooper());
+    private Runnable slidingWindowRunnable;
+    private boolean isTenMinuteFilterActive = false;
+
+    private boolean isStartPointFixed = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,11 +124,9 @@ public class MagnetActivity extends BaseChartActivity {
         xBisButton = findViewById(R.id.button_x_bis);
         xVonButton = findViewById(R.id.button_x_von);
 
-        yBisButton = findViewById(R.id.button_y_bis);
-        yVonButton = findViewById(R.id.button_y_von);
-
-        zBisButton = findViewById(R.id.button_z_bis);
-        zVonButton = findViewById(R.id.button_z_von);
+        // Quick filter: show last 10 minutes worth of accel data.
+        btnFilterLast10Min = findViewById(R.id.btn_x_10min);
+        btnFilterLast10Min.setOnClickListener(view -> toggleTenMinutesFilter());
 
         // --------------------------------------------------------------------
         // Chart references
@@ -130,26 +144,10 @@ public class MagnetActivity extends BaseChartActivity {
         resetAccel.setOnClickListener(
                 view -> {
                     lineChartMagnetX.fitScreen();
+                    lineChartMagnetY.fitScreen();
+                    lineChartMagnetZ.fitScreen();
                     xBisButton.setText("");
                     xVonButton.setText("");
-                });
-
-        // Reset Y-axis chart zoom/pan and clear corresponding date labels.
-        ImageButton resetGyro = findViewById(R.id.resetY);
-        resetGyro.setOnClickListener(
-                view -> {
-                    lineChartMagnetY.fitScreen();
-                    yBisButton.setText("");
-                    zVonButton.setText("");
-                });
-
-        // Reset Z-axis chart zoom/pan and clear its date labels.
-        ImageButton resetMagnet = findViewById(R.id.resetZ);
-        resetMagnet.setOnClickListener(
-                view -> {
-                    lineChartMagnetZ.fitScreen();
-                    zBisButton.setText("");
-                    zVonButton.setText("");
                 });
 
         // --------------------------------------------------------------------
@@ -163,30 +161,6 @@ public class MagnetActivity extends BaseChartActivity {
 
         // Configure date pickers for "from" and "to" range.
         setupDatePickers();
-
-        // --------------------------------------------------------------------
-        // LiveData observation: keep charts synced with DB content
-        // --------------------------------------------------------------------
-        // Observes all MagnetData rows in the database. Whenever the underlying
-        // table changes, Room triggers this observer and the charts are
-        // updated accordingly.
-        DB.getDatabase(getApplicationContext())
-                .sensorDao()
-                .getAllMagnetData()
-                .observe(
-                        this,
-                        magnetDataList -> {
-                            if (magnetDataList != null && !magnetDataList.isEmpty()) {
-                                // Use the first timestamp as reference for "elapsed time".
-                                long firstTimestamp = magnetDataList.get(0).timestamp;
-
-                                setupChart(lineChartMagnetX, "X-Achse", firstTimestamp);
-                                setupChart(lineChartMagnetY, "Y-Achse", firstTimestamp);
-                                setupChart(lineChartMagnetZ, "Z-Achse", firstTimestamp);
-
-                                displayDataInCharts(magnetDataList);
-                            }
-                        });
     }
 
     // ------------------------------------------------------------------------
@@ -200,27 +174,35 @@ public class MagnetActivity extends BaseChartActivity {
      * date initially set to today. - On any date change, the charts are re-filtered.
      */
     private void setupDatePickers() {
-
-        // Start with both ends = now. These will be updated below.
+        // Initialize Calendar objects with "now".
         dateFromCalendar = Calendar.getInstance();
         dateToCalendar = Calendar.getInstance();
 
-        // Fetch the oldest magnetometer timestamp and use it as the initial "from" date.
-        DB.getDatabase(getApplicationContext())
-                .sensorDao()
-                .getOldestMagnetTimestamp()
-                .observe(
-                        this,
-                        oldestTimestamp -> {
-                            if (oldestTimestamp != null && oldestTimestamp > 0) {
-                                dateFromCalendar.setTimeInMillis(oldestTimestamp);
-                                // Set up "von" (from) buttons now that we have a baseline.
-                                setupFromDatePickers(xVonButton, yVonButton, zVonButton);
-                            }
-                        });
+        LiveData<Long> oldestTimestampLiveData =
+                DB.getDatabase(getApplicationContext()).sensorDao().getOldestMagnetTimestamp();
 
-        // "Bis" (to) buttons will use the current date as default.
-        setupToDatePickers(xBisButton, yBisButton, zBisButton);
+        oldestTimestampLiveData.observe(
+                this,
+                new androidx.lifecycle.Observer<Long>() {
+                    @Override
+                    public void onChanged(Long oldestTimestamp) {
+                        if (oldestTimestamp != null && oldestTimestamp > 0) {
+
+                            if (!isTenMinuteFilterActive) {
+                                dateFromCalendar.setTimeInMillis(oldestTimestamp);
+                                syncDateButtonTexts();
+                                updateChartsWithDateFilter();
+                            }
+
+                            oldestTimestampLiveData.removeObserver(this);
+                        }
+                    }
+                });
+
+        isTenMinuteFilterActive = true;
+        isStartPointFixed = false;
+        btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.button));
+        startSlidingWindow();
     }
 
     /**
@@ -229,7 +211,7 @@ public class MagnetActivity extends BaseChartActivity {
      * <p>For each: - opens a calendar dialog, - updates {@link #dateFromCalendar}, - triggers
      * {@link #updateChartsWithDateFilter()}.
      */
-    private void setupFromDatePickers(Button xVonButton, Button yVonButton, Button zVonButton) {
+    private void setupFromDatePickers(Button xVonButton) {
         DatePickerHandler.createForButton(
                 xVonButton,
                 calendar -> {
@@ -238,52 +220,19 @@ public class MagnetActivity extends BaseChartActivity {
                 },
                 MagnetActivity.this);
 
-        DatePickerHandler.createForButton(
-                yVonButton,
-                calendar -> {
-                    dateFromCalendar = calendar;
-                    updateChartsWithDateFilter();
-                },
-                MagnetActivity.this);
-
-        DatePickerHandler.createForButton(
-                zVonButton,
-                calendar -> {
-                    dateFromCalendar = calendar;
-                    updateChartsWithDateFilter();
-                },
-                MagnetActivity.this);
-
         // Show initial "from" date on all axes.
         xVonButton.setText(formatCalendarDate(dateFromCalendar));
-        yVonButton.setText(formatCalendarDate(dateFromCalendar));
-        zVonButton.setText(formatCalendarDate(dateFromCalendar));
     }
 
     /**
      * Attaches DatePickers to the three "bis" buttons and sets their initial text to the current
      * value of {@link #dateToCalendar} (today).
      */
-    private void setupToDatePickers(Button xBisButton, Button yBisButton, Button zBisButton) {
+    private void setupToDatePickers(Button xBisButton) {
         DatePickerHandler.createForButton(
                 xBisButton,
                 calendar -> {
-                    dateToCalendar = calendar;
-                    updateChartsWithDateFilter();
-                },
-                MagnetActivity.this);
-
-        DatePickerHandler.createForButton(
-                yBisButton,
-                calendar -> {
-                    dateToCalendar = calendar;
-                    updateChartsWithDateFilter();
-                },
-                MagnetActivity.this);
-
-        DatePickerHandler.createForButton(
-                zBisButton,
-                calendar -> {
+                    stopSlidingWindow();
                     dateToCalendar = calendar;
                     updateChartsWithDateFilter();
                 },
@@ -291,8 +240,75 @@ public class MagnetActivity extends BaseChartActivity {
 
         // Initial "to" date is today for all axes.
         xBisButton.setText(formatCalendarDate(dateToCalendar));
-        yBisButton.setText(formatCalendarDate(dateToCalendar));
-        zBisButton.setText(formatCalendarDate(dateToCalendar));
+    }
+
+    /**
+     * Convenience filter: sets the date range to "now minus 10 minutes" to "now", refreshes the
+     * charts immediately and updates it every 5 seconds.
+     */
+    private void toggleTenMinutesFilter() {
+        if (!isTenMinuteFilterActive) {
+            isTenMinuteFilterActive = true;
+            isStartPointFixed = false;
+            btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.button));
+            startSlidingWindow();
+
+        } else if (!isStartPointFixed) {
+            isStartPointFixed = true;
+            btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.header));
+
+        } else {
+            isStartPointFixed = false;
+            btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.button));
+
+            long now = System.currentTimeMillis();
+            dateFromCalendar.setTimeInMillis(now - (10 * 60 * 1000));
+            syncDateButtonTexts();
+            updateChartsWithDateFilter();
+        }
+    }
+
+    private void startSlidingWindow() {
+        slidingWindowHandler.removeCallbacks(slidingWindowRunnable);
+        slidingWindowRunnable =
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        if (!isTenMinuteFilterActive) return;
+
+                        long now = System.currentTimeMillis();
+
+                        if (!isStartPointFixed) {
+                            long tenMinutesAgo = now - (10 * 60 * 1000);
+                            dateFromCalendar.setTimeInMillis(tenMinutesAgo);
+                        }
+
+                        dateToCalendar.setTimeInMillis(now);
+
+                        syncDateButtonTexts();
+                        updateChartsWithDateFilter();
+
+                        slidingWindowHandler.postDelayed(this, 5000);
+                    }
+                };
+
+        slidingWindowHandler.post(slidingWindowRunnable);
+    }
+
+    private void stopSlidingWindow() {
+        isTenMinuteFilterActive = false;
+        isStartPointFixed = false;
+        if (slidingWindowHandler != null && slidingWindowRunnable != null) {
+            slidingWindowHandler.removeCallbacks(slidingWindowRunnable);
+        }
+    }
+
+    /** Updates all six date filter buttons to match the current from/to calendars. */
+    private void syncDateButtonTexts() {
+        xVonButton.setText(makeDateTimeString(dateFromCalendar));
+
+        // "Bis"-Buttons
+        xBisButton.setText(makeDateTimeString(dateToCalendar));
     }
 
     // ------------------------------------------------------------------------
@@ -310,43 +326,63 @@ public class MagnetActivity extends BaseChartActivity {
             return;
         }
 
-        // We want to include the entire "to" day, so we set the upper bound
-        // to 23:59:59 of the chosen date.
-        Calendar adjustedToCalendar = (Calendar) dateToCalendar.clone();
-        adjustedToCalendar.add(Calendar.DAY_OF_MONTH, 0);
-        adjustedToCalendar.set(Calendar.HOUR_OF_DAY, 23);
-        adjustedToCalendar.set(Calendar.MINUTE, 59);
-        adjustedToCalendar.set(Calendar.SECOND, 59);
+        if (currentLiveData != null) {
+            currentLiveData.removeObservers(this);
+        }
 
-        DB.getDatabase(getApplicationContext())
-                .sensorDao()
-                .getMagnetDataBetween(
-                        dateFromCalendar.getTimeInMillis(), adjustedToCalendar.getTimeInMillis())
-                .observe(
-                        this,
-                        filteredData -> {
-                            if (filteredData != null && !filteredData.isEmpty()) {
-                                // Use first sample in filtered range as base timestamp.
-                                long firstTimestamp = filteredData.get(0).timestamp;
+        long fromTime = dateFromCalendar.getTimeInMillis();
+        long toTime;
 
-                                setupChart(lineChartMagnetX, "X-Achse", firstTimestamp);
-                                setupChart(lineChartMagnetY, "Y-Achse", firstTimestamp);
-                                setupChart(lineChartMagnetZ, "Z-Achse", firstTimestamp);
+        if (isTenMinuteFilterActive) {
+            toTime = dateToCalendar.getTimeInMillis();
+        } else {
+            Calendar adjustedToCalendar = (Calendar) dateToCalendar.clone();
+            adjustedToCalendar.set(Calendar.HOUR_OF_DAY, 23);
+            adjustedToCalendar.set(Calendar.MINUTE, 59);
+            adjustedToCalendar.set(Calendar.SECOND, 59);
+            toTime = adjustedToCalendar.getTimeInMillis();
+        }
 
-                                displayDataInCharts(filteredData);
-                            } else {
-                                // No data in range → clear charts so old graphs are not misleading.
-                                lineChartMagnetX.clear();
-                                lineChartMagnetY.clear();
-                                lineChartMagnetZ.clear();
-                            }
-                        });
+        currentLiveData =
+                DB.getDatabase(getApplicationContext())
+                        .sensorDao()
+                        .getMagnetDataBetween(fromTime, toTime);
+
+        currentLiveData.observe(
+                this,
+                filteredData -> {
+                    if (filteredData != null && !filteredData.isEmpty()) {
+                        long firstTimestamp = filteredData.get(0).timestamp;
+
+                        // Use earliest row in range as X-axis start.
+                        setupChart(lineChartMagnetX, "X-Achse", firstTimestamp);
+                        setupChart(lineChartMagnetY, "Y-Achse", firstTimestamp);
+                        setupChart(lineChartMagnetZ, "Z-Achse", firstTimestamp);
+
+                        displayDataInCharts(filteredData);
+                    } else {
+                        // No data in this range → clear charts to avoid stale plots.
+                        lineChartMagnetX.clear();
+                        lineChartMagnetY.clear();
+                        lineChartMagnetZ.clear();
+                    }
+                });
     }
 
     /** Formats a Calendar into "dd.MM.yyyy" for button labels. */
     private String formatCalendarDate(Calendar calendar) {
         return String.format(
                 java.util.Locale.GERMANY,
+                "%02d.%02d.%04d",
+                calendar.get(Calendar.DAY_OF_MONTH),
+                calendar.get(Calendar.MONTH) + 1,
+                calendar.get(Calendar.YEAR));
+    }
+
+    /** Formats a Calendar into "dd.MM.yyyy" (no time) – used for the quick-filter labels. */
+    private String makeDateTimeString(Calendar calendar) {
+        return String.format(
+                Locale.GERMAN,
                 "%02d.%02d.%04d",
                 calendar.get(Calendar.DAY_OF_MONTH),
                 calendar.get(Calendar.MONTH) + 1,
@@ -388,5 +424,11 @@ public class MagnetActivity extends BaseChartActivity {
         setData(lineChartMagnetX, entriesX, "X-Achse", Color.WHITE);
         setData(lineChartMagnetY, entriesY, "Y-Achse", Color.WHITE);
         setData(lineChartMagnetZ, entriesZ, "Z-Achse", Color.WHITE);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopSlidingWindow();
     }
 }

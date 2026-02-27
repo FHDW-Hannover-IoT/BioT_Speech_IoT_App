@@ -3,11 +3,15 @@ package com.fhdw.biot.speech.iot.sensor;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.Button;
 import android.widget.ImageButton;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.LiveData;
 import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.events.EreignisActivity;
 import com.fhdw.biot.speech.iot.graph.BaseChartActivity;
@@ -20,6 +24,7 @@ import database.entities.GyroData;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * GyroActivity ------------ Screen that visualizes gyroscope sensor data in three separate line
@@ -41,10 +46,21 @@ public class GyroActivity extends BaseChartActivity {
     private Calendar dateToCalendar;
 
     /** Buttons that display and modify the filter range ("von" / "bis" per axis). */
-    private Button xVonButton, xBisButton, yVonButton, yBisButton, zVonButton, zBisButton;
+    private Button xVonButton, xBisButton;
 
     /** Optional reference start time (not strictly needed, kept for future use). */
     private long startTime = 0;
+
+    private Handler slidingWindowHandler = new Handler(Looper.getMainLooper());
+    private Runnable slidingWindowRunnable;
+    private boolean isTenMinuteFilterActive = false;
+
+    /** Quick filter button: show only last 10 minutes. */
+    private Button btnFilterLast10Min;
+
+    private LiveData<List<GyroData>> currentLiveData;
+
+    private boolean isStartPointFixed = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,11 +134,9 @@ public class GyroActivity extends BaseChartActivity {
         xBisButton = findViewById(R.id.button_x_bis);
         xVonButton = findViewById(R.id.button_x_von);
 
-        yBisButton = findViewById(R.id.button_y_bis);
-        yVonButton = findViewById(R.id.button_y_von);
-
-        zBisButton = findViewById(R.id.button_z_bis);
-        zVonButton = findViewById(R.id.button_z_von);
+        // Quick filter: show last 10 minutes worth of accel data.
+        btnFilterLast10Min = findViewById(R.id.btn_x_10min);
+        btnFilterLast10Min.setOnClickListener(view -> toggleTenMinutesFilter());
 
         // --------------------------------------------------------------------
         // Reset buttons for each axis chart
@@ -133,26 +147,10 @@ public class GyroActivity extends BaseChartActivity {
         resetAccel.setOnClickListener(
                 view -> {
                     lineChartGyroX.fitScreen();
+                    lineChartGyroY.fitScreen();
+                    lineChartGyroZ.fitScreen();
                     xBisButton.setText("");
                     xVonButton.setText("");
-                });
-
-        // Reset Y-axis chart zoom/pan and clear date labels.
-        ImageButton resetGyro = findViewById(R.id.resetY);
-        resetGyro.setOnClickListener(
-                view -> {
-                    lineChartGyroY.fitScreen();
-                    yBisButton.setText("");
-                    zVonButton.setText("");
-                });
-
-        // Reset Z-axis chart zoom/pan and clear date labels.
-        ImageButton resetMagnet = findViewById(R.id.resetZ);
-        resetMagnet.setOnClickListener(
-                view -> {
-                    lineChartGyroZ.fitScreen();
-                    zBisButton.setText("");
-                    zVonButton.setText("");
                 });
 
         // --------------------------------------------------------------------
@@ -167,30 +165,6 @@ public class GyroActivity extends BaseChartActivity {
 
         // Configure and attach the date pickers (from/to).
         setupDatePickers();
-
-        // --------------------------------------------------------------------
-        // LiveData observation: keep charts in sync with DB
-        // --------------------------------------------------------------------
-        // We subscribe to all gyro samples in the DB. Whenever the underlying
-        // Room table changes, this observer is called again and the charts
-        // are updated automatically.
-        DB.getDatabase(getApplicationContext())
-                .sensorDao()
-                .getAllGyroData()
-                .observe(
-                        this,
-                        gyroDataList -> {
-                            if (gyroDataList != null && !gyroDataList.isEmpty()) {
-                                // Use first timestamp as base for "elapsed time" X-values.
-                                long firstTimestamp = gyroDataList.get(0).timestamp;
-
-                                setupChart(lineChartGyroX, "X-Achse", firstTimestamp);
-                                setupChart(lineChartGyroY, "Y-Achse", firstTimestamp);
-                                setupChart(lineChartGyroZ, "Z-Achse", firstTimestamp);
-
-                                displayDataInCharts(gyroDataList);
-                            }
-                        });
     }
 
     // ------------------------------------------------------------------------
@@ -204,27 +178,35 @@ public class GyroActivity extends BaseChartActivity {
      * date initially = today. - whenever the user picks a date, charts are re-filtered.
      */
     private void setupDatePickers() {
-
-        // Start with "now" for both ends of the range.
+        // Initialize Calendar objects with "now".
         dateFromCalendar = Calendar.getInstance();
         dateToCalendar = Calendar.getInstance();
 
-        // Read the oldest gyro timestamp from DB and use it as initial "from" date.
-        DB.getDatabase(getApplicationContext())
-                .sensorDao()
-                .getOldestGyroTimestamp()
-                .observe(
-                        this,
-                        oldestTimestamp -> {
-                            if (oldestTimestamp != null && oldestTimestamp > 0) {
-                                dateFromCalendar.setTimeInMillis(oldestTimestamp);
-                                // Wire up "von" (from) buttons now that we have the initial value.
-                                setupFromDatePickers(xVonButton, yVonButton, zVonButton);
-                            }
-                        });
+        LiveData<Long> oldestTimestampLiveData =
+                DB.getDatabase(getApplicationContext()).sensorDao().getOldestGyroTimestamp();
 
-        // Wire up "bis" (to) buttons, defaulting to today.
-        setupToDatePickers(xBisButton, yBisButton, zBisButton);
+        oldestTimestampLiveData.observe(
+                this,
+                new androidx.lifecycle.Observer<Long>() {
+                    @Override
+                    public void onChanged(Long oldestTimestamp) {
+                        if (oldestTimestamp != null && oldestTimestamp > 0) {
+
+                            if (!isTenMinuteFilterActive) {
+                                dateFromCalendar.setTimeInMillis(oldestTimestamp);
+                                syncDateButtonTexts();
+                                updateChartsWithDateFilter();
+                            }
+
+                            oldestTimestampLiveData.removeObserver(this);
+                        }
+                    }
+                });
+
+        isTenMinuteFilterActive = true;
+        isStartPointFixed = false;
+        btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.button));
+        startSlidingWindow();
     }
 
     /**
@@ -234,26 +216,11 @@ public class GyroActivity extends BaseChartActivity {
      * <p>For each button: - opens a calendar dialog, - updates {@link #dateFromCalendar}, - calls
      * {@link #updateChartsWithDateFilter()} so the data refreshes.
      */
-    private void setupFromDatePickers(Button xVonButton, Button yVonButton, Button zVonButton) {
+    private void setupFromDatePickers(Button xVonButton) {
         DatePickerHandler.createForButton(
                 xVonButton,
                 calendar -> {
-                    dateFromCalendar = calendar;
-                    updateChartsWithDateFilter();
-                },
-                GyroActivity.this);
-
-        DatePickerHandler.createForButton(
-                yVonButton,
-                calendar -> {
-                    dateFromCalendar = calendar;
-                    updateChartsWithDateFilter();
-                },
-                GyroActivity.this);
-
-        DatePickerHandler.createForButton(
-                zVonButton,
-                calendar -> {
+                    stopSlidingWindow();
                     dateFromCalendar = calendar;
                     updateChartsWithDateFilter();
                 },
@@ -261,45 +228,90 @@ public class GyroActivity extends BaseChartActivity {
 
         // Show initial "from" date on all three axes.
         xVonButton.setText(formatCalendarDate(dateFromCalendar));
-        yVonButton.setText(formatCalendarDate(dateFromCalendar));
-        zVonButton.setText(formatCalendarDate(dateFromCalendar));
     }
 
-    /**
-     * Attaches DatePickers to the three "bis" buttons and sets their texts to the current value of
-     * {@link #dateToCalendar} (initially today).
-     *
-     * <p>Similar to {@link #setupFromDatePickers}, but updates the upper bound.
-     */
-    private void setupToDatePickers(Button xBisButton, Button yBisButton, Button zBisButton) {
+    /** Wires up DatePickers for all "bis" buttons and sets their initial text. */
+    private void setupToDatePickers(Button xBisButton) {
         DatePickerHandler.createForButton(
                 xBisButton,
                 calendar -> {
+                    stopSlidingWindow();
                     dateToCalendar = calendar;
                     updateChartsWithDateFilter();
                 },
                 GyroActivity.this);
 
-        DatePickerHandler.createForButton(
-                yBisButton,
-                calendar -> {
-                    dateToCalendar = calendar;
-                    updateChartsWithDateFilter();
-                },
-                GyroActivity.this);
-
-        DatePickerHandler.createForButton(
-                zBisButton,
-                calendar -> {
-                    dateToCalendar = calendar;
-                    updateChartsWithDateFilter();
-                },
-                GyroActivity.this);
-
-        // Initial "to" date is the current day for all axes.
+        // Show the initial "to" date (today) on all three buttons.
         xBisButton.setText(formatCalendarDate(dateToCalendar));
-        yBisButton.setText(formatCalendarDate(dateToCalendar));
-        zBisButton.setText(formatCalendarDate(dateToCalendar));
+    }
+
+    /**
+     * Convenience filter: sets the date range to "now minus 10 minutes" to "now", refreshes the
+     * charts immediately and updates it every 5 seconds.
+     */
+    private void toggleTenMinutesFilter() {
+        if (!isTenMinuteFilterActive) {
+            isTenMinuteFilterActive = true;
+            isStartPointFixed = false;
+            btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.button));
+            startSlidingWindow();
+
+        } else if (!isStartPointFixed) {
+            isStartPointFixed = true;
+            btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.header));
+
+        } else {
+            isStartPointFixed = false;
+            btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.button));
+
+            long now = System.currentTimeMillis();
+            dateFromCalendar.setTimeInMillis(now - (10 * 60 * 1000));
+            syncDateButtonTexts();
+            updateChartsWithDateFilter();
+        }
+    }
+
+    private void startSlidingWindow() {
+        slidingWindowHandler.removeCallbacks(slidingWindowRunnable);
+        slidingWindowRunnable =
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        if (!isTenMinuteFilterActive) return;
+
+                        long now = System.currentTimeMillis();
+
+                        if (!isStartPointFixed) {
+                            long tenMinutesAgo = now - (10 * 60 * 1000);
+                            dateFromCalendar.setTimeInMillis(tenMinutesAgo);
+                        }
+
+                        dateToCalendar.setTimeInMillis(now);
+
+                        syncDateButtonTexts();
+                        updateChartsWithDateFilter();
+
+                        slidingWindowHandler.postDelayed(this, 5000);
+                    }
+                };
+
+        slidingWindowHandler.post(slidingWindowRunnable);
+    }
+
+    private void stopSlidingWindow() {
+        isTenMinuteFilterActive = false;
+        isStartPointFixed = false;
+        if (slidingWindowHandler != null && slidingWindowRunnable != null) {
+            slidingWindowHandler.removeCallbacks(slidingWindowRunnable);
+        }
+    }
+
+    /** Updates all six date filter buttons to match the current from/to calendars. */
+    private void syncDateButtonTexts() {
+        xVonButton.setText(makeDateTimeString(dateFromCalendar));
+
+        // "Bis"-Buttons
+        xBisButton.setText(makeDateTimeString(dateToCalendar));
     }
 
     // ------------------------------------------------------------------------
@@ -317,44 +329,63 @@ public class GyroActivity extends BaseChartActivity {
             return;
         }
 
-        // We want the full "to" day to be included. So we adjust the
-        // upper bound to 23:59:59 of the chosen day.
-        Calendar adjustedToCalendar = (Calendar) dateToCalendar.clone();
-        adjustedToCalendar.add(Calendar.DAY_OF_MONTH, 0);
-        adjustedToCalendar.set(Calendar.HOUR_OF_DAY, 23);
-        adjustedToCalendar.set(Calendar.MINUTE, 59);
-        adjustedToCalendar.set(Calendar.SECOND, 59);
+        if (currentLiveData != null) {
+            currentLiveData.removeObservers(this);
+        }
 
-        DB.getDatabase(getApplicationContext())
-                .sensorDao()
-                .getGyroDataBetween(
-                        dateFromCalendar.getTimeInMillis(), adjustedToCalendar.getTimeInMillis())
-                .observe(
-                        this,
-                        filteredData -> {
-                            if (filteredData != null && !filteredData.isEmpty()) {
-                                // Use first value in the filtered range as time reference.
-                                long firstTimestamp = filteredData.get(0).timestamp;
+        long fromTime = dateFromCalendar.getTimeInMillis();
+        long toTime;
 
-                                setupChart(lineChartGyroX, "X-Achse", firstTimestamp);
-                                setupChart(lineChartGyroY, "Y-Achse", firstTimestamp);
-                                setupChart(lineChartGyroZ, "Z-Achse", firstTimestamp);
+        if (isTenMinuteFilterActive) {
+            toTime = dateToCalendar.getTimeInMillis();
+        } else {
+            Calendar adjustedToCalendar = (Calendar) dateToCalendar.clone();
+            adjustedToCalendar.set(Calendar.HOUR_OF_DAY, 23);
+            adjustedToCalendar.set(Calendar.MINUTE, 59);
+            adjustedToCalendar.set(Calendar.SECOND, 59);
+            toTime = adjustedToCalendar.getTimeInMillis();
+        }
 
-                                displayDataInCharts(filteredData);
-                            } else {
-                                // No data in the selected time window → clear
-                                // charts so old data is not displayed.
-                                lineChartGyroX.clear();
-                                lineChartGyroY.clear();
-                                lineChartGyroZ.clear();
-                            }
-                        });
+        currentLiveData =
+                DB.getDatabase(getApplicationContext())
+                        .sensorDao()
+                        .getGyroDataBetween(fromTime, toTime);
+
+        currentLiveData.observe(
+                this,
+                filteredData -> {
+                    if (filteredData != null && !filteredData.isEmpty()) {
+                        long firstTimestamp = filteredData.get(0).timestamp;
+
+                        // Use earliest row in range as X-axis start.
+                        setupChart(lineChartGyroX, "X-Achse", firstTimestamp);
+                        setupChart(lineChartGyroY, "Y-Achse", firstTimestamp);
+                        setupChart(lineChartGyroZ, "Z-Achse", firstTimestamp);
+
+                        displayDataInCharts(filteredData);
+                    } else {
+                        // No data in this range → clear charts to avoid stale plots.
+                        lineChartGyroX.clear();
+                        lineChartGyroY.clear();
+                        lineChartGyroZ.clear();
+                    }
+                });
     }
 
     /** Formats the given Calendar as "dd.MM.yyyy" for button labels. */
     private String formatCalendarDate(Calendar calendar) {
         return String.format(
                 java.util.Locale.GERMANY,
+                "%02d.%02d.%04d",
+                calendar.get(Calendar.DAY_OF_MONTH),
+                calendar.get(Calendar.MONTH) + 1,
+                calendar.get(Calendar.YEAR));
+    }
+
+    /** Formats a Calendar into "dd.MM.yyyy" (no time) – used for the quick-filter labels. */
+    private String makeDateTimeString(Calendar calendar) {
+        return String.format(
+                Locale.GERMAN,
                 "%02d.%02d.%04d",
                 calendar.get(Calendar.DAY_OF_MONTH),
                 calendar.get(Calendar.MONTH) + 1,
@@ -397,5 +428,11 @@ public class GyroActivity extends BaseChartActivity {
         setData(lineChartGyroX, entriesX, "X-Achse", Color.WHITE);
         setData(lineChartGyroY, entriesY, "Y-Achse", Color.WHITE);
         setData(lineChartGyroZ, entriesZ, "Z-Achse", Color.WHITE);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopSlidingWindow();
     }
 }

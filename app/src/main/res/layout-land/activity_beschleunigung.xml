@@ -124,7 +124,7 @@
                     android:text="10 Min"
                     android:textSize="10sp"
                     android:textColor="@color/background"
-                    android:backgroundTint="@color/button"
+                    android:backgroundTint="@color/header"
                     android:id="@+id/btn_x_10min"
                     android:layout_marginStart="370dp"
                     android:paddingStart="0dp"
@@ -141,124 +141,12 @@
                 android:layout_weight="1"
                 android:layout_margin="16dp"/>
 
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Von: "
-                    android:textColor="@color/text"/>
-
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="30dp"
-                    android:text="01.01.2025 00:00"
-                    android:textSize="10dp"
-                    android:textColor="@color/background"
-                    android:backgroundTint="@color/button"
-                    android:id="@+id/button_y_von"
-                    android:paddingStart="0dp"
-                    android:paddingEnd="0dp"
-                    android:paddingBottom="0dp"
-                    android:paddingTop="0dp"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Bis: "
-                    android:textColor="@color/text"
-                    android:layout_marginStart="10dp"/>
-
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="30dp"
-                    android:text="01.01.2025 00:00"
-                    android:textSize="10dp"
-                    android:textColor="@color/background"
-                    android:backgroundTint="@color/button"
-                    android:id="@+id/button_y_bis"
-                    android:paddingStart="0dp"
-                    android:paddingEnd="0dp"
-                    android:paddingBottom="0dp"
-                    android:paddingTop="0dp"/>
-
-                <ImageButton
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:src="@drawable/outline_reset_focus_24"
-                    android:background="@color/background"
-                    android:layout_marginStart="10dp"
-                    android:paddingTop="3dp"
-                    android:id="@+id/resetY"
-                    />
-
-            </LinearLayout>
-
             <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/lineChartAccelY"
                 android:layout_width="match_parent"
                 android:layout_height="210dp"
                 android:layout_weight="1"
                 android:layout_margin="16dp" />
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Von: "
-                    android:textColor="@color/text"/>
-
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="30dp"
-                    android:text="01.01.2025 00:00"
-                    android:textSize="10dp"
-                    android:textColor="@color/background"
-                    android:backgroundTint="@color/button"
-                    android:id="@+id/button_z_von"
-                    android:paddingStart="0dp"
-                    android:paddingEnd="0dp"
-                    android:paddingBottom="0dp"
-                    android:paddingTop="0dp"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Bis: "
-                    android:textColor="@color/text"
-                    android:layout_marginStart="10dp"/>
-
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="30dp"
-                    android:text="01.01.2025 00:00"
-                    android:textSize="10dp"
-                    android:textColor="@color/background"
-                    android:backgroundTint="@color/button"
-                    android:id="@+id/button_z_bis"
-                    android:paddingStart="0dp"
-                    android:paddingEnd="0dp"
-                    android:paddingBottom="0dp"
-                    android:paddingTop="0dp"/>
-
-                <ImageButton
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:src="@drawable/outline_reset_focus_24"
-                    android:background="@color/background"
-                    android:layout_marginStart="10dp"
-                    android:paddingTop="3dp"
-                    android:id="@+id/resetZ"
-                    />
-
-            </LinearLayout>
 
             <com.github.mikephil.charting.charts.LineChart
                 android:id="@+id/lineChartAccelZ"

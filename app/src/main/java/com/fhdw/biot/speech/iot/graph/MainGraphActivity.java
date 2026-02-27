@@ -1,11 +1,16 @@
 package com.fhdw.biot.speech.iot.graph;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.ImageButton;
 import androidx.activity.EdgeToEdge;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -16,6 +21,7 @@ import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.fhdw.biot.speech.iot.sensor.AccelActivity;
 import com.fhdw.biot.speech.iot.sensor.GyroActivity;
 import com.fhdw.biot.speech.iot.sensor.MagnetActivity;
+import com.fhdw.biot.speech.iot.settings.SettingsActivity;
 import com.fhdw.biot.speech.iot.util.DatePickerHandler;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
@@ -79,11 +85,16 @@ public class MainGraphActivity extends BaseChartActivity {
     private CheckBox MagXCheck, MagYCheck, MagZCheck, MagSumCheck;
 
     // Buttons for date pickers
-    private Button xVonButton, xBisButton, yVonButton, yBisButton, zVonButton, zBisButton;
+    private Button xVonButton, xBisButton;
 
     private Button btnFilterLast10Min;
 
     private long startTime = 0; // initial timestamp for axis formatting (seconds)
+
+    private Handler slidingWindowHandler = new Handler(Looper.getMainLooper());
+    private Runnable slidingWindowRunnable;
+    private boolean isTenMinuteFilterActive = false;
+    private boolean isStartPointFixed = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,12 +129,6 @@ public class MainGraphActivity extends BaseChartActivity {
         xVonButton = findViewById(R.id.button_Accel_von);
         xBisButton = findViewById(R.id.button_Accel_bis);
 
-        yVonButton = findViewById(R.id.button_Gyro_von);
-        yBisButton = findViewById(R.id.button_Gyro_bis);
-
-        zVonButton = findViewById(R.id.button_Mag_von);
-        zBisButton = findViewById(R.id.button_Mag_bis);
-
         // ------------------------------------------------------------
         // SENSOR NAVIGATION BUTTONS
         // ------------------------------------------------------------
@@ -153,9 +158,16 @@ public class MainGraphActivity extends BaseChartActivity {
                             startActivity(intent);
                         });
 
+        ImageButton settingsButton = findViewById(R.id.settings_button);
+        settingsButton.setOnClickListener(
+                view ->
+                        startActivity(
+                                new android.content.Intent(
+                                        MainGraphActivity.this, SettingsActivity.class)));
+
         // Quick filter: show last 10 minutes worth of accel data.
         btnFilterLast10Min = findViewById(R.id.btn_x_10min);
-        btnFilterLast10Min.setOnClickListener(view -> filterLastTenMinutes());
+        btnFilterLast10Min.setOnClickListener(view -> toggleTenMinutesFilter());
 
         // ------------------------------------------------------------
         // CHART REFERENCES
@@ -174,24 +186,10 @@ public class MainGraphActivity extends BaseChartActivity {
                 .setOnClickListener(
                         v -> {
                             lineChartAccel.fitScreen();
+                            lineChartGyro.fitScreen();
+                            lineChartMag.fitScreen();
                             xVonButton.setText("");
                             xBisButton.setText("");
-                        });
-
-        findViewById(R.id.resetGyro)
-                .setOnClickListener(
-                        v -> {
-                            lineChartGyro.fitScreen();
-                            yVonButton.setText("");
-                            yBisButton.setText("");
-                        });
-
-        findViewById(R.id.resetMagnet)
-                .setOnClickListener(
-                        v -> {
-                            lineChartMag.fitScreen();
-                            zVonButton.setText("");
-                            zBisButton.setText("");
                         });
 
         // Finally setup date pickers for filtering
@@ -205,61 +203,51 @@ public class MainGraphActivity extends BaseChartActivity {
     /** Reads the oldest available timestamp from DB → sets initial "from" date. */
     private void setupDatePickers() {
         dateFromCalendar = Calendar.getInstance();
-        dateFromCalendar.set(Calendar.HOUR_OF_DAY, 0);
-        dateFromCalendar.set(Calendar.MINUTE, 0);
-        dateFromCalendar.set(Calendar.SECOND, 0);
         dateToCalendar = Calendar.getInstance();
 
-        DB.getDatabase(getApplicationContext())
-                .sensorDao()
-                .getOldestAccelTimestamp()
-                .observe(
-                        this,
-                        oldest -> {
-                            if (oldest != null && oldest > 0) {
-                                updateChartsWithDateFilter();
+        LiveData<Long> oldestTimestampLiveData =
+                DB.getDatabase(getApplicationContext()).sensorDao().getOldestAccelTimestamp();
+
+        oldestTimestampLiveData.observe(
+                this,
+                new androidx.lifecycle.Observer<Long>() {
+                    @Override
+                    public void onChanged(Long oldest) {
+                        if (oldest != null && oldest > 0) {
+                            if (!isTenMinuteFilterActive) {
+                                dateFromCalendar.setTimeInMillis(oldest);
                             }
-                        });
+                            setupFromDatePickers();
 
-        setupFromDatePickers();
+                            oldestTimestampLiveData.removeObserver(this);
+                        }
+                    }
+                });
+
         setupToDatePickers();
-
-        updateChartsWithDateFilter();
+        toggleTenMinutesFilter();
     }
 
-    /** Creates the three “from date” pickers (Accel/Gyro/Magnet). */
     private void setupFromDatePickers() {
-        DatePickerHandler.OnDateSelectedListener listener =
+        DatePickerHandler.createForButton(
+                xVonButton,
                 cal -> {
+                    stopSlidingWindow();
                     dateFromCalendar = cal;
                     updateChartsWithDateFilter();
-                };
-
-        DatePickerHandler.createForButton(xVonButton, listener, this);
-        DatePickerHandler.createForButton(yVonButton, listener, this);
-        DatePickerHandler.createForButton(zVonButton, listener, this);
-
-        // Initially empty → user decides manually
-        xVonButton.setText("");
-        yVonButton.setText("");
-        zVonButton.setText("");
+                },
+                this);
     }
 
-    /** Creates the three “to date” pickers. */
     private void setupToDatePickers() {
-        DatePickerHandler.OnDateSelectedListener listener =
+        DatePickerHandler.createForButton(
+                xBisButton,
                 cal -> {
+                    stopSlidingWindow();
                     dateToCalendar = cal;
                     updateChartsWithDateFilter();
-                };
-
-        DatePickerHandler.createForButton(xBisButton, listener, this);
-        DatePickerHandler.createForButton(yBisButton, listener, this);
-        DatePickerHandler.createForButton(zBisButton, listener, this);
-
-        xBisButton.setText("");
-        yBisButton.setText("");
-        zBisButton.setText("");
+                },
+                this);
     }
 
     // =====================================================================
@@ -270,24 +258,30 @@ public class MainGraphActivity extends BaseChartActivity {
     private void updateChartsWithDateFilter() {
         if (dateFromCalendar == null || dateToCalendar == null) return;
 
-        // Extend end date to include full day
-        Calendar adjustedTo = (Calendar) dateToCalendar.clone();
-        adjustedTo.set(Calendar.HOUR_OF_DAY, 23);
-        adjustedTo.set(Calendar.MINUTE, 59);
-        adjustedTo.set(Calendar.SECOND, 59);
-
-        long start = dateFromCalendar.getTimeInMillis();
-        long end = adjustedTo.getTimeInMillis();
-
         if (currentAccelLiveData != null) currentAccelLiveData.removeObservers(this);
         if (currentGyroLiveData != null) currentGyroLiveData.removeObservers(this);
         if (currentMagLiveData != null) currentMagLiveData.removeObservers(this);
+
+        long fromTime = dateFromCalendar.getTimeInMillis();
+        long toTime;
+
+        if (isTenMinuteFilterActive) {
+            toTime = dateToCalendar.getTimeInMillis();
+        } else {
+            Calendar adjustedTo = (Calendar) dateToCalendar.clone();
+            adjustedTo.set(Calendar.HOUR_OF_DAY, 23);
+            adjustedTo.set(Calendar.MINUTE, 59);
+            adjustedTo.set(Calendar.SECOND, 59);
+            toTime = adjustedTo.getTimeInMillis();
+        }
 
         // ============================
         // ACCEL DATA
         // ============================
         currentAccelLiveData =
-                DB.getDatabase(getApplicationContext()).sensorDao().getAccelDataBetween(start, end);
+                DB.getDatabase(getApplicationContext())
+                        .sensorDao()
+                        .getAccelDataBetween(fromTime, toTime);
         currentAccelLiveData.observe(
                 this,
                 data -> {
@@ -304,7 +298,9 @@ public class MainGraphActivity extends BaseChartActivity {
         // GYRO DATA
         // ============================
         currentGyroLiveData =
-                DB.getDatabase(getApplicationContext()).sensorDao().getGyroDataBetween(start, end);
+                DB.getDatabase(getApplicationContext())
+                        .sensorDao()
+                        .getGyroDataBetween(fromTime, toTime);
         currentGyroLiveData.observe(
                 this,
                 data -> {
@@ -322,7 +318,7 @@ public class MainGraphActivity extends BaseChartActivity {
         currentMagLiveData =
                 DB.getDatabase(getApplicationContext())
                         .sensorDao()
-                        .getMagnetDataBetween(start, end);
+                        .getMagnetDataBetween(fromTime, toTime);
         currentMagLiveData.observe(
                 this,
                 data -> {
@@ -370,31 +366,67 @@ public class MainGraphActivity extends BaseChartActivity {
             box.setOnCheckedChangeListener((button, isChecked) -> updateAccelChart());
     }
 
-    private void filterLastTenMinutes() {
-        long now = System.currentTimeMillis();
-        long tenMinutesAgo = now - (10 * 60 * 1000);
+    /**
+     * Convenience filter: sets the date range to "now minus 10 minutes" to "now", refreshes the
+     * charts immediately and updates it every 5 seconds.
+     */
+    private void toggleTenMinutesFilter() {
+        if (!isTenMinuteFilterActive) {
+            isTenMinuteFilterActive = true;
+            isStartPointFixed = false;
+            btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.header));
+            startSlidingWindow();
+        } else if (!isStartPointFixed) {
+            isStartPointFixed = true;
+            btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.button));
+        } else {
+            isStartPointFixed = false;
+            isTenMinuteFilterActive = false;
+            btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.button));
+            stopSlidingWindow();
+        }
+    }
 
-        dateToCalendar = Calendar.getInstance();
-        dateToCalendar.setTimeInMillis(now);
+    private void startSlidingWindow() {
+        slidingWindowHandler.removeCallbacks(slidingWindowRunnable);
+        slidingWindowRunnable =
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        if (!isTenMinuteFilterActive) return;
 
-        dateFromCalendar = Calendar.getInstance();
-        dateFromCalendar.setTimeInMillis(tenMinutesAgo);
+                        long now = System.currentTimeMillis();
 
-        // Reflect the new range in the button labels.
-        syncDateButtonTexts();
-        updateChartsWithDateFilter();
+                        if (!isStartPointFixed) {
+                            long tenMinutesAgo = now - (10 * 60 * 1000);
+                            dateFromCalendar.setTimeInMillis(tenMinutesAgo);
+                        }
+
+                        dateToCalendar.setTimeInMillis(now);
+
+                        syncDateButtonTexts();
+                        updateChartsWithDateFilter();
+
+                        slidingWindowHandler.postDelayed(this, 5000);
+                    }
+                };
+        slidingWindowHandler.post(slidingWindowRunnable);
+    }
+
+    private void stopSlidingWindow() {
+        isTenMinuteFilterActive = false;
+        isStartPointFixed = false; // Reset!
+        if (slidingWindowHandler != null && slidingWindowRunnable != null) {
+            slidingWindowHandler.removeCallbacks(slidingWindowRunnable);
+        }
     }
 
     /** Updates all six date filter buttons to match the current from/to calendars. */
     private void syncDateButtonTexts() {
         xVonButton.setText(makeDateTimeString(dateFromCalendar));
-        yVonButton.setText(makeDateTimeString(dateFromCalendar));
-        zVonButton.setText(makeDateTimeString(dateFromCalendar));
 
         // "Bis"-Buttons
         xBisButton.setText(makeDateTimeString(dateToCalendar));
-        yBisButton.setText(makeDateTimeString(dateToCalendar));
-        zBisButton.setText(makeDateTimeString(dateToCalendar));
     }
 
     /** Formats a Calendar into "dd.MM.yyyy" (no time) – used for the quick-filter labels. */
@@ -465,6 +497,18 @@ public class MainGraphActivity extends BaseChartActivity {
     // =====================================================================
 
     private void initializeAccelDataSets(List<AccelData> list) {
+        // Check if Douglas-Peucker is enabled in Settings
+        SharedPreferences prefs = getSharedPreferences("GraphSettings", MODE_PRIVATE);
+        boolean dpEnabled = prefs.getBoolean("dp_enabled", false);
+
+        List<AccelData> dataToUse = list;
+
+        // Only apply Douglas-Peucker if enabled
+        if (dpEnabled) {
+            float epsilon = EpsilonCalculator.calculateEpsilon(this, list);
+            dataToUse = DouglasPeukerAlg.simplify(list, epsilon);
+        }
+
         ArrayList<Entry> xs = new ArrayList<>();
         ArrayList<Entry> ys = new ArrayList<>();
         ArrayList<Entry> zs = new ArrayList<>();
@@ -472,7 +516,7 @@ public class MainGraphActivity extends BaseChartActivity {
 
         long first = list.get(0).timestamp;
 
-        for (AccelData d : list) {
+        for (AccelData d : dataToUse) {
             float t = d.timestamp - first;
             xs.add(new Entry(t, d.accelX));
             ys.add(new Entry(t, d.accelY));
@@ -489,15 +533,31 @@ public class MainGraphActivity extends BaseChartActivity {
 
         lineDataAccelx = new LineDataSet(xs, "X-Achse");
         lineDataAccelx.setColor(Color.CYAN);
+        lineDataAccelx.setDrawCircles(false);
         lineDataAccely = new LineDataSet(ys, "Y-Achse");
         lineDataAccely.setColor(Color.WHITE);
+        lineDataAccely.setDrawCircles(false);
         lineDataAccelz = new LineDataSet(zs, "Z-Achse");
         lineDataAccelz.setColor(Color.GREEN);
+        lineDataAccelz.setDrawCircles(false);
         lineDataAccelTotal = new LineDataSet(totals, "Summe");
         lineDataAccelTotal.setColor(Color.RED);
+        lineDataAccelTotal.setDrawCircles(false);
     }
 
     private void initializeGyroDataSets(List<GyroData> list) {
+        // Check if Douglas-Peucker is enabled in Settings
+        SharedPreferences prefs = getSharedPreferences("GraphSettings", MODE_PRIVATE);
+        boolean dpEnabled = prefs.getBoolean("dp_enabled", false);
+
+        List<GyroData> dataToUse = list;
+
+        // Only apply Douglas-Peucker if enabled
+        if (dpEnabled) {
+            float epsilon = EpsilonCalculator.calculateEpsilon(this, list);
+            dataToUse = DouglasPeukerAlg.simplify(list, epsilon);
+        }
+
         ArrayList<Entry> xs = new ArrayList<>();
         ArrayList<Entry> ys = new ArrayList<>();
         ArrayList<Entry> zs = new ArrayList<>();
@@ -505,7 +565,7 @@ public class MainGraphActivity extends BaseChartActivity {
 
         long first = list.get(0).timestamp;
 
-        for (GyroData d : list) {
+        for (GyroData d : dataToUse) {
             float t = d.timestamp - first;
             xs.add(new Entry(t, d.gyroX));
             ys.add(new Entry(t, d.gyroY));
@@ -522,15 +582,31 @@ public class MainGraphActivity extends BaseChartActivity {
 
         lineDataGyrox = new LineDataSet(xs, "X-Achse");
         lineDataGyrox.setColor(Color.CYAN);
+        lineDataGyrox.setDrawCircles(false);
         lineDataGyroy = new LineDataSet(ys, "Y-Achse");
         lineDataGyroy.setColor(Color.WHITE);
+        lineDataGyroy.setDrawCircles(false);
         lineDataGyroz = new LineDataSet(zs, "Z-Achse");
         lineDataGyroz.setColor(Color.GREEN);
+        lineDataGyroz.setDrawCircles(false);
         lineDataGyroTotal = new LineDataSet(totals, "Summe");
         lineDataGyroTotal.setColor(Color.RED);
+        lineDataGyroTotal.setDrawCircles(false);
     }
 
     private void initializeMagDataSets(List<MagnetData> list) {
+        // Check if Douglas-Peucker is enabled in Settings
+        SharedPreferences prefs = getSharedPreferences("GraphSettings", MODE_PRIVATE);
+        boolean dpEnabled = prefs.getBoolean("dp_enabled", false);
+
+        List<MagnetData> dataToUse = list;
+
+        // Only apply Douglas-Peucker if enabled
+        if (dpEnabled) {
+            float epsilon = EpsilonCalculator.calculateEpsilon(this, list);
+            dataToUse = DouglasPeukerAlg.simplify(list, epsilon);
+        }
+
         ArrayList<Entry> xs = new ArrayList<>();
         ArrayList<Entry> ys = new ArrayList<>();
         ArrayList<Entry> zs = new ArrayList<>();
@@ -538,7 +614,7 @@ public class MainGraphActivity extends BaseChartActivity {
 
         long first = list.get(0).timestamp;
 
-        for (MagnetData d : list) {
+        for (MagnetData d : dataToUse) {
             float t = d.timestamp - first;
             xs.add(new Entry(t, d.magnetX));
             ys.add(new Entry(t, d.magnetY));
@@ -555,12 +631,16 @@ public class MainGraphActivity extends BaseChartActivity {
 
         lineDataMagx = new LineDataSet(xs, "X-Achse");
         lineDataMagx.setColor(Color.CYAN);
+        lineDataMagx.setDrawCircles(false);
         lineDataMagy = new LineDataSet(ys, "Y-Achse");
         lineDataMagy.setColor(Color.WHITE);
+        lineDataMagy.setDrawCircles(false);
         lineDataMagz = new LineDataSet(zs, "Z-Achse");
         lineDataMagz.setColor(Color.GREEN);
+        lineDataMagz.setDrawCircles(false);
         lineDataMagTotal = new LineDataSet(totals, "Summe");
         lineDataMagTotal.setColor(Color.RED);
+        lineDataMagTotal.setDrawCircles(false);
     }
 
     // =====================================================================
@@ -624,5 +704,11 @@ public class MainGraphActivity extends BaseChartActivity {
                 lineChartMag.clear();
             }
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopSlidingWindow();
     }
 }
