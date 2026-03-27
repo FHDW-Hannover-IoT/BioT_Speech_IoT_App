@@ -201,12 +201,6 @@
                     android:layout_gravity="center"
                     android:textSize="28sp" />
             </LinearLayout>
-            <TextView
-                android:id="@+id/micValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Mic: --"
-                android:textColor="#00FF00" />
 
             <Button
                 android:layout_width="wrap_content"
@@ -217,6 +211,103 @@
                 android:backgroundTint="@color/button"
                 android:textColor="@color/background"
                 android:id="@+id/graphenansicht"/>
+
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/button" />
+
+        <!-- Mikrofon section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mikrofon (KY-037)"
+                android:textColor="@color/text"
+                android:textStyle="bold"
+                android:textSize="20sp"
+                android:paddingBottom="4dp" />
+
+            <TextView
+                android:id="@+id/micValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Wert: --"
+                android:textColor="@color/highlight"
+                android:layout_gravity="center"
+                android:textSize="28sp" />
+
+            <TextView
+                android:id="@+id/ModeLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Modus: Stream"
+                android:textColor="@color/text"
+                android:layout_gravity="center"
+                android:textSize="14sp"
+                android:paddingTop="4dp" />
+
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/button" />
+
+        <!-- Data mode buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/btnStream"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="4dp"
+                android:text="Stream"
+                android:textColor="@color/background"
+                android:backgroundTint="@color/button"
+                android:alpha="1.0" />
+
+            <Button
+                android:id="@+id/btnBurst"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:text="Burst"
+                android:textColor="@color/background"
+                android:backgroundTint="@color/button"
+                android:alpha="0.4" />
+
+            <Button
+                android:id="@+id/btnAverage"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="8dp"
+                android:text="Average"
+                android:textColor="@color/background"
+                android:backgroundTint="@color/button"
+                android:alpha="0.4" />
 
         </LinearLayout>
 
