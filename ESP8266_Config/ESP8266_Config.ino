@@ -12,7 +12,7 @@ const char* CLIENT_ID     = "ESP8266_KY037";
 const int MIC_PIN = A0;
 
 // ── Topics ───────────────────────────────────────────
-const char* TOPIC_MIC = "Sensor/Bewegung";
+const char* TOPIC_MIC = "Sensor/Mic";  
 
 // ── Timing ───────────────────────────────────────────
 unsigned long lastPublish = 0;
@@ -62,7 +62,7 @@ void loop() {
     int micValue = analogRead(MIC_PIN);
 
     // Format as x,y,z CSV to match the Android app's parser
-    String payload = String(micValue) + ",0,0";
+    String payload = String(micValue);
 
     mqtt.publish(TOPIC_MIC, payload.c_str());
     Serial.println("Published: " + payload);

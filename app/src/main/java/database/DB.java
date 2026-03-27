@@ -78,6 +78,12 @@ public abstract class DB extends RoomDatabase {
                                                     Log.d("DB", "successfully wrote data");
                                                     db.endTransaction();
                                                     Log.d("DB", "ended Transaction");
+                                                    ContentValues micValues = new ContentValues();
+                                                    micValues.put("sensorName", "KY037");
+                                                    db.beginTransaction();
+                                                    db.insert("knownSensors", SQLiteDatabase.CONFLICT_ABORT, micValues);
+                                                    db.setTransactionSuccessful();
+                                                    db.endTransaction();
                                                 }
                                             })
                                     .build();

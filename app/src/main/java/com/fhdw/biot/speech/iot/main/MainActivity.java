@@ -73,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView accelXValue, accelYValue, accelZValue;
     private TextView gyroXValue, gyroYValue, gyroZValue;
     private TextView magXValue, magYValue, magZValue;
+    private TextView micValueText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -147,6 +148,8 @@ public class MainActivity extends AppCompatActivity {
         magYValue = findViewById(R.id.magYValue);
         magZValue = findViewById(R.id.magZValue);
 
+        micValueText = findViewById(R.id.micValue);
+
         // ---- Room: DB / DAOs ----------------------------------------------
         DB db = DB.getDatabase(this);
         sensorDao = db.sensorDao();
@@ -188,6 +191,9 @@ public class MainActivity extends AppCompatActivity {
                                         case "Sensor/Magnet":
                                             handleMagnetMessage(message);
                                             break;
+                                        case "Sensor/Mic":
+                                            handleMicMessage(message);
+                                            break;
                                         default:
                                             Log.w(TAG, "Unhandled topic: " + topic);
                                     }
@@ -218,6 +224,7 @@ public class MainActivity extends AppCompatActivity {
                         mqttHandler.subscribe("Sensor/Bewegung");
                         mqttHandler.subscribe("Sensor/Gyro");
                         mqttHandler.subscribe("Sensor/Magnet");
+                        mqttHandler.subscribe("Sensor/Mic");
 
                         // just for debugging:
                         loadDatabaseValues();
@@ -389,6 +396,19 @@ public class MainActivity extends AppCompatActivity {
 
         } catch (NumberFormatException e) {
             Log.e(TAG, "Magnet parse error: " + e.getMessage(), e);
+        }
+    }
+
+    private void handleMicMessage(String message) {
+        try {
+            int micValue = Integer.parseInt(message.trim());
+            // update a TextView you add to your layout, e.g. micValue TextView
+            if (micValueText != null) {
+                micValueText.setText(String.valueOf(micValue));
+            }
+            Log.i(TAG, "Mic value: " + micValue);
+        } catch (NumberFormatException e) {
+            Log.e(TAG, "Mic parse error: " + e.getMessage(), e);
         }
     }
 

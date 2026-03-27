@@ -201,6 +201,12 @@
                     android:layout_gravity="center"
                     android:textSize="28sp" />
             </LinearLayout>
+            <TextView
+                android:id="@+id/micValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mic: --"
+                android:textColor="#00FF00" />
 
             <Button
                 android:layout_width="wrap_content"
