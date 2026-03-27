@@ -17,6 +17,8 @@ import com.fhdw.biot.speech.iot.events.EreignisActivity;
 import com.fhdw.biot.speech.iot.graph.BaseChartActivity;
 import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.fhdw.biot.speech.iot.util.DatePickerHandler;
+import com.fhdw.biot.speech.iot.graph.IFilterableChart;
+import com.fhdw.biot.speech.iot.voice.VoiceCommandExecutor;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
 import database.DB;
@@ -34,7 +36,7 @@ import java.util.Locale;
  * from Room via DB.sensorDao(). - Applying time filters via date pickers. - Mapping DB entities →
  * MPAndroidChart entries. - Delegating chart styling to BaseChartActivity.
  */
-public class AccelActivity extends BaseChartActivity {
+public class AccelActivity extends BaseChartActivity implements IFilterableChart {
 
     /** Individual charts for each axis of the accelerometer. */
     private LineChart lineChartAccelX, lineChartAccelY, lineChartAccelZ;
@@ -192,6 +194,7 @@ public class AccelActivity extends BaseChartActivity {
         isStartPointFixed = false;
         btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.button));
         startSlidingWindow();
+        checkVoiceFilterIntent();
     }
 
     /** Wires up DatePickers for all "von" buttons and sets their initial text. */
@@ -401,9 +404,50 @@ public class AccelActivity extends BaseChartActivity {
         setData(lineChartAccelZ, entriesZ, "Z-Achse", Color.WHITE);
     }
 
+    private void checkVoiceFilterIntent() {
+        Intent intent = getIntent();
+        if (intent == null) return;
+        int minutes = intent.getIntExtra(VoiceCommandExecutor.EXTRA_FILTER_MINUTES, 0);
+        if (minutes > 0) {
+            applyTimeFilter(minutes);
+            // Remove the extra so it is not reapplied on configuration changes
+            intent.removeExtra(VoiceCommandExecutor.EXTRA_FILTER_MINUTES);
+        }
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
         stopSlidingWindow();
+    }
+
+    @Override
+    public void applyTimeFilter(int minutes) {
+        if (minutes <= 0) {
+            clearFilter();
+            return;
+        }
+        stopSlidingWindow();
+        long now = System.currentTimeMillis();
+        dateFromCalendar.setTimeInMillis(now - ((long) minutes * 60 * 1000));
+        dateToCalendar.setTimeInMillis(now);
+        isTenMinuteFilterActive = true;
+        syncDateButtonTexts();
+        updateChartsWithDateFilter();
+        startSlidingWindow();
+    }
+
+    @Override
+    public void clearFilter() {
+        stopSlidingWindow();
+        dateFromCalendar = Calendar.getInstance();
+        dateToCalendar   = Calendar.getInstance();
+        syncDateButtonTexts();
+        updateChartsWithDateFilter();
+    }
+
+    @Override
+    public boolean isFilterActive() {
+        return isTenMinuteFilterActive;
     }
 }

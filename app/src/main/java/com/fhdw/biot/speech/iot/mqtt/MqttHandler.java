@@ -27,7 +27,7 @@ import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
  * <p>Data flow (send side): SensorDataSimulator / MainActivity → MqttHandler.publish(...) →
  * MqttAsyncClient.publish(...) → Broker → (optionally other subscribers, including our own client).
  */
-public class MqttHandler {
+public class MqttHandler implements IMqttPublisher{
 
     /**
      * Underlying Paho asynchronous client. All real MQTT protocol work happens inside this object.
