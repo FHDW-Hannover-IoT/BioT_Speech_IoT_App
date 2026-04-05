@@ -188,7 +188,7 @@ public class MainActivity extends AppCompatActivity {
                         case "Sensor/Gyro":       handleGyroMessage(message);     break;
                         case "Sensor/Magnet":     handleMagnetMessage(message);   break;
                         case "Sensor/Mic":        handleMicMessage(message);      break;
-                        case "Control/Mode/Ack":
+                        case "Control/Mode":
                             switch (message) {
                                 case "STREAM":  highlightActiveMode(btnStream,  "Stream",  btnBurst, btnAverage); break;
                                 case "BURST":   highlightActiveMode(btnBurst,   "Burst",   btnStream, btnAverage); break;
@@ -214,7 +214,7 @@ public class MainActivity extends AppCompatActivity {
                 mqttHandler.subscribe("Sensor/Gyro");
                 mqttHandler.subscribe("Sensor/Magnet");
                 mqttHandler.subscribe("Sensor/Mic");
-                mqttHandler.subscribe("Control/Mode/Ack");
+                mqttHandler.subscribe("Control/Mode");
                 loadDatabaseValues();
             }
 
