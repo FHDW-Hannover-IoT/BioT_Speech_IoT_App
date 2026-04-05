@@ -13,7 +13,7 @@ const char* CLIENT_ID     = "ESP8266_KY037";
 // ── Pins ─────────────────────────────────────────────────────────
 const int MIC_PIN  = A0;
 const int HALL_PIN = D5;
-// MPU-6050: SDA → D2 (GPIO4), SCL → D1 (GPIO5) — no pin defines needed
+// MPU-6050: SDA → D2 (GPIO4), SCL → D1 (GPIO5)
 
 // ── Topics ───────────────────────────────────────────────────────
 const char* TOPIC_MIC    = "Sensor/Mic";
@@ -29,7 +29,7 @@ const char* TOPIC_MODE   = "Control/Mode";
 int currentMode = MODE_STREAM;
 
 // ── Timing ───────────────────────────────────────────────────────
-const long SAMPLE_MS_MIC  = 20;    // 50Hz for mic — fast enough for voice
+const long SAMPLE_MS_MIC  = 20;    // 50Hz for mic
 const long SAMPLE_MS_SLOW = 100;   // 10Hz for accel, gyro, hall
 const long WINDOW_MS      = 5000;  // burst/average send every 5s
 
@@ -38,8 +38,8 @@ unsigned long lastSampleSlow = 0;
 unsigned long lastWindow     = 0;
 
 // ── Burst buffers ─────────────────────────────────────────────────
-const int BURST_SIZE_MIC  = 250;  // 5s x 50Hz
-const int BURST_SIZE_SLOW = 50;   // 5s x 10Hz
+const int BURST_SIZE_MIC  = 250;
+const int BURST_SIZE_SLOW = 50;
 
 int   micBurst[BURST_SIZE_MIC];
 int   micBurstCount = 0;
@@ -88,10 +88,9 @@ void setMode(int mode) {
     gxSum   = 0; gySum  = 0; gzSum  = 0; gyroCount  = 0;
     hallSum = 0; hallCount = 0;
 
-    const char* ack = (mode == MODE_STREAM)  ? "STREAM"  :
-                      (mode == MODE_BURST)   ? "BURST"   : "AVERAGE";
-    mqtt.publish(TOPIC_MODE, ack, true);
-    Serial.println("Mode → " + String(ack));
+    const char* name = (mode == MODE_STREAM)  ? "STREAM"  :
+                       (mode == MODE_BURST)   ? "BURST"   : "AVERAGE";
+    Serial.println("Mode → " + String(name));
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -127,7 +126,6 @@ void connectMQTT() {
         if (mqtt.connect(CLIENT_ID)) {
             Serial.println("connected");
             mqtt.subscribe(TOPIC_MODE, 1);
-            setMode(currentMode);
         } else {
             Serial.print("fail rc="); Serial.println(mqtt.state());
             delay(2000);
@@ -194,7 +192,6 @@ void publishHall(int val) {
 // Window sends
 // ─────────────────────────────────────────────────────────────────
 void sendBurst() {
-    // Mic — send full CSV of all readings
     String micPayload = "";
     for (int i = 0; i < micBurstCount; i++) {
         micPayload += String(micBurst[i]);
@@ -204,7 +201,6 @@ void sendBurst() {
     Serial.println("BURST mic: " + String(micBurstCount) + " readings");
     micBurstCount = 0;
 
-    // Accel — send last reading as representative value
     if (accelBurstCount > 0) {
         publishAccel(
             accelXBurst[accelBurstCount - 1],
@@ -215,7 +211,6 @@ void sendBurst() {
         accelBurstCount = 0;
     }
 
-    // Gyro — send last reading
     if (gyroBurstCount > 0) {
         publishGyro(
             gyroXBurst[gyroBurstCount - 1],
@@ -226,7 +221,6 @@ void sendBurst() {
         gyroBurstCount = 0;
     }
 
-    // Hall — send last reading
     if (hallBurstCount > 0) {
         publishHall(hallBurst[hallBurstCount - 1]);
         Serial.println("BURST hall: " + String(hallBurstCount) + " readings");
@@ -235,13 +229,11 @@ void sendBurst() {
 }
 
 void sendAverage() {
-    // Mic
     int micAvg = micCount > 0 ? micSum / micCount : 0;
     mqtt.publish(TOPIC_MIC, String(micAvg).c_str());
     Serial.println("AVG mic: " + String(micAvg) + " n=" + String(micCount));
     micSum = 0; micCount = 0;
 
-    // Accel
     float ax = accelCount > 0 ? axSum / accelCount : 0;
     float ay = accelCount > 0 ? aySum / accelCount : 0;
     float az = accelCount > 0 ? azSum / accelCount : 0;
@@ -249,7 +241,6 @@ void sendAverage() {
     Serial.println("AVG accel n=" + String(accelCount));
     axSum = 0; aySum = 0; azSum = 0; accelCount = 0;
 
-    // Gyro
     float gx = gyroCount > 0 ? gxSum / gyroCount : 0;
     float gy = gyroCount > 0 ? gySum / gyroCount : 0;
     float gz = gyroCount > 0 ? gzSum / gyroCount : 0;
@@ -257,7 +248,6 @@ void sendAverage() {
     Serial.println("AVG gyro n=" + String(gyroCount));
     gxSum = 0; gySum = 0; gzSum = 0; gyroCount = 0;
 
-    // Hall
     int hallAvg = hallCount > 0 ? hallSum / hallCount : 0;
     publishHall(hallAvg);
     Serial.println("AVG hall n=" + String(hallCount));

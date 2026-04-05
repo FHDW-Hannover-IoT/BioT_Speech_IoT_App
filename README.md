@@ -1,4 +1,4 @@
-# BioT Speech IoT App — How to Run
+# BioT Speech IoT App (How to Run)
 
 > Parts used: ESP8266 NodeMCU + KY-037 + MPU-6050 + A3144 | MQTT + Android | FHDW Hannover IoT
 > I misunderstood the assignment and added a microphone to the ESP8266, but you can ignore this part.
@@ -25,7 +25,7 @@ Make sure you have the following installed on your PC before starting:
 
 | Tool | Purpose | Download |
 |------|---------|---------|
-| Mosquitto 2.x | MQTT broker — message relay between ESP8266 and app | mosquitto.org/download |
+| Mosquitto 2.x | MQTT broker, message relay between ESP8266 and app | mosquitto.org/download |
 | Android Studio | Build and run the Android app | developer.android.com/studio |
 | Arduino IDE | Flash firmware to the NodeMCU ESP8266 | arduino.cc/en/software |
 | Java 17+ | Required by Android Studio | Bundled with Android Studio |
@@ -53,16 +53,16 @@ listener 1883
 allow_anonymous true
 ```
 
-> ⚠️ **Warning:** `allow_anonymous true` means anyone on your local network can connect without a password. This is fine for development — see [Section 8](#8-security-notes) for what to do on public networks.
+> ⚠️ **Warning:** `allow_anonymous true` means anyone on your local network can connect without a password. This is fine for development, see [Section 8](#8-security-notes) for what to do on public networks.
 
 ### Port Selection
 
-This project uses **port 1883** — the standard unencrypted MQTT port. If 1883 is already in use on your machine or you want to use a different port, change the number in the config and update it in both `MainActivity.java` and the Arduino sketch to match.
+This project uses **port 1883**, the standard unencrypted MQTT port. If 1883 is already in use on your machine or you want to use a different port, change the number in the config and update it in both `MainActivity.java` and the Arduino sketch to match.
 
 | Port | Protocol | Use case |
 |------|----------|---------|
-| **1883** | MQTT (unencrypted) | ✅ Used in this project — standard default for local development |
-| 8883 | MQTT over TLS/SSL | Production use — requires certificates, encrypted connection |
+| **1883** | MQTT (unencrypted) | ✅ Used in this project, standard default for local development |
+| 8883 | MQTT over TLS/SSL | Production use, requires certificates, encrypted connection |
 | 1884 | MQTT (unencrypted) | Common alternative if 1883 is taken by another service |
 | 8884 | MQTT over TLS/SSL | Alternative encrypted port |
 | 8080 | MQTT over WebSocket | Browser-based MQTT clients |
@@ -109,7 +109,7 @@ TCP    0.0.0.0:1883    0.0.0.0:0    LISTENING
 TCP    [::]:1883       [::]:0       LISTENING
 ```
 
-If you see nothing, Mosquitto is not running — check [Section 7](#7-troubleshooting).
+If you see nothing, Mosquitto is not running, check [Section 7](#7-troubleshooting).
 
 ---
 
@@ -141,7 +141,7 @@ You should see `Enabled: Yes` in the output.
 ipconfig
 ```
 
-Look for `IPv4 Address` under your Wi-Fi adapter — it will look like `192.168.x.x`.
+Look for `IPv4 Address` under your Wi-Fi adapter, it will look like `192.168.x.x`.
 
 ### 4.2 Update the Android app
 
@@ -153,7 +153,7 @@ private static final String PHONE_BROKER = "tcp://192.168.x.x:1883";
 
 Replace `192.168.x.x` with your PC's actual LAN IP.
 
-> **Note:** The emulator IP (`10.0.2.2`) never needs changing — the app automatically detects whether it is running on an emulator or a real device and picks the correct broker URL.
+> **Note:** The emulator IP (`10.0.2.2`) never needs changing, the app automatically detects whether it is running on an emulator or a real device and picks the correct broker URL.
 
 > ⚠️ Your IP may change every time you reconnect to Wi-Fi. If the app stops working after a network change, run `ipconfig` again and update `PHONE_BROKER`.
 
@@ -207,7 +207,6 @@ Follow this order every time you start a development session:
 | `Sensor/Gyro` | ESP8266 → App | `x,y,z` floats | MPU-6050 gyroscope data |
 | `Sensor/Magnet` | ESP8266 → App | `x,y,z` floats | A3144 hall effect sensor |
 | `Control/Mode` | App → ESP8266 | `STREAM` / `BURST` / `AVERAGE` | Sets the transmission mode |
-| `Control/Mode/Ack` | ESP8266 → App | `STREAM` / `BURST` / `AVERAGE` | ESP8266 confirms mode change |
 
 ### 6.2 Data Transmission Modes
 
@@ -219,7 +218,7 @@ The three buttons on the home screen control how the ESP8266 sends sensor data:
 | **Burst** | Every 20ms, sent every 5s | Every 100ms, sent every 5s | Collects 5s of readings then sends all at once |
 | **Average** | Averaged every 5s | Averaged every 5s | Computes the mean over 5s and sends one value |
 
-The selected mode persists across reconnects — both the app and ESP8266 remember the last mode via a retained MQTT message on `Control/Mode/Ack`.
+The selected mode persists across reconnects, both the app and ESP8266 remember the last mode via a retained MQTT message on `Control/Mode`.
 
 ### 6.3 Navigation
 
@@ -230,7 +229,7 @@ The selected mode persists across reconnects — both the app and ESP8266 rememb
 | Gyroskop | Gyroskop button | Gyroscope X/Y/Z line charts with date filter |
 | Magnetfeld | Magnetfeld button | Magnetometer X/Y/Z line charts with date filter |
 | Graphenansicht | Zur Graphenansicht button | All three sensors combined on one chart |
-| Ereignisse | Bell icon top right | Event log — sensor threshold alerts |
+| Ereignisse | Bell icon top right | Event log, sensor threshold alerts |
 | Settings | Gear icon top left | App configuration |
 
 ---
@@ -240,13 +239,13 @@ The selected mode persists across reconnects — both the app and ESP8266 rememb
 | Symptom | Likely cause | Fix |
 |---------|-------------|-----|
 | App shows "MQTT Fehler" toast | Mosquitto not running or wrong IP | Run `net start mosquitto`, check `PHONE_BROKER` IP matches `ipconfig` output |
-| Sensor values show `%1$.2f` | No MQTT data arriving yet | Normal on first launch — wait for ESP8266 to connect and publish |
+| Sensor values show `%1$.2f` | No MQTT data arriving yet | Normal on first launch, wait for ESP8266 to connect and publish |
 | ESP8266 shows `rc=-2` in Serial | Cannot reach Mosquitto | Check `MQTT_BROKER` IP in sketch, check firewall rule, check Mosquitto is listening on 1883 |
-| ESP8266 connects then disconnects | Keep-alive timeout | Handled by `mqtt.setKeepAlive(120)` in sketch — if persists, restart Mosquitto |
+| ESP8266 connects then disconnects | Keep-alive timeout | Handled by `mqtt.setKeepAlive(120)` in sketch, if persists, restart Mosquitto |
 | Mode buttons do not highlight | Variable shadowing bug | Ensure `Button` type keyword is not used when binding `btnStream`, `btnBurst`, `btnAverage` in `onCreate` |
 | `netstat` shows `TIME_WAIT` on 1883 | Previous connection still closing | Wait 30 seconds then restart Mosquitto |
 | Mosquitto starts then stops immediately | Config file error | Run `mosquitto.exe -v -c mosquitto.conf` directly to see the error |
-| No data on real phone but emulator works | Phone not on same Wi-Fi as PC | Connect phone to same router — not mobile data, not guest Wi-Fi, no VPN |
+| No data on real phone but emulator works | Phone not on same Wi-Fi as PC | Connect phone to same router, not mobile data, not guest Wi-Fi, no VPN |
 | Mosquitto error: Invalid bridge configuration | Wrong config option | Remove everything except `listener 1883` and `allow_anonymous true` from config |
 
 ---
@@ -280,12 +279,10 @@ For a production deployment, add username/password authentication to `mosquitto.
 
 ## 9. Hardware Reference
 
-| Sensor | Module | Connection | MQTT Topic | Status |
-|--------|--------|-----------|------------|--------|
-| Microphone | KY-037 | `A → A0`, `G → GND`, `+ → 3V3` | `Sensor/Mic` | ✅ Active |
-| Accelerometer + Gyro | MPU-6050 | `SDA → D2`, `SCL → D1`, `VCC → 3V3`, `GND → GND` | `Sensor/Bewegung` + `Sensor/Gyro` | 🔧 Stub ready — awaiting hardware |
-| Hall Effect / Magnet | A3144 | `OUT → D5`, `VCC → 3V3`, `GND → GND` | `Sensor/Magnet` | 🔧 Stub ready — awaiting hardware |
+| Sensor | Module | Connection | MQTT Topic |
+|--------|--------|-----------|------------|
+| Microphone | KY-037 | `A → A0`, `G → GND`, `+ → 3V3` | `Sensor/Mic` |
+| Accelerometer + Gyro | MPU-6050 | `SDA → D2`, `SCL → D1`, `VCC → 3V3`, `GND → GND` | `Sensor/Bewegung` + `Sensor/Gyro` |
+| Hall Effect / Magnet | A3144 | `OUT → D5`, `VCC → 3V3`, `GND → GND` | `Sensor/Magnet` |
 
 ---
-
-*BioT Speech IoT App — Developer Guide | FHDW Hannover IoT 2025-26*
