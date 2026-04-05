@@ -215,9 +215,10 @@ public class VoiceInputManager {
             public void onResults(Bundle results) {
                 listening = false;
                 listener.onListeningEnded();
-
                 ArrayList<String> matches = results.getStringArrayList(
                         SpeechRecognizer.RESULTS_RECOGNITION);
+
+                System.out.println("STT-Output" + matches);
 
                 if (matches == null || matches.isEmpty()) {
                     Log.w(TAG, "onResults: empty result list");
