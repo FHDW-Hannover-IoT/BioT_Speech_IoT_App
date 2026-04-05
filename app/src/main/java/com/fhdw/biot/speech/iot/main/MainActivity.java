@@ -24,7 +24,6 @@ import com.fhdw.biot.speech.iot.sensor.AccelActivity;
 import com.fhdw.biot.speech.iot.sensor.GyroActivity;
 import com.fhdw.biot.speech.iot.sensor.MagnetActivity;
 import com.fhdw.biot.speech.iot.settings.SettingsActivity;
-import com.fhdw.biot.speech.iot.simulation.SensorDataSimulator;
 import com.fhdw.biot.speech.iot.voice.TtsManager;
 import com.fhdw.biot.speech.iot.voice.ILlmQueryHandler;
 import com.fhdw.biot.speech.iot.voice.VoiceCommand;
@@ -54,7 +53,7 @@ import java.util.UUID;
 public class MainActivity extends AppCompatActivity {
 
     // ── Broker URLs ──────────────────────────────────────────────────────────
-    private static final String PHONE_BROKER    = "tcp://192.168.178.80:1883";
+    private static final String PHONE_BROKER    = "tcp://192.168.x.x:1883";
     private static final String EMULATOR_BROKER = "tcp://10.0.2.2:1883";
     private static final String TAG             = "MainActivity";
 
@@ -63,7 +62,6 @@ public class MainActivity extends AppCompatActivity {
 
     // ── MQTT ─────────────────────────────────────────────────────────────────
     private MqttHandler mqttHandler;
-    private SensorDataSimulator dataSimulator;
 
     // ── Room DAOs ────────────────────────────────────────────────────────────
     private SensorDao      sensorDao;
@@ -394,7 +392,6 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        if (dataSimulator    != null) dataSimulator.stop();
         if (mqttHandler      != null) mqttHandler.disconnect();
         if (voiceInputManager != null) voiceInputManager.destroy();
         if (ttsManager != null) ttsManager.destroy();

@@ -21,7 +21,6 @@ const char* TOPIC_ACCEL  = "Sensor/Bewegung";
 const char* TOPIC_GYRO   = "Sensor/Gyro";
 const char* TOPIC_MAGNET = "Sensor/Magnet";
 const char* TOPIC_MODE   = "Control/Mode";
-const char* TOPIC_ACK    = "Control/Mode/Ack";
 
 // ── Mode ─────────────────────────────────────────────────────────
 #define MODE_STREAM  0
@@ -91,7 +90,7 @@ void setMode(int mode) {
 
     const char* ack = (mode == MODE_STREAM)  ? "STREAM"  :
                       (mode == MODE_BURST)   ? "BURST"   : "AVERAGE";
-    mqtt.publish(TOPIC_ACK, ack, true);
+    mqtt.publish(TOPIC_MODE, ack, true);
     Serial.println("Mode → " + String(ack));
 }
 
