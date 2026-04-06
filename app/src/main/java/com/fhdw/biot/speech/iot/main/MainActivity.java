@@ -73,6 +73,9 @@ public class MainActivity extends AppCompatActivity {
     private TextView accelXValue, accelYValue, accelZValue;
     private TextView gyroXValue, gyroYValue, gyroZValue;
     private TextView magXValue, magYValue, magZValue;
+    private TextView ModeLabel;
+
+    private Button btnStream, btnBurst, btnAverage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -134,6 +137,23 @@ public class MainActivity extends AppCompatActivity {
                                 new android.content.Intent(
                                         MainActivity.this, SettingsActivity.class)));
 
+        btnStream  = findViewById(R.id.btnStream);
+        btnBurst   = findViewById(R.id.btnBurst);
+        btnAverage = findViewById(R.id.btnAverage);
+
+        btnStream.setOnClickListener(v -> {
+            mqttHandler.publish("Control/Mode", "STREAM", true); // true = retained
+            highlightActiveMode(btnStream, "Stream", btnBurst, btnAverage);
+        });
+        btnBurst.setOnClickListener(v -> {
+            mqttHandler.publish("Control/Mode", "BURST", true);
+            highlightActiveMode(btnBurst, "Burst", btnStream, btnAverage);
+        });
+        btnAverage.setOnClickListener(v -> {
+            mqttHandler.publish("Control/Mode", "AVERAGE", true);
+            highlightActiveMode(btnAverage, "Average", btnStream, btnBurst);
+        });
+
         // ---- bind TextViews -------------------------------------------------
         accelXValue = findViewById(R.id.accelXValue);
         accelYValue = findViewById(R.id.accelYValue);
@@ -188,6 +208,13 @@ public class MainActivity extends AppCompatActivity {
                                         case "Sensor/Magnet":
                                             handleMagnetMessage(message);
                                             break;
+                                        case "Control/Mode":
+                                            switch (message) {
+                                                case "STREAM":  highlightActiveMode(btnStream,  "Stream",  btnBurst, btnAverage); break;
+                                                case "BURST":   highlightActiveMode(btnBurst,   "Burst",   btnStream, btnAverage); break;
+                                                case "AVERAGE": highlightActiveMode(btnAverage, "Average", btnStream, btnBurst); break;
+                                            }
+                                            break;
                                         default:
                                             Log.w(TAG, "Unhandled topic: " + topic);
                                     }
@@ -218,13 +245,14 @@ public class MainActivity extends AppCompatActivity {
                         mqttHandler.subscribe("Sensor/Bewegung");
                         mqttHandler.subscribe("Sensor/Gyro");
                         mqttHandler.subscribe("Sensor/Magnet");
+                        mqttHandler.subscribe("Control/Mode");
 
                         // just for debugging:
                         loadDatabaseValues();
 
                         // Start the fake data publisher: "remote sensor"
-                        dataSimulator = new SensorDataSimulator(mqttHandler, 1000L);
-                        dataSimulator.start();
+                        //dataSimulator = new SensorDataSimulator(mqttHandler, 1000L);
+                        //dataSimulator.start();
                     }
 
                     @Override
@@ -390,6 +418,12 @@ public class MainActivity extends AppCompatActivity {
         } catch (NumberFormatException e) {
             Log.e(TAG, "Magnet parse error: " + e.getMessage(), e);
         }
+    }
+
+    private void highlightActiveMode(Button active, String modeName, Button... others) {
+        active.setAlpha(1.0f);
+        for (Button b : others) b.setAlpha(0.4f);
+        if (ModeLabel != null) ModeLabel.setText("Modus: " + modeName);
     }
 
     // ------------------------------------------------------------------------
