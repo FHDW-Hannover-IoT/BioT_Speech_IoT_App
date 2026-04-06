@@ -245,7 +245,7 @@ public class MainActivity extends AppCompatActivity {
                         mqttHandler.subscribe("Sensor/Bewegung");
                         mqttHandler.subscribe("Sensor/Gyro");
                         mqttHandler.subscribe("Sensor/Magnet");
-                        mqttHandler.subscribe("Control/Mode/Ack");
+                        mqttHandler.subscribe("Control/Mode");
 
                         // just for debugging:
                         loadDatabaseValues();
