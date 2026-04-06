@@ -73,7 +73,6 @@ public class MainActivity extends AppCompatActivity {
     private TextView accelXValue, accelYValue, accelZValue;
     private TextView gyroXValue, gyroYValue, gyroZValue;
     private TextView magXValue, magYValue, magZValue;
-    private TextView micValueText;
     private TextView ModeLabel;
 
     private Button btnStream, btnBurst, btnAverage;
@@ -169,8 +168,6 @@ public class MainActivity extends AppCompatActivity {
         magYValue = findViewById(R.id.magYValue);
         magZValue = findViewById(R.id.magZValue);
 
-        micValueText = findViewById(R.id.micValue);
-
         // ---- Room: DB / DAOs ----------------------------------------------
         DB db = DB.getDatabase(this);
         sensorDao = db.sensorDao();
@@ -212,9 +209,6 @@ public class MainActivity extends AppCompatActivity {
                                         case "Sensor/Magnet":
                                             handleMagnetMessage(message);
                                             break;
-                                        case "Sensor/Mic":
-                                            handleMicMessage(message);
-                                            break;
                                         case "Control/Mode/Ack":
                                             switch (message) {
                                                 case "STREAM":  highlightActiveMode(btnStream,  "Stream",  btnBurst, btnAverage); break;
@@ -252,7 +246,6 @@ public class MainActivity extends AppCompatActivity {
                         mqttHandler.subscribe("Sensor/Bewegung");
                         mqttHandler.subscribe("Sensor/Gyro");
                         mqttHandler.subscribe("Sensor/Magnet");
-                        mqttHandler.subscribe("Sensor/Mic");
                         mqttHandler.subscribe("Control/Mode/Ack");
 
                         // just for debugging:
@@ -425,20 +418,6 @@ public class MainActivity extends AppCompatActivity {
 
         } catch (NumberFormatException e) {
             Log.e(TAG, "Magnet parse error: " + e.getMessage(), e);
-        }
-    }
-
-    private void handleMicMessage(String message) {
-        try {
-            // burst mode sends comma-separated values, just show the last one
-            String[] parts = message.split(",");
-            int displayValue = Integer.parseInt(parts[parts.length - 1].trim());
-
-            if (micValueText != null) {
-                micValueText.setText("Wert: " + displayValue);
-            }
-        } catch (NumberFormatException e) {
-            Log.e(TAG, "Mic parse error: " + e.getMessage(), e);
         }
     }
 
