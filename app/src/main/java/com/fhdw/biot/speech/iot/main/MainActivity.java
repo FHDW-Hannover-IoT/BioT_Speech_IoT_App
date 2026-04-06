@@ -140,7 +140,6 @@ public class MainActivity extends AppCompatActivity {
         btnStream  = findViewById(R.id.btnStream);
         btnBurst   = findViewById(R.id.btnBurst);
         btnAverage = findViewById(R.id.btnAverage);
-        ModeLabel = findViewById(R.id.ModeLabel);
 
         btnStream.setOnClickListener(v -> {
             mqttHandler.publish("Control/Mode", "STREAM", true); // true = retained
@@ -209,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
                                         case "Sensor/Magnet":
                                             handleMagnetMessage(message);
                                             break;
-                                        case "Control/Mode/Ack":
+                                        case "Control/Mode":
                                             switch (message) {
                                                 case "STREAM":  highlightActiveMode(btnStream,  "Stream",  btnBurst, btnAverage); break;
                                                 case "BURST":   highlightActiveMode(btnBurst,   "Burst",   btnStream, btnAverage); break;
