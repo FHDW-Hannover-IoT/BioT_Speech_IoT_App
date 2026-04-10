@@ -1,8 +1,7 @@
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-// Uncomment when MPU-6050 arrives:
-// #include <Wire.h>
-// #include <MPU6050.h>
+#include <Wire.h>
+#include <MPU6050.h>
 
 const char* WIFI_SSID     = "YOUR_WIFI_NAME";
 const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
@@ -66,7 +65,7 @@ long  hallSum = 0; int hallCount = 0;
 WiFiClient   wifiClient;
 PubSubClient mqtt(wifiClient);
 
-// MPU6050 mpu;  ← uncomment when sensor arrives
+MPU6050 mpu;
 
 // ─────────────────────────────────────────────────────────────────
 // Mode switching
@@ -141,22 +140,20 @@ void readMic(int &val) {
 }
 
 void readAccel(float &x, float &y, float &z) {
-    // ── Uncomment when MPU-6050 arrives ──────────────────────────
-    // int16_t ax, ay, az;
-    // mpu.getAcceleration(&ax, &ay, &az);
-    // x = ax / 16384.0;
-    // y = ay / 16384.0;
-    // z = az / 16384.0;
+    int16_t ax, ay, az;
+    mpu.getAcceleration(&ax, &ay, &az);
+    x = ax / 16384.0;
+    y = ay / 16384.0;
+    z = az / 16384.0;
     x = 0.0; y = 0.0; z = 0.0;
 }
 
 void readGyro(float &x, float &y, float &z) {
-    // ── Uncomment when MPU-6050 arrives ──────────────────────────
-    // int16_t gx, gy, gz;
-    // mpu.getRotation(&gx, &gy, &gz);
-    // x = gx / 131.0;
-    // y = gy / 131.0;
-    // z = gz / 131.0;
+    int16_t gx, gy, gz;
+    mpu.getRotation(&gx, &gy, &gz);
+    x = gx / 131.0;
+    y = gy / 131.0;
+    z = gz / 131.0;
     x = 0.0; y = 0.0; z = 0.0;
 }
 
@@ -259,10 +256,9 @@ void setup() {
     Serial.begin(115200);
     pinMode(HALL_PIN, INPUT);
 
-    // ── Uncomment when MPU-6050 arrives ──────────────────────────
-    // Wire.begin();
-    // mpu.initialize();
-    // Serial.println("MPU-6050: " + String(mpu.testConnection() ? "OK" : "FAIL"));
+    Wire.begin();
+    mpu.initialize();
+    Serial.println("MPU-6050: " + String(mpu.testConnection() ? "OK" : "FAIL"));
 
     connectWiFi();
     mqtt.setServer(MQTT_BROKER, MQTT_PORT);
