@@ -280,33 +280,33 @@ public class MainActivity extends AppCompatActivity {
     private String toConfirmation(VoiceCommand cmd, boolean handled) {
         if (!handled) return ""; // LLM will respond — don't double-speak
         switch (cmd) {
-            case NAV_ACCEL:              return "Öffne Beschleunigung";
-            case NAV_GYRO:               return "Öffne Gyroskop";
-            case NAV_MAGNET:             return "Öffne Magnetfeld";
-            case NAV_MIC:                return "Mikrofon-Ansicht";
-            case NAV_GRAPH:              return "Öffne Grafiken";
-            case NAV_EVENTS:             return "Öffne Ereignisse";
-            case NAV_HOME:               return "Zurück zur Hauptseite";
-            case NAV_SETTINGS:           return "Öffne Einstellungen";
-            case NAV_ACCEL_FILTER_10MIN: return "Beschleunigung, letzte 10 Minuten";
-            case NAV_GYRO_FILTER_10MIN:  return "Gyroskop, letzte 10 Minuten";
-            case NAV_MAGNET_FILTER_10MIN:return "Magnetfeld, letzte 10 Minuten";
-            case FILTER_LAST_5MIN:       return "Filter: 5 Minuten";
-            case FILTER_LAST_10MIN:      return "Filter: 10 Minuten";
-            case FILTER_LAST_30MIN:      return "Filter: 30 Minuten";
-            case FILTER_LAST_1H:         return "Filter: 1 Stunde";
-            case FILTER_LAST_24H:        return "Filter: 24 Stunden";
-            case FILTER_CLEAR:           return "Filter zurückgesetzt";
-            case MODE_STREAM:            return "Stream-Modus aktiviert";
-            case MODE_BURST:             return "Burst-Modus aktiviert";
-            case MODE_AVERAGE:           return "Durchschnitt-Modus aktiviert";
-            case COMBINED_MOTION:        return "Bewegungsübersicht";
-            case COMBINED_VIBRATION_SOUND: return "Vibration und Lautstärke";
-            case COMBINED_ORIENTATION_MAGNETIC: return "Orientierung und Magnetfeld";
-            case COMBINED_ALL_SENSORS:   return "Alle Sensoren";
-            case SYSTEM_HELP:            return "Hier sind verfügbare Befehle";
+            case NAV_ACCEL:              return "Opening Acceleration";
+            case NAV_GYRO:               return "Opening Gyroscope";
+            case NAV_MAGNET:             return "Opening Magnetic Field";
+            case NAV_MIC:                return "Microphone Overview";
+            case NAV_GRAPH:              return "Opening Graph";
+            case NAV_EVENTS:             return "Opening Events";
+            case NAV_HOME:               return "Going back to Homepage";
+            case NAV_SETTINGS:           return "Opening Settings";
+            case NAV_ACCEL_FILTER_10MIN: return "Acceleration, last ten minutes";
+            case NAV_GYRO_FILTER_10MIN:  return "Gyroscope, last ten minutes";
+            case NAV_MAGNET_FILTER_10MIN:return "Magnetic Field, last ten minutes";
+            case FILTER_LAST_5MIN:       return "Filter: last five minutes";
+            case FILTER_LAST_10MIN:      return "Filter: last ten minutes";
+            case FILTER_LAST_30MIN:      return "Filter: last thirty minutes";
+            case FILTER_LAST_1H:         return "Filter: last hour";
+            case FILTER_LAST_24H:        return "Filter: last twenty four hours";
+            case FILTER_CLEAR:           return "Filter reset";
+            case MODE_STREAM:            return "Stream mode active";
+            case MODE_BURST:             return "Burst mode active";
+            case MODE_AVERAGE:           return "Average mode active";
+            case COMBINED_MOTION:        return "Movement overview";
+            case COMBINED_VIBRATION_SOUND: return "Vibration and volume";
+            case COMBINED_ORIENTATION_MAGNETIC: return "Orientation and magnetic field";
+            case COMBINED_ALL_SENSORS:   return "All sensors";
+            case SYSTEM_HELP:            return "these are the available commands";
             case UNKNOWN:
-            default:                     return "Befehl nicht erkannt";
+            default:                     return "Unknown command";
         }
     }
 
@@ -333,7 +333,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onError(int errorCode, String message) {
                     runOnUiThread(() ->
                             Toast.makeText(MainActivity.this,
-                                    "Sprache: " + message, Toast.LENGTH_SHORT).show());
+                                    "Language: " + message, Toast.LENGTH_SHORT).show());
                 }
 
                 @Override
@@ -364,7 +364,7 @@ public class MainActivity extends AppCompatActivity {
         } catch (IllegalStateException e) {
             Log.e(TAG, "VoiceInputManager init failed: " + e.getMessage());
             Toast.makeText(this,
-                    "Spracherkennung nicht verfügbar auf diesem Gerät.",
+                    "Voice recognition not available on this device.",
                     Toast.LENGTH_LONG).show();
             if (btnVoice != null) btnVoice.setEnabled(false);
         }
@@ -376,7 +376,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void onVoiceButtonClicked() {
         if (voiceInputManager == null) {
-            Toast.makeText(this, "Spracherkennung nicht bereit.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Voice recognition not ready.", Toast.LENGTH_SHORT).show();
             return;
         }
         if (voiceInputManager.isListening()) {

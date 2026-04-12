@@ -91,7 +91,7 @@ public final class VoiceCommandResolver {
      * German umlauts are kept (ä ö ü ß) so keywords like "dreißig" still match.
      */
     private static String normalise(String raw) {
-        return raw.toLowerCase(Locale.GERMAN)
+        return raw.toLowerCase(Locale.ENGLISH)
                 .replaceAll("[^a-zäöüß0-9\\s]", " ")
                 .replaceAll("\\s+", " ")
                 .trim();

@@ -77,7 +77,7 @@ public final class VoiceCommandExecutor {
                 return true;
 
             case NAV_MIC:
-                Toast.makeText(activity, "Mikrofon-Ansicht: Hauptseite", Toast.LENGTH_SHORT).show();
+                Toast.makeText(activity, "Microphone-View: Homepage", Toast.LENGTH_SHORT).show();
                 navigate(activity, MainActivity.class, null, 0);
                 return true;
 
@@ -134,17 +134,17 @@ public final class VoiceCommandExecutor {
             // ── MQTT MODE CONTROL ─────────────────────────────────────────
             case MODE_STREAM:
                 publishMode(mqtt, "STREAM");
-                Toast.makeText(activity, "Modus: Stream", Toast.LENGTH_SHORT).show();
+                Toast.makeText(activity, "Mode: Stream", Toast.LENGTH_SHORT).show();
                 return true;
 
             case MODE_BURST:
                 publishMode(mqtt, "BURST");
-                Toast.makeText(activity, "Modus: Burst", Toast.LENGTH_SHORT).show();
+                Toast.makeText(activity, "Mode: Burst", Toast.LENGTH_SHORT).show();
                 return true;
 
             case MODE_AVERAGE:
                 publishMode(mqtt, "AVERAGE");
-                Toast.makeText(activity, "Modus: Durchschnitt", Toast.LENGTH_SHORT).show();
+                Toast.makeText(activity, "Mode: Average", Toast.LENGTH_SHORT).show();
                 return true;
 
             // ── COMBINED VIEWS ────────────────────────────────────────────
@@ -180,7 +180,7 @@ public final class VoiceCommandExecutor {
                     llm.handleQuery(transcript);
                 } else {
                     Toast.makeText(activity,
-                            "LLM nicht verbunden. Frage kann nicht beantwortet werden.",
+                            "LLM not connected. Question cant be answered.",
                             Toast.LENGTH_SHORT).show();
                 }
                 return false;
@@ -189,7 +189,7 @@ public final class VoiceCommandExecutor {
             case UNKNOWN:
             default:
                 Toast.makeText(activity,
-                        "Befehl nicht erkannt. Sag \"Hilfe\" für eine Übersicht.",
+                        "Command not recognized. Say \"Help\" for an overview.",
                         Toast.LENGTH_SHORT).show();
                 return true;
         }
@@ -218,10 +218,10 @@ public final class VoiceCommandExecutor {
         activity.sendBroadcast(broadcast);
 
         String msg = minutes == 0
-                ? "Filter zurückgesetzt"
-                : "Filter: letzte " + (minutes >= 60
-                ? (minutes / 60) + " Stunde(n)"
-                : minutes + " Minuten");
+                ? "Filter: reset"
+                : "Filter: last " + (minutes >= 60
+                ? (minutes / 60) + " Hour(s)"
+                : minutes + " Minutes");
         Toast.makeText(activity, msg, Toast.LENGTH_SHORT).show();
     }
 
@@ -233,8 +233,8 @@ public final class VoiceCommandExecutor {
 
     private static void showHelpToast(Activity activity) {
         Toast.makeText(activity,
-                "Befehle z.B.: \"Zeige Gyro\", \"Letzte 10 Minuten\", " +
-                        "\"Burst-Modus\", \"Alle Sensoren\", \"Gibt es Anomalien?\"",
+                "Commands e.g.: \"Show Gyro\", \"last 10 minutes\", " +
+                        "\"Burst-Mode\", \"all sensors\", \"are there any anomaly's?\"",
                 Toast.LENGTH_LONG).show();
     }
 }

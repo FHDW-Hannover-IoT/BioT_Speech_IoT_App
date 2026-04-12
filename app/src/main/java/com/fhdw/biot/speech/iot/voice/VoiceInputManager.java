@@ -120,7 +120,7 @@ public class VoiceInputManager {
         recognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "de-DE");
+        recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US");
         // Return up to 5 ranked hypotheses so VoiceCommandResolver can pick the best match
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5);
         // Do not play the "beep" sound (less disruptive in an IoT context)
@@ -222,7 +222,7 @@ public class VoiceInputManager {
 
                 if (matches == null || matches.isEmpty()) {
                     Log.w(TAG, "onResults: empty result list");
-                    listener.onError(SpeechRecognizer.ERROR_NO_MATCH, "Keine Ergebnisse");
+                    listener.onError(SpeechRecognizer.ERROR_NO_MATCH, "No results");
                     return;
                 }
 
@@ -245,16 +245,16 @@ public class VoiceInputManager {
 
     private static String errorToString(int error) {
         switch (error) {
-            case SpeechRecognizer.ERROR_AUDIO:               return "Audio-Fehler";
-            case SpeechRecognizer.ERROR_CLIENT:              return "Client-Fehler";
-            case SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS: return "Kein Mikrofon-Zugriff";
-            case SpeechRecognizer.ERROR_NETWORK:             return "Netzwerkfehler";
-            case SpeechRecognizer.ERROR_NETWORK_TIMEOUT:     return "Netzwerk-Timeout";
-            case SpeechRecognizer.ERROR_NO_MATCH:            return "Kein Treffer";
-            case SpeechRecognizer.ERROR_RECOGNIZER_BUSY:     return "Erkennung beschäftigt";
-            case SpeechRecognizer.ERROR_SERVER:              return "Serverfehler";
-            case SpeechRecognizer.ERROR_SPEECH_TIMEOUT:      return "Keine Sprache erkannt";
-            default:                                          return "Unbekannter Fehler (" + error + ")";
+            case SpeechRecognizer.ERROR_AUDIO:               return "Audio-Error";
+            case SpeechRecognizer.ERROR_CLIENT:              return "Client-Error";
+            case SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS: return "Insufficient permissions";
+            case SpeechRecognizer.ERROR_NETWORK:             return "Network Error";
+            case SpeechRecognizer.ERROR_NETWORK_TIMEOUT:     return "Network-Timeout";
+            case SpeechRecognizer.ERROR_NO_MATCH:            return "No results";
+            case SpeechRecognizer.ERROR_RECOGNIZER_BUSY:     return "Recognizer busy";
+            case SpeechRecognizer.ERROR_SERVER:              return "Server-Error";
+            case SpeechRecognizer.ERROR_SPEECH_TIMEOUT:      return "No language detected";
+            default:                                          return "Unknown error (" + error + ")";
         }
     }
 }
