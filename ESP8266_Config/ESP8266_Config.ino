@@ -22,8 +22,8 @@ const char* TOPIC_MAGNET = "Sensor/Magnet";
 const char* TOPIC_MODE   = "Control/Mode";
 
 // ── Mode ─────────────────────────────────────────────────────────
-#define MODE_STREAM  0
-#define MODE_BURST   1
+#define MODE_STREAM 0
+#define MODE_BURST 1
 #define MODE_AVERAGE 2
 int currentMode = MODE_STREAM;
 
@@ -256,7 +256,7 @@ void setup() {
     Serial.begin(115200);
     pinMode(HALL_PIN, INPUT);
 
-    Wire.begin();
+    Wire.begin(D2,D1);
     mpu.initialize();
     Serial.println("MPU-6050: " + String(mpu.testConnection() ? "OK" : "FAIL"));
 
