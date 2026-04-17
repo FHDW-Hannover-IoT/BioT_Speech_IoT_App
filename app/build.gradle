@@ -42,7 +42,7 @@ android {
                 "\"${project.findProperty('biot.llmHostPhone') ?: '192.168.178.80'}\""
 
         buildConfigField "String", "LLM_HOST_EMULATOR",
-                "\"${project.findProperty('biot.llmHostEmulator') ?: '10.0.2.2'}\""
+                "\"${project.findProperty('biot.llmHostEmulator') ?: '127.0.0.1'}\""
 
         buildConfigField "int", "LLM_PORT",
                 "${project.findProperty('biot.llmPort') ?: 8001}"
