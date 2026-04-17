@@ -53,6 +53,11 @@ listener 1883
 allow_anonymous true
 ```
 
+(NOTE THIS CAN BE ADDED TO ALLOW MOSQUITTO TO WORK AT FHDW BUT IT ADDS AN OPEN PORT TO YOUR LAPTOP SO USE ONLY IF YOU WANT TO)
+```
+netsh advfirewall firewall add rule name="Mosquitto" dir=in action=allow protocol=TCP localport=1883
+```
+
 > ⚠️ **Warning:** `allow_anonymous true` means anyone on your local network can connect without a password. This is fine for development, see [Section 8](#8-security-notes) for what to do on public networks.
 
 ### Port Selection
