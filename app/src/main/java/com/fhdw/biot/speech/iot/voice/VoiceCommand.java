@@ -7,128 +7,103 @@ package com.fhdw.biot.speech.iot.voice;
  *
  * Intent groups
  * ─────────────────────────────────────────────────────────────────────────────
- *  NAVIGATION   – open a screen
- *  FILTER       – apply a time / sensor filter on charts
- *  MODE         – switch the ESP8266 sampling mode via MQTT
- *  QUERY        – ask a question about a sensor value (for LLM phase)
- *  COMBINED     – commands that involve more than one sensor at once
- *  SYSTEM       – app-level commands (settings, home, help, …)
- *  UNKNOWN      – nothing matched
+ *  NAVIGATION       – open a screen
+ *  FILTER           – apply a time filter to the current chart
+ *  TRANSMISSION_MODE – Stream / Burst / Average (how the ESP8266 batches MQTT data)
+ *  OPERATING_MODE   – Autark / Supervision / Event / Identification
+ *                     (per BioT_Speech_IoT_Doc/doc/content/command-dictionary.adoc)
+ *  CALIBRATION      – calibration & epsilon tuning commands
+ *  EVENT_MGMT       – create / list events with optional sensor + threshold
+ *  TELL_VALUE       – ask the assistant to read out a sensor value
+ *  COMBINED         – multi-sensor dashboards
+ *  QUERY            – natural-language questions forwarded to the LLM
+ *  SYSTEM           – help, dashboard, etc.
+ *  UNKNOWN          – nothing matched
+ *
+ * Source of truth: BioT_Speech_IoT_Doc/doc/content/command-dictionary.adoc
+ *                 + LLM_App/docs/LLM_USE_CASES.md
  */
 public enum VoiceCommand {
 
     // ── NAVIGATION ────────────────────────────────────────────────
-    /** Open the accelerometer (Bewegung) detail screen. */
     NAV_ACCEL,
-
-    /** Open the gyroscope detail screen. */
     NAV_GYRO,
-
-    /** Open the Hall / Magnet detail screen. */
     NAV_MAGNET,
-
-    /** Open the microphone / sound detail screen. */
     NAV_MIC,
-
-    /** Open the graph / chart overview screen. */
     NAV_GRAPH,
-
-    /** Open the event / notification log. */
     NAV_EVENTS,
-
-    /** Go back to the main dashboard. */
     NAV_HOME,
-
-    /** Open the settings screen. */
     NAV_SETTINGS,
 
-    // ── TIME FILTER (applies to the currently visible chart) ──────
-    /** Show data from the last 5 minutes. */
+    // ── TIME FILTERS (applies to the currently visible chart) ─────
     FILTER_LAST_5MIN,
-
-    /** Show data from the last 10 minutes. */
     FILTER_LAST_10MIN,
-
-    /** Show data from the last 30 minutes. */
     FILTER_LAST_30MIN,
-
-    /** Show data from the last 1 hour. */
     FILTER_LAST_1H,
-
-    /** Show data from the last 24 hours. */
     FILTER_LAST_24H,
-
-    /** Clear all active time filters and show all data. */
     FILTER_CLEAR,
 
     // ── SENSOR FILTER (navigate + filter in one step) ─────────────
-    /** Open accel screen AND apply the last-10-min filter. */
     NAV_ACCEL_FILTER_10MIN,
-
-    /** Open gyro screen AND apply the last-10-min filter. */
     NAV_GYRO_FILTER_10MIN,
-
-    /** Open magnet screen AND apply the last-10-min filter. */
     NAV_MAGNET_FILTER_10MIN,
 
-    // ── MQTT MODE CONTROL ─────────────────────────────────────────
-    /** Switch ESP8266 to STREAM mode (publish every reading). */
+    // ── TRANSMISSION MODE (existing — Control/Mode topic) ─────────
+    /** Publish every reading immediately. */
     MODE_STREAM,
-
-    /** Switch ESP8266 to BURST mode (collect, then send in one burst). */
+    /** Buffer 5 s of readings and publish in one batch. */
     MODE_BURST,
-
-    /** Switch ESP8266 to AVERAGE mode (send rolling averages). */
+    /** Compute a 5 s rolling average and publish that. */
     MODE_AVERAGE,
 
-    // ── COMBINED SENSOR QUERIES ───────────────────────────────────
-    /**
-     * Show the combined motion dashboard: accelerometer + gyro side-by-side.
-     * Useful to judge whether an object is tilting vs. rotating.
-     */
+    // ── OPERATING MODE (new — Control/OperatingMode topic) ────────
+    // Per command-dictionary.adoc:
+    //   Autark         → sensors stop sending data (power saving)
+    //   Supervision    → sensors send all data; app shows homescreen
+    //   Event          → sensors only send when thresholds are met; app notifies
+    //   Identification → sensors send all data; app forwards to database
+    OPMODE_AUTARK,
+    OPMODE_SUPERVISION,
+    OPMODE_EVENT,
+    OPMODE_IDENTIFICATION,
+    /** "Get mode" — ask the app to announce/show the current operating mode. */
+    OPMODE_GET,
+
+    // ── CALIBRATION & EPSILON ─────────────────────────────────────
+    /** "Start calibration" — begin the guided calibration routine. */
+    START_CALIBRATION,
+    /** "Set epsilon (sensor) (axis?)" — adjust simplification threshold. */
+    SET_EPSILON,
+
+    // ── EVENT MANAGEMENT (from .adoc) ─────────────────────────────
+    /** "Create event (sensor) (threshold)" — define a new threshold rule. */
+    CREATE_EVENT,
+    /** "Show events" or "Show events (sensor)" — list event RULES. */
+    SHOW_EVENTS,
+    /** "Show notifications (timeframe?)" — list TRIGGERED events. */
+    SHOW_NOTIFICATIONS,
+
+    // ── TELL VALUE ────────────────────────────────────────────────
+    /** "Tell value (sensor) (axis?)" — speak a sensor value via TTS. */
+    TELL_VALUE,
+
+    // ── COMBINED VIEWS ────────────────────────────────────────────
     COMBINED_MOTION,
-
-    /**
-     * Show the vibration analysis view: accelerometer magnitude + mic level
-     * overlaid. Useful to correlate physical impacts with sound spikes.
-     */
     COMBINED_VIBRATION_SOUND,
-
-    /**
-     * Show the orientation summary: gyro + Hall sensor.
-     * Useful to see if a magnetic field triggered together with a rotation.
-     */
     COMBINED_ORIENTATION_MAGNETIC,
-
-    /**
-     * Show a full all-sensors snapshot (latest single reading from every sensor).
-     */
     COMBINED_ALL_SENSORS,
 
-    // ── QUERY (answered by LLM in Phase 4) ───────────────────────
-    /** "What is the current acceleration?" */
+    // ── QUERY (forwarded to the LLM) ──────────────────────────────
     QUERY_ACCEL_VALUE,
-
-    /** "What is the current gyro reading?" */
     QUERY_GYRO_VALUE,
-
-    /** "Is the magnet / hall sensor active?" */
     QUERY_MAGNET_STATUS,
-
-    /** "How loud is it right now?" */
     QUERY_MIC_LEVEL,
-
-    /** "Are there any unusual sensor events?" */
     QUERY_ANOMALY,
-
-    /** "What happened in the last X minutes?" */
     QUERY_RECENT_EVENTS,
 
     // ── SYSTEM ────────────────────────────────────────────────────
-    /** "Hilfe" / "Was kann ich sagen?" – show voice-command help overlay. */
     SYSTEM_HELP,
 
     // ── UNKNOWN ───────────────────────────────────────────────────
-    /** No rule matched the transcript. */
     UNKNOWN
 }
