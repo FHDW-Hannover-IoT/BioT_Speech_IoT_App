@@ -6,15 +6,15 @@ import android.util.Log;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.fhdw.biot.speech.iot.R;
-import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.fhdw.biot.speech.iot.config.BiotApplication;
+import com.fhdw.biot.speech.iot.config.BiotBaseActivity;
+import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.fhdw.biot.speech.iot.database.entities.EreignisData;
 import com.fhdw.biot.speech.iot.repository.SensorRepository;
 import java.util.ArrayList;
@@ -31,7 +31,7 @@ import java.util.List;
  *
  * <p>This screen is essentially the "Event Log" of the entire system.
  */
-public class EreignisActivity extends AppCompatActivity {
+public class EreignisActivity extends BiotBaseActivity {
 
     private RecyclerView recyclerView;
     private MyEventAdapter adapter;

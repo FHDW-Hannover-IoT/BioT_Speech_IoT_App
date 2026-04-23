@@ -11,7 +11,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
@@ -20,6 +19,8 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.fhdw.biot.speech.iot.BuildConfig;
 import com.fhdw.biot.speech.iot.R;
+import com.fhdw.biot.speech.iot.config.BiotBaseActivity;
+import com.fhdw.biot.speech.iot.config.LanguageManager;
 import com.fhdw.biot.speech.iot.config.AppContainer;
 import com.fhdw.biot.speech.iot.config.BiotApplication;
 import com.fhdw.biot.speech.iot.database.entities.AccelData;
@@ -59,7 +60,7 @@ import java.util.List;
  * The container is retrieved from {@link BiotApplication} (process-singleton),
  * so no new MQTT connection is created on rotation.
  */
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends BiotBaseActivity {
 
     private static final String TAG = "MainActivity";
     private static final int REQUEST_RECORD_AUDIO = 101;
@@ -331,12 +332,15 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, "MQTT → " + topic + " = " + message);
             runOnUiThread(() -> {
                 try {
-                    if (!liveDataReceived && topic.startsWith("Sensor/")) {
+                    // Only real hardware publishes to Sensor/*; simulator uses Sensor/Sim/*.
+                    if (!liveDataReceived
+                            && topic.startsWith("Sensor/")
+                            && !topic.startsWith("Sensor/Sim/")) {
                         liveDataReceived = true;
                         if (simulator != null) {
                             simulator.stop();
                             simulator = null;
-                            Log.i(TAG, "Live data received — simulator stopped");
+                            Log.i(TAG, "Live hardware data received — simulator stopped");
                         }
                     }
                     dispatchMqttMessage(topic, message);
@@ -349,9 +353,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void dispatchMqttMessage(String topic, String message) {
         switch (topic) {
-            case "Sensor/Bewegung":  handleMovementMessage(message); break;
-            case "Sensor/Gyro":      handleGyroMessage(message);     break;
-            case "Sensor/Magnet":    handleMagnetMessage(message);   break;
+            case "Sensor/Bewegung":
+            case "Sensor/Sim/Bewegung": handleMovementMessage(message); break;
+            case "Sensor/Gyro":
+            case "Sensor/Sim/Gyro":     handleGyroMessage(message);     break;
+            case "Sensor/Magnet":
+            case "Sensor/Sim/Magnet":   handleMagnetMessage(message);   break;
             case "Control/Mode":
                 switch (message) {
                     case "STREAM":  highlightActiveMode(modeLabel, "Stream",  btnStream,  btnBurst,   btnAverage); break;
@@ -379,10 +386,13 @@ public class MainActivity extends AppCompatActivity {
             public void onConnected() {
                 Log.i(TAG, "MQTT connected");
                 runOnUiThread(() ->
-                        Toast.makeText(MainActivity.this, "MQTT verbunden", Toast.LENGTH_SHORT).show());
+                        Toast.makeText(MainActivity.this, getString(R.string.toast_mqtt_connected), Toast.LENGTH_SHORT).show());
                 mqttHandler.subscribe("Sensor/Bewegung");
                 mqttHandler.subscribe("Sensor/Gyro");
                 mqttHandler.subscribe("Sensor/Magnet");
+                mqttHandler.subscribe("Sensor/Sim/Bewegung");
+                mqttHandler.subscribe("Sensor/Sim/Gyro");
+                mqttHandler.subscribe("Sensor/Sim/Magnet");
                 mqttHandler.subscribe("Control/Mode");
                 mqttHandler.subscribe("Control/OperatingMode");
                 scheduleSimulatorFallback();
@@ -393,7 +403,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.e(TAG, "MQTT connect failed: " + (t == null ? "?" : t.getMessage()), t);
                 runOnUiThread(() -> {
                     Toast.makeText(MainActivity.this,
-                            "MQTT Fehler: " + (t == null ? "?" : t.getMessage()),
+                            getString(R.string.toast_mqtt_error, t == null ? "?" : t.getMessage()),
                             Toast.LENGTH_LONG).show();
                     startSimulator();
                 });
@@ -405,7 +415,7 @@ public class MainActivity extends AppCompatActivity {
         new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
             if (!liveDataReceived) {
                 Log.i(TAG, "No live MQTT data after fallback delay — starting simulator");
-                Toast.makeText(this, "Kein Hardware gefunden – Simulator gestartet",
+                Toast.makeText(this, getString(R.string.toast_no_hardware),
                         Toast.LENGTH_LONG).show();
                 startSimulator();
             }
@@ -421,7 +431,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void mqttPublishOrToast(String topic, String payload) {
         if (mqttHandler == null || !mqttHandler.isConnected()) {
-            Toast.makeText(this, "MQTT nicht verbunden", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.toast_mqtt_not_connected), Toast.LENGTH_SHORT).show();
             return;
         }
         mqttHandler.publish(topic, payload, true);
@@ -534,7 +544,7 @@ public class MainActivity extends AppCompatActivity {
                 initVoiceInputManager();
             } else {
                 Toast.makeText(this,
-                        "Mikrofon-Zugriff verweigert. Sprachbefehle nicht verfügbar.",
+                        getString(R.string.toast_mic_denied),
                         Toast.LENGTH_LONG).show();
                 if (btnVoice != null) btnVoice.setEnabled(false);
             }
@@ -547,7 +557,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initVoiceInputManager() {
         try {
-            voiceInputManager = new VoiceInputManager(this, new VoiceInputManager.VoiceResultListener() {
+            voiceInputManager = new VoiceInputManager(this, LanguageManager.getLanguageTag(this), new VoiceInputManager.VoiceResultListener() {
                 @Override
                 public void onResult(String topResult, List<String> hypotheses) {
                     Log.i(TAG, "Voice result: \"" + topResult + "\"");
@@ -653,6 +663,11 @@ public class MainActivity extends AppCompatActivity {
                                      Button active, Button... others) {
         if (active != null) active.setAlpha(1.0f);
         for (Button b : others) if (b != null) b.setAlpha(0.4f);
-        if (label != null) label.setText("Modus: " + modeName);
+        if (label == null) return;
+        // Use the correct prefix depending on which label is being updated.
+        int fmtRes = (label == operatingModeLabel)
+                ? R.string.label_betriebsmodus_format
+                : R.string.label_modus_format;
+        label.setText(getString(fmtRes, modeName));
     }
 }

@@ -96,7 +96,7 @@ public class AppContainer {
             throw new IllegalStateException("Could not create MqttHandler", e);
         }
 
-        ttsManager = new TtsManager(activity);
+        ttsManager = new TtsManager(activity, LanguageManager.getLocale(activity));
         Log.i(TAG, "Activity scope initialised.");
     }
 
