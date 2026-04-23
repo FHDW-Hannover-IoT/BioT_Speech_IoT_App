@@ -32,7 +32,7 @@
             android:layout_height="80dp"
             android:background="@color/header"
             android:gravity="center_vertical|center_horizontal"
-            android:text="Sensordaten"
+            android:text="@string/main_header"
             android:textColor="@color/text"
             android:textSize="28sp"
             android:textStyle="bold" />
@@ -68,7 +68,7 @@
                 android:id="@+id/accelTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Beschleunigungssensor"
+                android:text="@string/sensor_accel_title"
                 android:textColor="@color/text"
                 android:textStyle="bold"
                 android:textSize="20sp"
@@ -118,7 +118,7 @@
                 android:id="@+id/gyroTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Gyroskop"
+                android:text="@string/sensor_gyro_title"
                 android:textColor="@color/text"
                 android:textStyle="bold"
                 android:textSize="20sp"
@@ -168,7 +168,7 @@
                 android:id="@+id/magTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Magnetfeldsensor"
+                android:text="@string/sensor_magnet_title"
                 android:textColor="@color/text"
                 android:textStyle="bold"
                 android:textSize="20sp"
@@ -206,7 +206,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="Zur Grapenansicht"
+            android:text="@string/btn_graph"
             android:layout_marginTop="30dp"
             android:backgroundTint="@color/button"
             android:textColor="@color/background"
@@ -220,7 +220,7 @@
         android:layout_height="1dp"
         android:background="@color/button" />
 
-    <!-- Mikrofon section -->
+    <!-- Mode / Operating-mode status labels -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -229,28 +229,10 @@
         android:paddingBottom="8dp">
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Mikrofon (KY-037)"
-            android:textColor="@color/text"
-            android:textStyle="bold"
-            android:textSize="20sp"
-            android:paddingBottom="4dp" />
-
-        <TextView
-            android:id="@+id/micValue"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Wert: --"
-            android:textColor="@color/highlight"
-            android:layout_gravity="center"
-            android:textSize="28sp" />
-
-        <TextView
             android:id="@+id/ModeLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Modus: Stream"
+            android:text="@string/modus_default"
             android:textColor="@color/text"
             android:layout_gravity="center"
             android:textSize="14sp"
@@ -260,7 +242,7 @@
             android:id="@+id/OperatingModeLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Betriebsmodus: Supervision"
+            android:text="@string/betriebsmodus_default"
             android:textColor="@color/text"
             android:layout_gravity="center"
             android:textSize="14sp"
@@ -398,7 +380,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Accel"
+            android:text="@string/btn_accel"
             android:textColor="@color/background"
             android:layout_margin="4dp"
             android:backgroundTint="@color/button"
@@ -409,7 +391,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Gyroskop"
+            android:text="@string/btn_gyro"
             android:textColor="@color/background"
             android:layout_margin="4dp"
             android:backgroundTint="@color/button"
@@ -420,7 +402,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Magnetfeld"
+            android:text="@string/btn_magnet"
             android:textColor="@color/background"
             android:layout_margin="4dp"
             android:backgroundTint="@color/button"

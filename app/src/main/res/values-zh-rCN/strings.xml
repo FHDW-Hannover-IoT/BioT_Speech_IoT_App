@@ -1,0 +1,50 @@
+<resources>
+    <string name="app_name">BiotSpeechIoT</string>
+
+    <!-- Sensor value formats -->
+    <string name="beschleunigung_x">X: %1$.2f</string>
+    <string name="beschleunigung_y">Y: %1$.2f</string>
+    <string name="beschleunigung_z">Z: %1$.2f</string>
+    <string name="gyro_x">X: %1$.2f</string>
+    <string name="gyro_y">Y: %1$.2f</string>
+    <string name="gyro_z">Z: %1$.2f</string>
+    <string name="magnet_x">X: %1$.2f</string>
+    <string name="magnet_y">Y: %1$.2f</string>
+    <string name="magnet_z">Z: %1$.2f</string>
+
+    <!-- Main screen -->
+    <string name="main_header">传感器数据</string>
+    <string name="sensor_accel_title">加速度传感器</string>
+    <string name="sensor_gyro_title">陀螺仪</string>
+    <string name="sensor_magnet_title">磁场传感器</string>
+    <string name="btn_graph">图形视图</string>
+    <string name="btn_accel">加速度</string>
+    <string name="btn_gyro">陀螺仪</string>
+    <string name="btn_magnet">磁场</string>
+    <string name="modus_default">模式: Stream</string>
+    <string name="betriebsmodus_default">运行模式: Supervision</string>
+    <string name="label_modus_format">模式: %s</string>
+    <string name="label_betriebsmodus_format">运行模式: %s</string>
+
+    <!-- Toast messages -->
+    <string name="toast_mqtt_connected">MQTT 已连接</string>
+    <string name="toast_mqtt_error">MQTT 错误: %s</string>
+    <string name="toast_no_hardware">未找到硬件 – 模拟器已启动</string>
+    <string name="toast_mqtt_not_connected">MQTT 未连接</string>
+    <string name="toast_mic_denied">麦克风访问被拒绝。语音命令不可用。</string>
+
+    <!-- Settings screen -->
+    <string name="settings_title">设置</string>
+    <string name="settings_language_title">语言</string>
+    <string name="settings_lang_de">德语</string>
+    <string name="settings_lang_en">英语</string>
+    <string name="settings_lang_zh">中文 (普通话)</string>
+    <string name="settings_dp_title">数据压缩 (Douglas-Peucker)</string>
+    <string name="settings_dp_desc">在不改变图形形状的情况下减少数据点数量以提高性能。</string>
+    <string name="settings_dp_enable">启用算法</string>
+    <string name="settings_dp_hint">提示：较高的值会使图形更平滑。</string>
+    <string name="settings_dp_epsilon_label">Epsilon (阈值): %s</string>
+
+    <!-- Events -->
+    <string name="ereignisse_title">事件记录</string>
+</resources>

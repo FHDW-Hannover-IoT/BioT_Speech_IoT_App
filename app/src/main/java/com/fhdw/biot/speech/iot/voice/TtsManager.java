@@ -53,15 +53,14 @@ public class TtsManager {
     /**
      * @param context Activity or application context.
      */
-    public TtsManager(Context context) {
+    public TtsManager(Context context, Locale locale) {
         tts = new TextToSpeech(context, status -> {
             if (status == TextToSpeech.SUCCESS) {
-                int result = tts.setLanguage(Locale.ENGLISH);
+                int result = tts.setLanguage(locale);
                 if (result == TextToSpeech.LANG_MISSING_DATA
                         || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                    // Fall back to English if German TTS data is not installed
-                    tts.setLanguage(Locale.GERMAN);
-                    Log.w(TAG, "English TTS not available, falling back to German.");
+                    tts.setLanguage(Locale.ENGLISH);
+                    Log.w(TAG, "TTS language " + locale + " not available, falling back to English.");
                 }
                 // Slightly slower speech rate — easier to understand in noisy environments
                 tts.setSpeechRate(0.9f);
