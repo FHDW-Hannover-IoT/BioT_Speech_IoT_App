@@ -47,11 +47,15 @@ public final class AppConfig {
     // LLM
     // ─────────────────────────────────────────────────────────────────────────
 
+    /** Base URL for the BioT LLM_App (e.g. http://192.168.178.80:8001). */
+    public static String mcpBaseUrl() {
+        String host = isEmulator() ? BuildConfig.LLM_HOST_EMULATOR : BuildConfig.LLM_HOST_PHONE;
+        return "http://" + host + ":" + BuildConfig.LLM_PORT;
+    }
+
     /** Full URL of the BioT LLM_App's POST /chat endpoint. */
     public static String llmChatEndpoint() {
-        String host = isEmulator() ? BuildConfig.LLM_HOST_EMULATOR : BuildConfig.LLM_HOST_PHONE;
-        int port = BuildConfig.LLM_PORT;
-        return "http://" + host + ":" + port + "/chat";
+        return mcpBaseUrl() + "/chat";
     }
 
     // ─────────────────────────────────────────────────────────────────────────

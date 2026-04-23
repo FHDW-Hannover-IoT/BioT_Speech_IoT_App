@@ -1,35 +1,26 @@
-package database.dao;
+package com.fhdw.biot.speech.iot.database.dao;
 
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
-import database.entities.AccelData;
-import database.entities.EreignisData;
-import database.entities.GyroData;
-import database.entities.MagnetData;
-import database.entities.Sensor;
+import com.fhdw.biot.speech.iot.database.entities.AccelData;
+import com.fhdw.biot.speech.iot.database.entities.EreignisData;
+import com.fhdw.biot.speech.iot.database.entities.GyroData;
+import com.fhdw.biot.speech.iot.database.entities.MagnetData;
+import com.fhdw.biot.speech.iot.database.entities.Sensor;
 import java.util.List;
 
-// DAta Access Object
 @Dao
 public interface SensorDao {
-    @Insert
-    void insert(AccelData data);
 
-    @Insert
-    void insert(GyroData data);
+    @Insert void insert(AccelData data);
+    @Insert void insert(GyroData data);
+    @Insert void insert(MagnetData data);
+    @Insert void insert(EreignisData data);
+    @Insert void insert(Sensor sensor);
 
-    @Insert
-    void insert(MagnetData data);
-
-    @Insert
-    void insert(EreignisData data);
-
-    @Insert
-    void insert(Sensor sensor);
-
-    @Query("SELECT * FROM accel_data Order By timestamp ASC")
+    @Query("SELECT * FROM accel_data ORDER BY timestamp ASC")
     LiveData<List<AccelData>> getAllAccelData();
 
     @Query("SELECT * FROM gyro_data ORDER BY timestamp ASC")
@@ -38,7 +29,6 @@ public interface SensorDao {
     @Query("SELECT * FROM magnet_data ORDER BY timestamp ASC")
     LiveData<List<MagnetData>> getAllMagnetData();
 
-    // Abfragen für die Datumsfilterung
     @Query("SELECT MIN(timestamp) FROM accel_data")
     LiveData<Long> getOldestAccelTimestamp();
 
@@ -60,6 +50,6 @@ public interface SensorDao {
     @Query("SELECT * FROM ereignis_data ORDER BY timestamp ASC")
     List<EreignisData> getAllEreignisData();
 
-    @Query("SELECT * FROM knownSensors Order By sensorID ASC")
+    @Query("SELECT * FROM knownSensors ORDER BY sensorID ASC")
     List<Sensor> getAllKnownSensors();
 }

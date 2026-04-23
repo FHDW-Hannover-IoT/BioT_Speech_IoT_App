@@ -10,7 +10,7 @@ import android.util.Log;
 import androidx.core.app.NotificationCompat;
 import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.main.MainActivity;
-import database.entities.EreignisData;
+import com.fhdw.biot.speech.iot.database.entities.EreignisData;
 
 /**
  * SensorEreignis --------------- Represents a *single triggered event* in memory.

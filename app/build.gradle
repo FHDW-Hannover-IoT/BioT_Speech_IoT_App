@@ -46,6 +46,18 @@ android {
 
         buildConfigField "int", "LLM_PORT",
                 "${project.findProperty('biot.llmPort') ?: 8001}"
+
+        buildConfigField "int", "SIMULATOR_FALLBACK_DELAY_MS",
+                "${project.findProperty('biot.simulatorFallbackDelayMs') ?: 5000}"
+
+        buildConfigField "int", "SIMULATOR_INTERVAL_MS",
+                "${project.findProperty('biot.simulatorIntervalMs') ?: 500}"
+
+        buildConfigField "int", "LLM_CONNECT_TIMEOUT_MS",
+                "${project.findProperty('biot.llmConnectTimeoutMs') ?: 5000}"
+
+        buildConfigField "int", "LLM_READ_TIMEOUT_MS",
+                "${project.findProperty('biot.llmReadTimeoutMs') ?: 30000}"
     }
 
     buildFeatures {

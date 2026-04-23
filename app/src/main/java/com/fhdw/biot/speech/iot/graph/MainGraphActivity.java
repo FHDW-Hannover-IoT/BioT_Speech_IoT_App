@@ -27,10 +27,11 @@ import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
-import database.DB;
-import database.entities.AccelData;
-import database.entities.GyroData;
-import database.entities.MagnetData;
+import com.fhdw.biot.speech.iot.config.BiotApplication;
+import com.fhdw.biot.speech.iot.database.entities.AccelData;
+import com.fhdw.biot.speech.iot.database.entities.GyroData;
+import com.fhdw.biot.speech.iot.database.entities.MagnetData;
+import com.fhdw.biot.speech.iot.repository.SensorRepository;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -64,6 +65,7 @@ public class MainGraphActivity extends BaseChartActivity {
     private Calendar dateFromCalendar;
     private Calendar dateToCalendar;
 
+    private SensorRepository sensorRepository;
     private LiveData<List<AccelData>> currentAccelLiveData;
     private LiveData<List<GyroData>> currentGyroLiveData;
     private LiveData<List<MagnetData>> currentMagLiveData;
@@ -101,6 +103,7 @@ public class MainGraphActivity extends BaseChartActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main_graph);
+        sensorRepository = ((BiotApplication) getApplication()).getContainer().sensorRepository();
 
         // ------------------------------------------------------------
         // SAFE INSETS (dynamic padding for status/navigation bars)
@@ -205,8 +208,7 @@ public class MainGraphActivity extends BaseChartActivity {
         dateFromCalendar = Calendar.getInstance();
         dateToCalendar = Calendar.getInstance();
 
-        LiveData<Long> oldestTimestampLiveData =
-                DB.getDatabase(getApplicationContext()).sensorDao().getOldestAccelTimestamp();
+        LiveData<Long> oldestTimestampLiveData = sensorRepository.getOldestAccelTimestamp();
 
         oldestTimestampLiveData.observe(
                 this,
@@ -278,10 +280,7 @@ public class MainGraphActivity extends BaseChartActivity {
         // ============================
         // ACCEL DATA
         // ============================
-        currentAccelLiveData =
-                DB.getDatabase(getApplicationContext())
-                        .sensorDao()
-                        .getAccelDataBetween(fromTime, toTime);
+        currentAccelLiveData = sensorRepository.getAccelBetween(fromTime, toTime);
         currentAccelLiveData.observe(
                 this,
                 data -> {
@@ -297,10 +296,7 @@ public class MainGraphActivity extends BaseChartActivity {
         // ============================
         // GYRO DATA
         // ============================
-        currentGyroLiveData =
-                DB.getDatabase(getApplicationContext())
-                        .sensorDao()
-                        .getGyroDataBetween(fromTime, toTime);
+        currentGyroLiveData = sensorRepository.getGyroBetween(fromTime, toTime);
         currentGyroLiveData.observe(
                 this,
                 data -> {
@@ -315,10 +311,7 @@ public class MainGraphActivity extends BaseChartActivity {
         // ============================
         // MAGNET DATA
         // ============================
-        currentMagLiveData =
-                DB.getDatabase(getApplicationContext())
-                        .sensorDao()
-                        .getMagnetDataBetween(fromTime, toTime);
+        currentMagLiveData = sensorRepository.getMagnetBetween(fromTime, toTime);
         currentMagLiveData.observe(
                 this,
                 data -> {
@@ -444,9 +437,7 @@ public class MainGraphActivity extends BaseChartActivity {
     // =====================================================================
 
     private void observeAccelData() {
-        DB.getDatabase(getApplicationContext())
-                .sensorDao()
-                .getAllAccelData()
+        sensorRepository.getAllAccelData()
                 .observe(
                         this,
                         list -> {
@@ -460,9 +451,7 @@ public class MainGraphActivity extends BaseChartActivity {
     }
 
     private void observeGyroData() {
-        DB.getDatabase(getApplicationContext())
-                .sensorDao()
-                .getAllGyroData()
+        sensorRepository.getAllGyroData()
                 .observe(
                         this,
                         list -> {
@@ -476,9 +465,7 @@ public class MainGraphActivity extends BaseChartActivity {
     }
 
     private void observeMagnetData() {
-        DB.getDatabase(getApplicationContext())
-                .sensorDao()
-                .getAllMagnetData()
+        sensorRepository.getAllMagnetData()
                 .observe(
                         this,
                         list -> {

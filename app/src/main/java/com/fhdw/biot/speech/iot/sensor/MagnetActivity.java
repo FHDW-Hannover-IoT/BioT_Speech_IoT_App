@@ -21,8 +21,9 @@ import com.fhdw.biot.speech.iot.voice.VoiceCommandExecutor;
 import com.fhdw.biot.speech.iot.graph.IFilterableChart;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
-import database.DB;
-import database.entities.MagnetData;
+import com.fhdw.biot.speech.iot.config.BiotApplication;
+import com.fhdw.biot.speech.iot.database.entities.MagnetData;
+import com.fhdw.biot.speech.iot.repository.SensorRepository;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -53,6 +54,7 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
     /** Quick filter button: show only last 10 minutes. */
     private Button btnFilterLast10Min;
 
+    private SensorRepository sensorRepository;
     private LiveData<List<MagnetData>> currentLiveData;
 
     private Handler slidingWindowHandler = new Handler(Looper.getMainLooper());
@@ -65,6 +67,7 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_magnetfeld);
+        sensorRepository = ((BiotApplication) getApplication()).getContainer().sensorRepository();
 
         // --------------------------------------------------------------------
         // Window insets handling (edge-to-edge UI + system bars)
@@ -180,8 +183,7 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
         dateFromCalendar = Calendar.getInstance();
         dateToCalendar = Calendar.getInstance();
 
-        LiveData<Long> oldestTimestampLiveData =
-                DB.getDatabase(getApplicationContext()).sensorDao().getOldestMagnetTimestamp();
+        LiveData<Long> oldestTimestampLiveData = sensorRepository.getOldestMagnetTimestamp();
 
         oldestTimestampLiveData.observe(
                 this,
@@ -346,10 +348,7 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
             toTime = adjustedToCalendar.getTimeInMillis();
         }
 
-        currentLiveData =
-                DB.getDatabase(getApplicationContext())
-                        .sensorDao()
-                        .getMagnetDataBetween(fromTime, toTime);
+        currentLiveData = sensorRepository.getMagnetBetween(fromTime, toTime);
 
         currentLiveData.observe(
                 this,
