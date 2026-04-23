@@ -1,7 +1,7 @@
 package com.fhdw.biot.speech.iot.graph;
 
 import android.graphics.Color;
-import androidx.appcompat.app.AppCompatActivity;
+import com.fhdw.biot.speech.iot.config.BiotBaseActivity;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Description;
 import com.github.mikephil.charting.components.XAxis;
@@ -18,7 +18,7 @@ import java.util.ArrayList;
  * <p>By placing the shared functionality here: → we avoid duplicated code → all sensor charts
  * maintain a consistent visual style → adding new sensors becomes trivial
  */
-public abstract class BaseChartActivity extends AppCompatActivity {
+public abstract class BaseChartActivity extends BiotBaseActivity {
 
     /**
      * Configure the chart BEFORE inserting data.

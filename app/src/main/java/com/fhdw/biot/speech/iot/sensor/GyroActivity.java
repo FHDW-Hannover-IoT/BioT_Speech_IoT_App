@@ -21,8 +21,9 @@ import com.fhdw.biot.speech.iot.graph.IFilterableChart;
 import com.fhdw.biot.speech.iot.voice.VoiceCommandExecutor;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
-import database.DB;
-import database.entities.GyroData;
+import com.fhdw.biot.speech.iot.config.BiotApplication;
+import com.fhdw.biot.speech.iot.database.entities.GyroData;
+import com.fhdw.biot.speech.iot.repository.SensorRepository;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -60,6 +61,7 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
     /** Quick filter button: show only last 10 minutes. */
     private Button btnFilterLast10Min;
 
+    private SensorRepository sensorRepository;
     private LiveData<List<GyroData>> currentLiveData;
 
     private boolean isStartPointFixed = false;
@@ -68,6 +70,7 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_gyroskop);
+        sensorRepository = ((BiotApplication) getApplication()).getContainer().sensorRepository();
 
         // --------------------------------------------------------------------
         // Window insets handling (status bar / navigation bar)
@@ -184,8 +187,7 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
         dateFromCalendar = Calendar.getInstance();
         dateToCalendar = Calendar.getInstance();
 
-        LiveData<Long> oldestTimestampLiveData =
-                DB.getDatabase(getApplicationContext()).sensorDao().getOldestGyroTimestamp();
+        LiveData<Long> oldestTimestampLiveData = sensorRepository.getOldestGyroTimestamp();
 
         oldestTimestampLiveData.observe(
                 this,
@@ -349,10 +351,7 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
             toTime = adjustedToCalendar.getTimeInMillis();
         }
 
-        currentLiveData =
-                DB.getDatabase(getApplicationContext())
-                        .sensorDao()
-                        .getGyroDataBetween(fromTime, toTime);
+        currentLiveData = sensorRepository.getGyroBetween(fromTime, toTime);
 
         currentLiveData.observe(
                 this,

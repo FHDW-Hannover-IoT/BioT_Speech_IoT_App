@@ -6,16 +6,17 @@ import android.util.Log;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.fhdw.biot.speech.iot.R;
+import com.fhdw.biot.speech.iot.config.BiotApplication;
+import com.fhdw.biot.speech.iot.config.BiotBaseActivity;
 import com.fhdw.biot.speech.iot.main.MainActivity;
-import database.DB;
-import database.entities.EreignisData;
+import com.fhdw.biot.speech.iot.database.entities.EreignisData;
+import com.fhdw.biot.speech.iot.repository.SensorRepository;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,11 +31,12 @@ import java.util.List;
  *
  * <p>This screen is essentially the "Event Log" of the entire system.
  */
-public class EreignisActivity extends AppCompatActivity {
+public class EreignisActivity extends BiotBaseActivity {
 
     private RecyclerView recyclerView;
     private MyEventAdapter adapter;
 
+    private SensorRepository sensorRepository;
     private List<EreignisData> filteredEvents = new ArrayList<>();
 
     private TextView headerTextView;
@@ -48,6 +50,7 @@ public class EreignisActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_ereignisse);
+        sensorRepository = ((BiotApplication) getApplication()).getContainer().sensorRepository();
 
         // Handle safe area insets
         ViewCompat.setOnApplyWindowInsetsListener(
@@ -97,12 +100,8 @@ public class EreignisActivity extends AppCompatActivity {
 
     /** Loads event data from ROOM → optionally filtered by sensor category. */
     private void loadEventData(String filter) {
-        DB.databaseWriteExecutor.execute(
-                () -> {
-                    List<EreignisData> allEventsList =
-                            DB.getDatabase(getApplicationContext())
-                                    .sensorDao()
-                                    .getAllEreignisData();
+        new Thread(() -> {
+                    List<EreignisData> allEventsList = sensorRepository.getAllEreignisData();
 
                     runOnUiThread(
                             () -> {
@@ -142,7 +141,7 @@ public class EreignisActivity extends AppCompatActivity {
 
                                 adapter.notifyDataSetChanged();
                             });
-                });
+                }).start();
     }
 
     /** Sorts events based on column clicked by user. */

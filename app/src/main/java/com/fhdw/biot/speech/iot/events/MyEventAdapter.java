@@ -7,7 +7,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.fhdw.biot.speech.iot.R;
-import database.entities.EreignisData;
+import com.fhdw.biot.speech.iot.database.entities.EreignisData;
 import java.util.Date;
 import java.util.List;
 

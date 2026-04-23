@@ -6,16 +6,17 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageButton;
 import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.fhdw.biot.speech.iot.R;
+import com.fhdw.biot.speech.iot.config.BiotApplication;
+import com.fhdw.biot.speech.iot.config.BiotBaseActivity;
 import com.fhdw.biot.speech.iot.main.MainActivity;
-import database.DB;
-import database.entities.Sensor;
+import com.fhdw.biot.speech.iot.database.entities.Sensor;
+import com.fhdw.biot.speech.iot.repository.SensorRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -36,7 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * <p>Note: Currently, only the UI list is implemented. The persistence logic ("Datenbanklogik
  * hinzufügen") is still a TODO.
  */
-public class NewEreignisActivity extends AppCompatActivity {
+public class NewEreignisActivity extends BiotBaseActivity {
 
     // RecyclerView that displays the list of editable rules
     private RecyclerView recyclerView;
@@ -46,14 +47,16 @@ public class NewEreignisActivity extends AppCompatActivity {
 
     // In-memory list of event-rule configurations
     private List<EditableSensorEvent> editableEventList;
-
-    public List<Sensor> sensors = loadAvailableSensors();
+    public List<Sensor> sensors = new ArrayList<>();
+    private SensorRepository sensorRepository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_new_ereignis);
+        sensorRepository = ((BiotApplication) getApplication()).getContainer().sensorRepository();
+        loadAvailableSensors();
 
         // Apply system window insets so content doesn't overlap status/navigation bars.
         ViewCompat.setOnApplyWindowInsetsListener(
@@ -110,25 +113,16 @@ public class NewEreignisActivity extends AppCompatActivity {
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    private List<Sensor> loadAvailableSensors() {
-        AtomicReference<List<Sensor>> allEventsList = new AtomicReference<>();
-        DB.databaseWriteExecutor.execute(
-                () -> {
-                    allEventsList.set(
-                            DB.getDatabase(getApplicationContext())
-                                    .sensorDao()
-                                    .getAllKnownSensors());
-
-                    runOnUiThread(
-                            () -> {
-                                if (allEventsList.get() == null) {
-                                    Log.e("ERROR", "Event list returned null!");
-                                    return;
-                                }
-
-                                adapter.notifyDataSetChanged();
-                            });
-                });
-        return allEventsList.get();
+    private void loadAvailableSensors() {
+        new Thread(() -> {
+            List<Sensor> knownSensors = sensorRepository.getAllKnownSensors();
+            runOnUiThread(() -> {
+                if (knownSensors != null) {
+                    sensors.clear();
+                    sensors.addAll(knownSensors);
+                }
+                if (adapter != null) adapter.notifyDataSetChanged();
+            });
+        }).start();
     }
 }

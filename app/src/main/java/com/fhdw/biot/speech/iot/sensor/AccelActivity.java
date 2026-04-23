@@ -21,8 +21,9 @@ import com.fhdw.biot.speech.iot.graph.IFilterableChart;
 import com.fhdw.biot.speech.iot.voice.VoiceCommandExecutor;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
-import database.DB;
-import database.entities.AccelData;
+import com.fhdw.biot.speech.iot.config.BiotApplication;
+import com.fhdw.biot.speech.iot.database.entities.AccelData;
+import com.fhdw.biot.speech.iot.repository.SensorRepository;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -55,6 +56,7 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
     /** Quick filter button: show only last 10 minutes. */
     private Button btnFilterLast10Min;
 
+    private SensorRepository sensorRepository;
     private LiveData<List<AccelData>> currentLiveData;
 
     private Handler slidingWindowHandler = new Handler(Looper.getMainLooper());
@@ -66,6 +68,7 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_beschleunigung);
+        sensorRepository = ((BiotApplication) getApplication()).getContainer().sensorRepository();
 
         // Ensure content is not hidden under system bars (status/navigation).
         ViewCompat.setOnApplyWindowInsetsListener(
@@ -169,8 +172,7 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
         dateFromCalendar = Calendar.getInstance();
         dateToCalendar = Calendar.getInstance();
 
-        LiveData<Long> oldestTimestampLiveData =
-                DB.getDatabase(getApplicationContext()).sensorDao().getOldestAccelTimestamp();
+        LiveData<Long> oldestTimestampLiveData = sensorRepository.getOldestAccelTimestamp();
 
         oldestTimestampLiveData.observe(
                 this,
@@ -323,10 +325,7 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
             toTime = adjustedToCalendar.getTimeInMillis();
         }
 
-        currentLiveData =
-                DB.getDatabase(getApplicationContext())
-                        .sensorDao()
-                        .getAccelDataBetween(fromTime, toTime);
+        currentLiveData = sensorRepository.getAccelBetween(fromTime, toTime);
 
         currentLiveData.observe(
                 this,
