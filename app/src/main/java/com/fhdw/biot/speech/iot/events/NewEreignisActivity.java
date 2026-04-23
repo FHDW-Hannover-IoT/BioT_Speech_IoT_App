@@ -6,15 +6,15 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageButton;
 import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.fhdw.biot.speech.iot.R;
-import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.fhdw.biot.speech.iot.config.BiotApplication;
+import com.fhdw.biot.speech.iot.config.BiotBaseActivity;
+import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.fhdw.biot.speech.iot.database.entities.Sensor;
 import com.fhdw.biot.speech.iot.repository.SensorRepository;
 import java.util.ArrayList;
@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * <p>Note: Currently, only the UI list is implemented. The persistence logic ("Datenbanklogik
  * hinzufügen") is still a TODO.
  */
-public class NewEreignisActivity extends AppCompatActivity {
+public class NewEreignisActivity extends BiotBaseActivity {
 
     // RecyclerView that displays the list of editable rules
     private RecyclerView recyclerView;

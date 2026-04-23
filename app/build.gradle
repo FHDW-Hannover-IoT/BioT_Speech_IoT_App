@@ -17,51 +17,18 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
-        // ─────────────────────────────────────────────────────────────────────
-        // Runtime configuration injected into BuildConfig and read by AppConfig.
-        //
-        // Override per developer machine WITHOUT editing this file by adding
-        // values to the project-root gradle.properties:
-        //
-        //     biot.phoneBroker=tcp://192.168.0.42:1883
-        //     biot.llmHostPhone=192.168.0.42
-        //     biot.llmPort=8001
-        //
-        // and they will be picked up by the project.findProperty calls below.
-        // Defaults are kept identical to what was previously hard-coded in
-        // MainActivity, so a fresh checkout still works without any edits.
-        // ─────────────────────────────────────────────────────────────────────
-
-        buildConfigField "String", "PHONE_BROKER_URL",
-                "\"${project.findProperty('biot.phoneBroker') ?: 'tcp://192.168.178.80:1883'}\""
-
-        buildConfigField "String", "EMULATOR_BROKER_URL",
-                "\"${project.findProperty('biot.emulatorBroker') ?: 'tcp://10.0.2.2:1883'}\""
-
-        buildConfigField "String", "LLM_HOST_PHONE",
-                "\"${project.findProperty('biot.llmHostPhone') ?: '192.168.178.80'}\""
-
-        buildConfigField "String", "LLM_HOST_EMULATOR",
-                "\"${project.findProperty('biot.llmHostEmulator') ?: '127.0.0.1'}\""
-
-        buildConfigField "int", "LLM_PORT",
-                "${project.findProperty('biot.llmPort') ?: 8001}"
-
-        buildConfigField "int", "SIMULATOR_FALLBACK_DELAY_MS",
-                "${project.findProperty('biot.simulatorFallbackDelayMs') ?: 5000}"
-
-        buildConfigField "int", "SIMULATOR_INTERVAL_MS",
-                "${project.findProperty('biot.simulatorIntervalMs') ?: 500}"
-
-        buildConfigField "int", "LLM_CONNECT_TIMEOUT_MS",
-                "${project.findProperty('biot.llmConnectTimeoutMs') ?: 5000}"
-
-        buildConfigField "int", "LLM_READ_TIMEOUT_MS",
-                "${project.findProperty('biot.llmReadTimeoutMs') ?: 30000}"
+        buildConfigField "String", "MQTT_PHONE_BROKER_URL",    '"tcp://192.168.178.80:1883"'
+        buildConfigField "String", "MQTT_EMULATOR_BROKER_URL", '"tcp://10.0.2.2:1883"'
+        buildConfigField "String", "LLM_HOST_PHONE",           '"192.168.178.80"'
+        buildConfigField "String", "LLM_HOST_EMULATOR",        '"127.0.0.1"'
+        buildConfigField "int",    "LLM_PORT",                 "8001"
+        buildConfigField "int",    "LLM_CONNECT_TIMEOUT_MS",   "5000"
+        buildConfigField "int",    "LLM_READ_TIMEOUT_MS",      "30000"
+        buildConfigField "int",    "SIMULATOR_FALLBACK_DELAY_MS", "5000"
+        buildConfigField "int",    "SIMULATOR_INTERVAL_MS",    "500"
     }
 
     buildFeatures {
-        // Required for AppConfig to read the buildConfigField entries above.
         buildConfig true
     }
 

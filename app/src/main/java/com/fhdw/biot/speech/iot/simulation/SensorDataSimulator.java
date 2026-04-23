@@ -144,9 +144,11 @@ public class SensorDataSimulator {
                                  * - retained = false → broker does NOT store the last value.
                                  *   We want a pure real-time stream here.
                                  */
-                                mqttHandler.publish("Sensor/Bewegung", bewegungPayload, false);
-                                mqttHandler.publish("Sensor/Gyro", gyroPayload, false);
-                                mqttHandler.publish("Sensor/Magnet", magnetPayload, false);
+                                // Publish under Sensor/Sim/* so the app can distinguish
+                                // simulator traffic from real hardware on Sensor/*.
+                                mqttHandler.publish("Sensor/Sim/Bewegung", bewegungPayload, false);
+                                mqttHandler.publish("Sensor/Sim/Gyro",     gyroPayload,     false);
+                                mqttHandler.publish("Sensor/Sim/Magnet",   magnetPayload,   false);
 
                             } catch (Exception e) {
                                 Log.e(TAG, "Simulator error: " + e.getMessage(), e);

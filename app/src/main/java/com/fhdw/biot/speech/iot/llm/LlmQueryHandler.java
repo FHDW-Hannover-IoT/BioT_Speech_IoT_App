@@ -36,9 +36,6 @@ public class LlmQueryHandler implements ILlmQueryHandler {
 
     private static final String TAG = "LlmQueryHandler";
 
-    private static final int CONNECT_TIMEOUT_MS = BuildConfig.LLM_CONNECT_TIMEOUT_MS;
-    private static final int READ_TIMEOUT_MS    = BuildConfig.LLM_READ_TIMEOUT_MS;
-
     private static final String FALLBACK_TTS =
             "Sorry, I didn't catch that. Could you repeat your question?";
 
@@ -46,6 +43,8 @@ public class LlmQueryHandler implements ILlmQueryHandler {
     private final MutableLiveData<Boolean>   llmLoading;
     private final String                     chatEndpointUrl;
     private final ExecutorService            http;
+    private final int                        connectTimeoutMs;
+    private final int                        readTimeoutMs;
 
     public LlmQueryHandler(
             MutableLiveData<LlmAction> liveAction,
@@ -54,6 +53,8 @@ public class LlmQueryHandler implements ILlmQueryHandler {
         this.liveAction      = liveAction;
         this.llmLoading      = llmLoading;
         this.chatEndpointUrl = chatEndpointUrl;
+        this.connectTimeoutMs = BuildConfig.LLM_CONNECT_TIMEOUT_MS;
+        this.readTimeoutMs    = BuildConfig.LLM_READ_TIMEOUT_MS;
         this.http = Executors.newSingleThreadExecutor(r -> {
             Thread t = new Thread(r, "llm-query-http");
             t.setDaemon(true);
@@ -102,8 +103,8 @@ public class LlmQueryHandler implements ILlmQueryHandler {
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
             conn.setRequestProperty("Accept", "application/json");
-            conn.setConnectTimeout(CONNECT_TIMEOUT_MS);
-            conn.setReadTimeout(READ_TIMEOUT_MS);
+            conn.setConnectTimeout(connectTimeoutMs);
+            conn.setReadTimeout(readTimeoutMs);
             conn.setDoOutput(true);
 
             JSONObject body = new JSONObject();
