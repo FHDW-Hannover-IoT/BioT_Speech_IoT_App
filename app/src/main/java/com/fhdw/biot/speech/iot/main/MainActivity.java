@@ -25,6 +25,7 @@ import com.fhdw.biot.speech.iot.sensor.AccelActivity;
 import com.fhdw.biot.speech.iot.sensor.GyroActivity;
 import com.fhdw.biot.speech.iot.sensor.MagnetActivity;
 import com.fhdw.biot.speech.iot.settings.SettingsActivity;
+import com.fhdw.biot.speech.iot.simulation.SensorDataSimulator;
 import com.fhdw.biot.speech.iot.voice.ILlmQueryHandler;
 import com.fhdw.biot.speech.iot.voice.TtsManager;
 import com.fhdw.biot.speech.iot.voice.VoiceCommand;
@@ -71,11 +72,14 @@ public class MainActivity extends AppCompatActivity {
     private ILlmQueryHandler  llmHandler;
     private VoiceInputManager voiceInputManager;
 
+    // ── Simulation ───────────────────────────────────────────────────────────
+    private SensorDataSimulator simulator;
+    private boolean liveDataReceived = false;
+
     // ── UI ───────────────────────────────────────────────────────────────────
     private TextView accelXValue, accelYValue, accelZValue;
     private TextView gyroXValue,  gyroYValue,  gyroZValue;
     private TextView magXValue,   magYValue,   magZValue;
-    private TextView micValueText;
     private TextView modeLabel;
     private TextView operatingModeLabel;
     private Button   btnStream, btnBurst, btnAverage;
@@ -127,6 +131,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         if (voiceInputManager != null) voiceInputManager.destroy();
+        if (simulator != null)        simulator.stop();
         container.releaseActivityScope();
         super.onDestroy();
     }
@@ -167,16 +172,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void bindSensorTextViews() {
-        accelXValue  = findViewById(R.id.accelXValue);
-        accelYValue  = findViewById(R.id.accelYValue);
-        accelZValue  = findViewById(R.id.accelZValue);
-        gyroXValue   = findViewById(R.id.gyroXValue);
-        gyroYValue   = findViewById(R.id.gyroYValue);
-        gyroZValue   = findViewById(R.id.gyroZValue);
-        magXValue    = findViewById(R.id.magXValue);
-        magYValue    = findViewById(R.id.magYValue);
-        magZValue    = findViewById(R.id.magZValue);
-        micValueText = findViewById(R.id.micValue);
+        accelXValue = findViewById(R.id.accelXValue);
+        accelYValue = findViewById(R.id.accelYValue);
+        accelZValue = findViewById(R.id.accelZValue);
+        gyroXValue  = findViewById(R.id.gyroXValue);
+        gyroYValue  = findViewById(R.id.gyroYValue);
+        gyroZValue  = findViewById(R.id.gyroZValue);
+        magXValue   = findViewById(R.id.magXValue);
+        magYValue   = findViewById(R.id.magYValue);
+        magZValue   = findViewById(R.id.magZValue);
     }
 
     private void bindModeButtons() {
@@ -247,11 +251,20 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, "MQTT → " + topic + " = " + message);
             runOnUiThread(() -> {
                 try {
+                    // Stop simulator the first time real hardware data arrives.
+                    if (!liveDataReceived && topic.startsWith("Sensor/")) {
+                        liveDataReceived = true;
+                        if (simulator != null) {
+                            simulator.stop();
+                            simulator = null;
+                            Log.i(TAG, "Live data received — simulator stopped");
+                        }
+                    }
+
                     switch (topic) {
                         case "Sensor/Bewegung":  handleMovementMessage(message); break;
                         case "Sensor/Gyro":      handleGyroMessage(message);     break;
                         case "Sensor/Magnet":    handleMagnetMessage(message);   break;
-                        case "Sensor/Mic":       handleMicMessage(message);      break;
                         case "Control/Mode":
                             switch (message) {
                                 case "STREAM":  highlightActiveMode(modeLabel, "Stream",  btnStream,  btnBurst,   btnAverage); break;
@@ -289,21 +302,45 @@ public class MainActivity extends AppCompatActivity {
                 mqttHandler.subscribe("Sensor/Bewegung");
                 mqttHandler.subscribe("Sensor/Gyro");
                 mqttHandler.subscribe("Sensor/Magnet");
-                mqttHandler.subscribe("Sensor/Mic");
                 mqttHandler.subscribe("Control/Mode");
                 mqttHandler.subscribe("Control/OperatingMode");
                 loadDatabaseValues();
+                scheduleSimulatorFallback();
             }
 
             @Override
             public void onFailure(Throwable t) {
                 Log.e(TAG, "MQTT connect failed: " + (t == null ? "?" : t.getMessage()), t);
-                runOnUiThread(() ->
-                        Toast.makeText(MainActivity.this,
-                                "MQTT Fehler: " + (t == null ? "?" : t.getMessage()),
-                                Toast.LENGTH_LONG).show());
+                runOnUiThread(() -> {
+                    Toast.makeText(MainActivity.this,
+                            "MQTT Fehler: " + (t == null ? "?" : t.getMessage()),
+                            Toast.LENGTH_LONG).show();
+                    startSimulator();
+                });
             }
         });
+    }
+
+    /**
+     * If no real sensor data arrives within 5 seconds of connecting, fall back to
+     * the simulator so charts are not empty during demos without hardware.
+     */
+    private void scheduleSimulatorFallback() {
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            if (!liveDataReceived) {
+                Log.i(TAG, "No live MQTT data after 5 s — starting simulator");
+                Toast.makeText(this, "Kein Hardware gefunden – Simulator gestartet",
+                        Toast.LENGTH_LONG).show();
+                startSimulator();
+            }
+        }, 5_000);
+    }
+
+    private void startSimulator() {
+        if (simulator != null) return;
+        simulator = new SensorDataSimulator(mqttHandler, 500);
+        simulator.start();
+        Log.i(TAG, "SensorDataSimulator started");
     }
 
     private void mqttPublishOrToast(String topic, String payload) {
@@ -539,16 +576,6 @@ public class MainActivity extends AppCompatActivity {
             DB.databaseWriteExecutor.execute(() -> sensorDao.insert(magnetData));
         } catch (NumberFormatException e) {
             Log.e(TAG, "Magnet parse error: " + e.getMessage(), e);
-        }
-    }
-
-    private void handleMicMessage(String message) {
-        try {
-            String[] parts = message.split(",");
-            int displayValue = Integer.parseInt(parts[parts.length - 1].trim());
-            if (micValueText != null) micValueText.setText("Wert: " + displayValue);
-        } catch (NumberFormatException e) {
-            Log.e(TAG, "Mic parse error: " + e.getMessage(), e);
         }
     }
 

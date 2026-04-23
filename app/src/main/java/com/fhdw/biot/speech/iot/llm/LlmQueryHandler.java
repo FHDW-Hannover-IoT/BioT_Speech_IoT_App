@@ -92,7 +92,7 @@ public class LlmQueryHandler implements ILlmQueryHandler {
         Log.i(TAG, "LlmQueryHandler ready, endpoint=" + chatEndpointUrl);
     }
 
-    /** Call from {@link Activity#onDestroy()} to stop the HTTP executor. */
+    /** Call from {@link Activity#} to stop the HTTP executor. */
     public void shutdown() {
         http.shutdownNow();
     }
