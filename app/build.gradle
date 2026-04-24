@@ -17,9 +17,9 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField "String", "MQTT_PHONE_BROKER_URL",    '"tcp://192.168.178.80:1883"'
+        buildConfigField "String", "MQTT_PHONE_BROKER_URL",    '"tcp://10.156.142.171:1883"'
         buildConfigField "String", "MQTT_EMULATOR_BROKER_URL", '"tcp://10.0.2.2:1883"'
-        buildConfigField "String", "LLM_HOST_PHONE",           '"192.168.178.80"'
+        buildConfigField "String", "LLM_HOST_PHONE",           '"10.156.142.171"'
         buildConfigField "String", "LLM_HOST_EMULATOR",        '"127.0.0.1"'
         buildConfigField "int",    "LLM_PORT",                 "8001"
         buildConfigField "int",    "LLM_CONNECT_TIMEOUT_MS",   "5000"
