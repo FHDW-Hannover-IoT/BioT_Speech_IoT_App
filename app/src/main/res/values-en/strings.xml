@@ -39,6 +39,7 @@
     <string name="settings_lang_de">German</string>
     <string name="settings_lang_en">English</string>
     <string name="settings_lang_zh">Chinese (Mandarin)</string>
+    <string name="loading_language">Loading language…</string>
     <string name="settings_dp_title">Data Reduction (Douglas-Peucker)</string>
     <string name="settings_dp_desc">Reduces the number of data points to improve performance without changing the shape of the graph.</string>
     <string name="settings_dp_enable">Enable algorithm</string>

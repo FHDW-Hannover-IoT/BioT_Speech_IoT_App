@@ -16,6 +16,7 @@ import com.fhdw.biot.speech.iot.mqtt.MqttHandler;
 import com.fhdw.biot.speech.iot.repository.McpDataSyncService;
 import com.fhdw.biot.speech.iot.repository.SensorRepository;
 import com.fhdw.biot.speech.iot.voice.ILlmQueryHandler;
+import com.fhdw.biot.speech.iot.voice.TranslationManager;
 import com.fhdw.biot.speech.iot.voice.TtsManager;
 
 import java.util.UUID;
@@ -44,6 +45,7 @@ public class AppContainer {
     private SensorRepository sensorRepository;
     private McpDataSyncService mcpDataSync;
     private LlmQueryHandler llmQueryHandler;
+    private TranslationManager translationManager;
 
     private final MutableLiveData<LlmAction>  liveAction  = new MutableLiveData<>();
     private final MutableLiveData<Boolean>    llmLoading  = new MutableLiveData<>(false);
@@ -59,22 +61,24 @@ public class AppContainer {
     public void initApplicationScope(Context context) {
         if (db != null) return;
 
-        db              = DB.getDatabase(context.getApplicationContext());
-        dbContext       = new DbContext(db);
-        sensorRepository = new SensorRepository(dbContext);
-        mcpDataSync     = new McpDataSyncService(sensorRepository, AppConfig.mcpBaseUrl());
-        llmQueryHandler = new LlmQueryHandler(liveAction, llmLoading, AppConfig.llmChatEndpoint());
+        db                 = DB.getDatabase(context.getApplicationContext());
+        dbContext          = new DbContext(db);
+        sensorRepository   = new SensorRepository(dbContext);
+        mcpDataSync        = new McpDataSyncService(sensorRepository, AppConfig.mcpBaseUrl());
+        llmQueryHandler    = new LlmQueryHandler(liveAction, llmLoading, AppConfig.llmChatEndpoint());
+        translationManager = new TranslationManager();
 
         Log.i(TAG, "Application scope initialised.");
     }
 
     // ── Application-scope getters ─────────────────────────────────────────────
 
-    public SensorRepository    sensorRepository() { return sensorRepository; }
-    public McpDataSyncService  mcpDataSync()       { return mcpDataSync; }
-    public ILlmQueryHandler    llmQueryHandler()   { return llmQueryHandler; }
-    public MutableLiveData<LlmAction> liveAction() { return liveAction; }
-    public LiveData<Boolean>   llmLoading()        { return llmLoading; }
+    public SensorRepository    sensorRepository()   { return sensorRepository; }
+    public McpDataSyncService  mcpDataSync()        { return mcpDataSync; }
+    public ILlmQueryHandler    llmQueryHandler()    { return llmQueryHandler; }
+    public TranslationManager  translationManager() { return translationManager; }
+    public MutableLiveData<LlmAction> liveAction()  { return liveAction; }
+    public LiveData<Boolean>   llmLoading()         { return llmLoading; }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Activity-scope init (called from Activity.onCreate)

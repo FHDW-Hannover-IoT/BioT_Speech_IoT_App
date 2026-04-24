@@ -39,6 +39,7 @@
     <string name="settings_lang_de">德语</string>
     <string name="settings_lang_en">英语</string>
     <string name="settings_lang_zh">中文 (普通话)</string>
+    <string name="loading_language">正在加载语言…</string>
     <string name="settings_dp_title">数据压缩 (Douglas-Peucker)</string>
     <string name="settings_dp_desc">在不改变图形形状的情况下减少数据点数量以提高性能。</string>
     <string name="settings_dp_enable">启用算法</string>
