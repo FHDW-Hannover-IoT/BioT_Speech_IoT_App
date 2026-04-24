@@ -18,7 +18,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.Consumer;
 
 /**
  * McpDataSyncService — Observer-pattern bridge between the MCP/FastAPI server and
@@ -32,7 +31,7 @@ import java.util.function.Consumer;
  *   4. Any Activity observing the LiveData is notified automatically on the main
  *      thread — no polling, no blocking.
  *
- * Endpoints (LLM app):
+ * Endpoints (LLM app — update when the FastAPI routes are confirmed):
  *   GET {baseUrl}/data/accel?from={fromMs}&to={toMs}
  *   GET {baseUrl}/data/gyro?from={fromMs}&to={toMs}
  *   GET {baseUrl}/data/magnet?from={fromMs}&to={toMs}
@@ -81,97 +80,99 @@ public class McpDataSyncService {
     // ── Public fetch API ──────────────────────────────────────────────────────
 
     public void fetchAccel(long fromMs, long toMs) {
-        fetchSensor(PATH_ACCEL, "Accel", fromMs, toMs,
-                row -> {
-                    AccelData d = new AccelData();
-                    d.timestamp = row.getLong("timestamp");
-                    d.accelX    = (float) row.getDouble("x");
-                    d.accelY    = (float) row.getDouble("y");
-                    d.accelZ    = (float) row.getDouble("z");
-                    return d;
-                },
-                repository::insertAccelBatch,
-                accelHistory);
-    }
-
-    public void fetchGyro(long fromMs, long toMs) {
-        fetchSensor(PATH_GYRO, "Gyro", fromMs, toMs,
-                row -> {
-                    GyroData d = new GyroData();
-                    d.timestamp = row.getLong("timestamp");
-                    d.gyroX     = (float) row.getDouble("x");
-                    d.gyroY     = (float) row.getDouble("y");
-                    d.gyroZ     = (float) row.getDouble("z");
-                    return d;
-                },
-                repository::insertGyroBatch,
-                gyroHistory);
-    }
-
-    public void fetchMagnet(long fromMs, long toMs) {
-        fetchSensor(PATH_MAGNET, "Magnet", fromMs, toMs,
-                row -> {
-                    MagnetData d = new MagnetData();
-                    d.timestamp = row.getLong("timestamp");
-                    d.magnetX   = (float) row.getDouble("x");
-                    d.magnetY   = (float) row.getDouble("y");
-                    d.magnetZ   = (float) row.getDouble("z");
-                    return d;
-                },
-                repository::insertMagnetBatch,
-                magnetHistory);
-    }
-
-    // ── Generic fetch helper ──────────────────────────────────────────────────
-
-    /**
-     * Executes an HTTP GET to the given sensor path, maps each JSON row to a
-     * domain object via {@code mapper}, batch-inserts via {@code batchInsert},
-     * and posts the result list to {@code liveData}.
-     *
-     * @param path        URL path suffix (e.g. "/data/accel")
-     * @param label       Human-readable name used in log messages
-     * @param fromMs      Range start (epoch ms)
-     * @param toMs        Range end (epoch ms)
-     * @param mapper      Converts one JSON row object to the domain entity
-     * @param batchInsert Inserts the completed list into Room
-     * @param liveData    Receives the result on success, empty list on failure
-     */
-    private <T> void fetchSensor(
-            String path,
-            String label,
-            long fromMs,
-            long toMs,
-            RowMapper<T> mapper,
-            Consumer<List<T>> batchInsert,
-            MutableLiveData<List<T>> liveData) {
-
         executor.submit(() -> {
             try {
-                List<T> data = httpGetSensor(path, fromMs, toMs, mapper);
-                batchInsert.accept(data);
-                liveData.postValue(data);
-                Log.i(TAG, "fetch" + label + ": " + data.size() + " rows");
+                List<AccelData> data = httpGetAccel(fromMs, toMs);
+                repository.insertAccelBatch(data);
+                accelHistory.postValue(data);
+                Log.i(TAG, "fetchAccel: " + data.size() + " rows");
             } catch (Exception e) {
-                Log.e(TAG, "fetch" + label + " failed: " + e.getMessage(), e);
-                syncError.postValue(label + " history unavailable: " + e.getMessage());
-                liveData.postValue(Collections.emptyList());
+                Log.e(TAG, "fetchAccel failed: " + e.getMessage(), e);
+                syncError.postValue("Accel history unavailable: " + e.getMessage());
+                accelHistory.postValue(Collections.emptyList());
             }
         });
     }
 
-    private <T> List<T> httpGetSensor(
-            String path, long fromMs, long toMs, RowMapper<T> mapper) throws Exception {
-        String json = httpGet(path, fromMs, toMs);
+    public void fetchGyro(long fromMs, long toMs) {
+        executor.submit(() -> {
+            try {
+                List<GyroData> data = httpGetGyro(fromMs, toMs);
+                repository.insertGyroBatch(data);
+                gyroHistory.postValue(data);
+                Log.i(TAG, "fetchGyro: " + data.size() + " rows");
+            } catch (Exception e) {
+                Log.e(TAG, "fetchGyro failed: " + e.getMessage(), e);
+                syncError.postValue("Gyro history unavailable: " + e.getMessage());
+                gyroHistory.postValue(Collections.emptyList());
+            }
+        });
+    }
+
+    public void fetchMagnet(long fromMs, long toMs) {
+        executor.submit(() -> {
+            try {
+                List<MagnetData> data = httpGetMagnet(fromMs, toMs);
+                repository.insertMagnetBatch(data);
+                magnetHistory.postValue(data);
+                Log.i(TAG, "fetchMagnet: " + data.size() + " rows");
+            } catch (Exception e) {
+                Log.e(TAG, "fetchMagnet failed: " + e.getMessage(), e);
+                syncError.postValue("Magnet history unavailable: " + e.getMessage());
+                magnetHistory.postValue(Collections.emptyList());
+            }
+        });
+    }
+
+    // ── HTTP helpers ──────────────────────────────────────────────────────────
+
+    private List<AccelData> httpGetAccel(long fromMs, long toMs) throws Exception {
+        String json = httpGet(PATH_ACCEL, fromMs, toMs);
+        List<AccelData> result = new ArrayList<>();
         JSONArray rows = new JSONObject(json).getJSONArray("rows");
-        List<T> result = new ArrayList<>(rows.length());
         for (int i = 0; i < rows.length(); i++) {
-            result.add(mapper.map(rows.getJSONObject(i)));
+            JSONObject row = rows.getJSONObject(i);
+            AccelData d = new AccelData();
+            d.timestamp = row.getLong("timestamp");
+            d.accelX    = (float) row.getDouble("x");
+            d.accelY    = (float) row.getDouble("y");
+            d.accelZ    = (float) row.getDouble("z");
+            result.add(d);
         }
         return result;
     }
 
-    // ── HTTP helpers ──────────────────────────────────────────────────────────
+    private List<GyroData> httpGetGyro(long fromMs, long toMs) throws Exception {
+        String json = httpGet(PATH_GYRO, fromMs, toMs);
+        List<GyroData> result = new ArrayList<>();
+        JSONArray rows = new JSONObject(json).getJSONArray("rows");
+        for (int i = 0; i < rows.length(); i++) {
+            JSONObject row = rows.getJSONObject(i);
+            GyroData d = new GyroData();
+            d.timestamp = row.getLong("timestamp");
+            d.gyroX     = (float) row.getDouble("x");
+            d.gyroY     = (float) row.getDouble("y");
+            d.gyroZ     = (float) row.getDouble("z");
+            result.add(d);
+        }
+        return result;
+    }
+
+    private List<MagnetData> httpGetMagnet(long fromMs, long toMs) throws Exception {
+        String json = httpGet(PATH_MAGNET, fromMs, toMs);
+        List<MagnetData> result = new ArrayList<>();
+        JSONArray rows = new JSONObject(json).getJSONArray("rows");
+        for (int i = 0; i < rows.length(); i++) {
+            JSONObject row = rows.getJSONObject(i);
+            MagnetData d = new MagnetData();
+            d.timestamp = row.getLong("timestamp");
+            d.magnetX   = (float) row.getDouble("x");
+            d.magnetY   = (float) row.getDouble("y");
+            d.magnetZ   = (float) row.getDouble("z");
+            result.add(d);
+        }
+        return result;
+    }
 
     private String httpGet(String path, long fromMs, long toMs) throws Exception {
         URL url = new URL(baseUrl + path + "?from=" + fromMs + "&to=" + toMs);
@@ -197,12 +198,5 @@ public class McpDataSyncService {
         } finally {
             conn.disconnect();
         }
-    }
-
-    // ── Inner interfaces ──────────────────────────────────────────────────────
-
-    @FunctionalInterface
-    private interface RowMapper<T> {
-        T map(JSONObject row) throws Exception;
     }
 }

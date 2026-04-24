@@ -103,13 +103,6 @@ public class MqttHandler implements IMqttPublisher {
 
     public void connect(ConnectionListener connListener) {
         executor.submit(() -> {
-            // Guard against duplicate connect (e.g. when a new Activity starts while
-            // this handler is already connected — Paho throws 32100 otherwise).
-            if (client.isConnected()) {
-                Log.d(TAG, "connect() called but already connected — skipping");
-                if (connListener != null) connListener.onConnected();
-                return;
-            }
             try {
                 MqttConnectionOptions options = new MqttConnectionOptions();
                 options.setAutomaticReconnect(true);

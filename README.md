@@ -1,7 +1,7 @@
 # BioT Speech IoT App (How to Run)
 
-> Parts used: ESP8266 NodeMCU + MPU-6050 (accel/gyro) + A3144 (hall) | MQTT + Android + LLM | FHDW Hannover IoT
-> Voice input uses the phone's built-in mic (Android SpeechRecognizer), not a hardware microphone sensor.
+> Parts used: ESP8266 NodeMCU + KY-037 + MPU-6050 + A3144 | MQTT + Android | FHDW Hannover IoT
+> I misunderstood the assignment and added a microphone to the ESP8266, but you can ignore this part.
 
 ---
 
@@ -13,7 +13,6 @@
 4. [IP Address Configuration](#4-ip-address-configuration)
 5. [Running the Application](#5-running-the-application)
 6. [App Features](#6-app-features)
-   - [6.3 Voice Commands and Language Support](#63-voice-commands-and-language-support)
 7. [Troubleshooting](#7-troubleshooting)
 8. [Security Notes](#8-security-notes)
 9. [Hardware Reference](#9-hardware-reference)
@@ -208,13 +207,11 @@ Follow this order every time you start a development session:
 
 | Topic | Direction | Format | Description |
 |-------|-----------|--------|-------------|
+| `Sensor/Mic` | ESP8266 → App | integer or CSV | KY-037 microphone sound level |
 | `Sensor/Bewegung` | ESP8266 → App | `x,y,z` floats | MPU-6050 accelerometer data |
 | `Sensor/Gyro` | ESP8266 → App | `x,y,z` floats | MPU-6050 gyroscope data |
 | `Sensor/Magnet` | ESP8266 → App | `x,y,z` floats | A3144 hall effect sensor |
-| `Control/Mode` | App → ESP8266 | `STREAM` / `BURST` / `AVERAGE` | Sets the transmission mode (retained) |
-| `Control/OperatingMode` | App → ESP8266 | `AUTARK` / `SUPERVISION` / `EVENT` / `IDENTIFICATION` | Sets the operating mode (retained) |
-
-> **Voice input** uses the Android phone's built-in microphone (Android SpeechRecognizer), not a hardware sensor. The KY-037 microphone module is not part of this system.
+| `Control/Mode` | App → ESP8266 | `STREAM` / `BURST` / `AVERAGE` | Sets the transmission mode |
 
 ### 6.2 Data Transmission Modes
 
@@ -228,29 +225,7 @@ The three buttons on the home screen control how the ESP8266 sends sensor data:
 
 The selected mode persists across reconnects, both the app and ESP8266 remember the last mode via a retained MQTT message on `Control/Mode`.
 
-### 6.3 Voice Commands and Language Support
-
-The mic button on the home screen activates push-to-talk voice control. Supported languages match the app UI language selected in Settings:
-
-| App language | STT language | How commands are matched |
-|---|---|---|
-| Deutsch | de-DE | Transcript translated to English → keyword dictionary |
-| English | en-US | Keyword dictionary directly (no translation) |
-| 中文 | zh-CN | Transcript translated to English → keyword dictionary |
-
-Translation uses Google ML Kit on-device — **no internet required** after the language model is downloaded the first time (~30 MB per language, cached automatically).
-
-If a command is not matched by the keyword dictionary it is forwarded to the LLM backend in the **original language** (not the English translation), so the LLM receives the full context.
-
-Example commands (any language):
-
-| Intent | English | German | Chinese |
-|---|---|---|---|
-| Open gyroscope | "show gyro" | "Gyroskop anzeigen" | "显示陀螺仪" |
-| Switch to burst mode | "burst mode" | "Burst Modus" | "突发模式" |
-| Last 10 minutes | "last 10 minutes" | "letzte 10 Minuten" | "最近10分钟" |
-
-### 6.4 Navigation
+### 6.3 Navigation
 
 | Screen | How to access | What it shows |
 |--------|--------------|---------------|
@@ -311,9 +286,8 @@ For a production deployment, add username/password authentication to `mosquitto.
 
 | Sensor | Module | Connection | MQTT Topic |
 |--------|--------|-----------|------------|
+| Microphone | KY-037 | `A → A0`, `G → GND`, `+ → 3V3` | `Sensor/Mic` |
 | Accelerometer + Gyro | MPU-6050 | `SDA → D2`, `SCL → D1`, `VCC → 3V3`, `GND → GND` | `Sensor/Bewegung` + `Sensor/Gyro` |
 | Hall Effect / Magnet | A3144 | `OUT → D5`, `VCC → 3V3`, `GND → GND` | `Sensor/Magnet` |
-
-> The KY-037 microphone module is **not** wired in this project. Voice input uses the Android phone's built-in mic.
 
 ---

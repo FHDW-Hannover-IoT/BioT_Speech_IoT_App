@@ -50,12 +50,6 @@ public final class VoiceCommandExecutor {
     /** Intent extra key used to pre-filter the EreignisActivity by sensor type. */
     public static final String EXTRA_SENSOR_FILTER = "SENSOR_FILTER";
 
-    /** Values for the VIEW_MODE extra passed to MainGraphActivity. */
-    public static final String VIEW_MOTION               = "MOTION";
-    public static final String VIEW_VIBRATION_SOUND      = "VIBRATION_SOUND";
-    public static final String VIEW_ORIENTATION_MAGNETIC = "ORIENTATION_MAGNETIC";
-    public static final String VIEW_ALL_SENSORS          = "ALL";
-
     private VoiceCommandExecutor() {}
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -242,19 +236,19 @@ public final class VoiceCommandExecutor {
 
             // ── COMBINED VIEWS ────────────────────────────────────────────
             case COMBINED_MOTION:
-                navigateWithStringExtra(activity, MainGraphActivity.class, "VIEW_MODE", VIEW_MOTION);
+                navigateWithStringExtra(activity, MainGraphActivity.class, "VIEW_MODE", "MOTION");
                 return true;
 
             case COMBINED_VIBRATION_SOUND:
-                navigateWithStringExtra(activity, MainGraphActivity.class, "VIEW_MODE", VIEW_VIBRATION_SOUND);
+                navigateWithStringExtra(activity, MainGraphActivity.class, "VIEW_MODE", "VIBRATION_SOUND");
                 return true;
 
             case COMBINED_ORIENTATION_MAGNETIC:
-                navigateWithStringExtra(activity, MainGraphActivity.class, "VIEW_MODE", VIEW_ORIENTATION_MAGNETIC);
+                navigateWithStringExtra(activity, MainGraphActivity.class, "VIEW_MODE", "ORIENTATION_MAGNETIC");
                 return true;
 
             case COMBINED_ALL_SENSORS:
-                navigateWithStringExtra(activity, MainGraphActivity.class, "VIEW_MODE", VIEW_ALL_SENSORS);
+                navigateWithStringExtra(activity, MainGraphActivity.class, "VIEW_MODE", "ALL");
                 return true;
 
             // ── SYSTEM ────────────────────────────────────────────────────

@@ -181,15 +181,9 @@ public class MainActivity extends BiotBaseActivity {
 
     private void handleNavigate(String screenName) {
         if (screenName == null) return;
-        if ("MainActivity".equals(screenName)) {
-            // Clear back stack rather than adding another MainActivity on top
-            Intent home = new Intent(this, MainActivity.class);
-            home.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            startActivity(home);
-            return;
-        }
         Class<?> target;
         switch (screenName) {
+            case "MainActivity":      target = MainActivity.class;      break;
             case "AccelActivity":     target = AccelActivity.class;     break;
             case "GyroActivity":      target = GyroActivity.class;      break;
             case "MagnetActivity":    target = MagnetActivity.class;    break;
@@ -200,9 +194,7 @@ public class MainActivity extends BiotBaseActivity {
                 Log.w(TAG, "Unknown screen: " + screenName);
                 return;
         }
-        Intent intent = new Intent(this, target);
-        intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-        startActivity(intent);
+        startActivity(new Intent(this, target));
     }
 
     private void handleMqttPublish(String topic, String payload) {
@@ -244,30 +236,23 @@ public class MainActivity extends BiotBaseActivity {
 
     private void bindNavigationButtons() {
         findViewById(R.id.btnGyro).setOnClickListener(v ->
-                navigateTo(GyroActivity.class));
+                startActivity(new Intent(this, GyroActivity.class)));
         findViewById(R.id.btnAccel).setOnClickListener(v ->
-                navigateTo(AccelActivity.class));
+                startActivity(new Intent(this, AccelActivity.class)));
         findViewById(R.id.btnMagnet).setOnClickListener(v ->
-                navigateTo(MagnetActivity.class));
+                startActivity(new Intent(this, MagnetActivity.class)));
 
         ImageButton ereignisButton = findViewById(R.id.notification_button);
         ereignisButton.setOnClickListener(v -> {
             Intent intent = new Intent(this, EreignisActivity.class);
             intent.putExtra(VoiceCommandExecutor.EXTRA_SENSOR_FILTER, "ALL");
-            intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
         });
 
         findViewById(R.id.graphenansicht).setOnClickListener(v ->
-                navigateTo(MainGraphActivity.class));
+                startActivity(new Intent(this, MainGraphActivity.class)));
         findViewById(R.id.settings_button).setOnClickListener(v ->
-                navigateTo(SettingsActivity.class));
-    }
-
-    private void navigateTo(Class<?> target) {
-        Intent intent = new Intent(this, target);
-        intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-        startActivity(intent);
+                startActivity(new Intent(this, SettingsActivity.class)));
     }
 
     private void bindSensorTextViews() {
@@ -576,12 +561,15 @@ public class MainActivity extends BiotBaseActivity {
                 @Override
                 public void onResult(String topResult, List<String> hypotheses) {
                     Log.i(TAG, "Voice result: \"" + topResult + "\"");
-                    String langCode = LanguageManager.getCode(MainActivity.this);
-                    if (container.translationManager().isNeeded(langCode)) {
-                        container.translationManager().translateAll(langCode, hypotheses,
-                                translated -> resolveAndExecute(topResult, translated));
-                    } else {
-                        resolveAndExecute(topResult, hypotheses);
+                    VoiceCommand cmd = VoiceCommandResolver.resolveFromList(hypotheses);
+                    Log.i(TAG, "Resolved command: " + cmd);
+
+                    boolean handledLocally = VoiceCommandExecutor.execute(
+                            MainActivity.this, cmd, mqttHandler, llmHandler, topResult);
+
+                    if (handledLocally && ttsManager != null) {
+                        String confirmation = toConfirmation(cmd);
+                        if (!confirmation.isEmpty()) ttsManager.speak(confirmation);
                     }
                 }
 
@@ -616,17 +604,6 @@ public class MainActivity extends BiotBaseActivity {
                     "Voice recognition not available on this device.",
                     Toast.LENGTH_LONG).show();
             if (btnVoice != null) btnVoice.setEnabled(false);
-        }
-    }
-
-    private void resolveAndExecute(String rawTranscript, List<String> hypotheses) {
-        VoiceCommand cmd = VoiceCommandResolver.resolveFromList(hypotheses);
-        Log.i(TAG, "Resolved command: " + cmd);
-        boolean handledLocally = VoiceCommandExecutor.execute(
-                this, cmd, mqttHandler, llmHandler, rawTranscript);
-        if (handledLocally && ttsManager != null) {
-            String confirmation = toConfirmation(cmd);
-            if (!confirmation.isEmpty()) ttsManager.speak(confirmation);
         }
     }
 

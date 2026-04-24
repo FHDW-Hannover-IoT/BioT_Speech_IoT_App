@@ -1,11 +1,8 @@
 package com.fhdw.biot.speech.iot.settings;
 
-import android.app.Dialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.widget.ImageButton;
 import android.widget.RadioGroup;
 import android.widget.SeekBar;
@@ -23,19 +20,6 @@ import com.google.android.material.switchmaterial.SwitchMaterial;
 
 public class SettingsActivity extends BiotBaseActivity {
 
-    private Dialog loadingDialog;
-    private final Handler handler = new Handler(Looper.getMainLooper());
-
-    @Override
-    protected void onDestroy() {
-        handler.removeCallbacksAndMessages(null);
-        if (loadingDialog != null) {
-            loadingDialog.dismiss();
-            loadingDialog = null;
-        }
-        super.onDestroy();
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,14 +34,10 @@ public class SettingsActivity extends BiotBaseActivity {
                     return insets;
                 });
 
-        // Home button — FLAG_ACTIVITY_CLEAR_TOP brings the existing MainActivity to
-        // the front instead of creating a second instance on top of the stack.
+        // Home button
         ImageButton buttonHome = findViewById(R.id.home_button);
-        buttonHome.setOnClickListener(view -> {
-            Intent intent = new Intent(SettingsActivity.this, MainActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            startActivity(intent);
-        });
+        buttonHome.setOnClickListener(view ->
+                startActivity(new Intent(SettingsActivity.this, MainActivity.class)));
 
         // ── Language selector ────────────────────────────────────────────────
         RadioGroup rgLanguage = findViewById(R.id.rg_language);
@@ -77,7 +57,7 @@ public class SettingsActivity extends BiotBaseActivity {
 
             if (!code.equals(LanguageManager.getCode(this))) {
                 LanguageManager.save(this, code);
-                showLanguageLoadingAndRestart();
+                recreate(); // re-inflate in the new locale
             }
         });
 
@@ -116,26 +96,5 @@ public class SettingsActivity extends BiotBaseActivity {
             @Override public void onStartTrackingTouch(SeekBar seekBar) {}
             @Override public void onStopTrackingTouch(SeekBar seekBar)  {}
         });
-    }
-
-    private void showLanguageLoadingAndRestart() {
-        loadingDialog = new Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
-        loadingDialog.setContentView(R.layout.dialog_language_loading);
-        loadingDialog.setCancelable(false);
-        loadingDialog.show();
-
-        handler.postDelayed(() -> {
-            if (loadingDialog != null) {
-                loadingDialog.dismiss();
-                loadingDialog = null;
-            }
-            // Restart the entire task so every Activity picks up the new locale
-            // via BiotBaseActivity.attachBaseContext(). recreate() only fixes the
-            // current Activity — all other Activities in the back stack keep the
-            // old locale until they are destroyed and recreated.
-            Intent restart = new Intent(this, MainActivity.class);
-            restart.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(restart);
-        }, 5000);
     }
 }
