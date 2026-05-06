@@ -91,7 +91,7 @@ public class VoiceInputManager {
     // ── Fields ────────────────────────────────────────────────────────────────
 
     private final SpeechRecognizer recognizer;
-    private final Intent           recognizerIntent;
+    private final Intent recognizerIntent;
     private final VoiceResultListener listener;
 
     private boolean listening = false;

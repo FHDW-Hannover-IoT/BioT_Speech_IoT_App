@@ -39,8 +39,8 @@ public final class LanguageManager {
     public static Locale getLocale(Context ctx) {
         switch (getCode(ctx)) {
             case "zh": return Locale.SIMPLIFIED_CHINESE;
-            case "en": return Locale.ENGLISH;
-            default:   return Locale.GERMAN;
+            case "en": return Locale.GERMAN;
+            default:   return Locale.ENGLISH;
         }
     }
 
@@ -48,8 +48,8 @@ public final class LanguageManager {
     public static String getLanguageTag(Context ctx) {
         switch (getCode(ctx)) {
             case "zh": return "zh-CN";
-            case "en": return "en-US";
-            default:   return "de-DE";
+            case "en": return "en-DE";
+            default:   return "en-US";
         }
     }
 
