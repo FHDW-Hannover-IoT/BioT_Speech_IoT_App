@@ -64,59 +64,51 @@ public class VoiceCommandDictionary {
     private static List<Rule> buildRules() {
         List<Rule> r = new ArrayList<>();
 
-        // ══ CALIBRATION (must come before NAV_* so "calibrate the gyro"
-        //    doesn't trigger NAV_GYRO) ══════════════════════════════════════
+        // ══ CALIBRATION (before NAV_* so "calibrate the gyro" doesn't trigger NAV_GYRO)
         r.add(Rule.of(VoiceCommand.START_CALIBRATION,
-                new String[]{"calibrate", "calibration", "kalibrierung", "kalibrieren", "start calibration"}));
+                new String[]{"calibrate", "calibration", "start calibration"}));
 
-        // ══ SET EPSILON (must come before SETTINGS) ═══════════════════════
+        // ══ SET EPSILON (before SETTINGS)
         r.add(Rule.of(VoiceCommand.SET_EPSILON,
-                new String[]{"epsilon", "threshold value", "schwellwert", "vereinfachung"},
-                new String[]{"set", "change", "update", "adjust", "setze", "ändere"}));
+                new String[]{"epsilon", "threshold value"},
+                new String[]{"set", "change", "update", "adjust"}));
 
-        // ══ CREATE EVENT (must come before SHOW_EVENTS so "create event for accel"
-        //    doesn't match SHOW_EVENTS first) ═════════════════════════════
+        // ══ CREATE EVENT (before SHOW_EVENTS)
         r.add(Rule.of(VoiceCommand.CREATE_EVENT,
-                new String[]{"create", "add", "new", "erstelle", "neues", "neue", "lege"},
-                new String[]{"event", "ereignis", "rule", "regel", "trigger", "alert"}));
+                new String[]{"create", "add", "new"},
+                new String[]{"event", "rule", "trigger", "alert"}));
 
-        // ══ SHOW NOTIFICATIONS vs SHOW EVENTS ═════════════════════════════
-        // "notifications" is the .adoc term for TRIGGERED events;
-        // "events" is the .adoc term for the RULES that produce them.
+        // ══ SHOW NOTIFICATIONS vs SHOW EVENTS
         r.add(Rule.of(VoiceCommand.SHOW_NOTIFICATIONS,
-                new String[]{"notification", "notifications", "benachrichtigung", "benachrichtigungen", "alert", "alerts"},
-                new String[]{"show", "list", "display", "zeige", "öffne", "anzeigen"}));
+                new String[]{"notification", "notifications", "alert", "alerts"},
+                new String[]{"show", "list", "display"}));
 
         r.add(Rule.of(VoiceCommand.SHOW_EVENTS,
-                new String[]{"events", "event", "rules", "regel", "ereignisregel"},
-                new String[]{"show", "list", "display", "zeige", "öffne", "anzeigen"}));
+                new String[]{"events", "event", "rules"},
+                new String[]{"show", "list", "display"}));
 
-        // ══ TELL VALUE (must come before NAV_* / QUERY_*) ═════════════════
+        // ══ TELL VALUE (before NAV_* / QUERY_*)
         r.add(Rule.of(VoiceCommand.TELL_VALUE,
-                new String[]{"tell", "say", "speak", "sage", "sprich", "nenne", "what is the value"}));
+                new String[]{"tell", "say", "speak", "what is the value"}));
 
-        // ══ OPERATING MODE (Autark / Supervision / Event / Identification) ══
-        // Each operating mode gets its own rule. They sit BEFORE the existing
-        // transmission MODE_STREAM/BURST/AVERAGE rules so that a phrase like
-        // "switch to event mode" is read as OPMODE_EVENT not as something else.
+        // ══ OPERATING MODE
         r.add(Rule.of(VoiceCommand.OPMODE_AUTARK,
-                new String[]{"autark", "autonomous", "standalone", "power saving", "energiesparen"}));
+                new String[]{"autark", "autonomous", "standalone", "power saving"}));
 
         r.add(Rule.of(VoiceCommand.OPMODE_SUPERVISION,
-                new String[]{"supervision", "überwachung", "überwacht", "monitor", "monitoring"}));
+                new String[]{"supervision", "monitor", "monitoring"}));
 
         r.add(Rule.of(VoiceCommand.OPMODE_EVENT,
-                new String[]{"event mode", "ereignismodus", "ereignis modus", "trigger mode", "schwellenmodus"}));
+                new String[]{"event mode", "trigger mode"}));
 
         r.add(Rule.of(VoiceCommand.OPMODE_IDENTIFICATION,
-                new String[]{"identification", "identifikation", "identify", "identifizieren"}));
+                new String[]{"identification", "identify"}));
 
-        // "What mode am I in" / "get mode" / "current mode"
         r.add(Rule.of(VoiceCommand.OPMODE_GET,
-                new String[]{"current", "active", "running", "aktuell", "welcher", "what", "which"},
-                new String[]{"mode", "modus", "operating", "betriebs"}));
+                new String[]{"current", "active", "running", "what", "which"},
+                new String[]{"mode", "operating"}));
 
-        // ══ COMBINED (specific multi-sensor commands) ═════════════════════
+        // ══ COMBINED (specific multi-sensor commands)
         r.add(Rule.of(VoiceCommand.COMBINED_MOTION,
                 new String[]{"movement", "motion", "acceleration", "accel"},
                 new String[]{"gyro", "rotation", "spin"}));
@@ -130,9 +122,9 @@ public class VoiceCommandDictionary {
                 new String[]{"magnet", "hall", "magnetic field"}));
 
         r.add(Rule.of(VoiceCommand.COMBINED_ALL_SENSORS,
-                new String[]{"all sensors", "all sensor", "alle sensoren", "homescreen", "home screen", "complete overview", "summary"}));
+                new String[]{"all sensors", "all sensor", "homescreen", "home screen", "complete overview", "summary"}));
 
-        // ══ NAVIGATION + FILTER COMBOS ════════════════════════════════════
+        // ══ NAVIGATION + FILTER COMBOS
         r.add(Rule.of(VoiceCommand.NAV_ACCEL_FILTER_10MIN,
                 new String[]{"acceleration", "accel", "movement", "motion"},
                 new String[]{"10", "ten"},
@@ -148,7 +140,7 @@ public class VoiceCommandDictionary {
                 new String[]{"10", "ten"},
                 new String[]{"minute", "min"}));
 
-        // ══ TIME FILTERS (standalone) ═════════════════════════════════════
+        // ══ TIME FILTERS (standalone)
         r.add(Rule.of(VoiceCommand.FILTER_LAST_5MIN,
                 new String[]{"5", "five"},
                 new String[]{"minute", "min"}));
@@ -173,7 +165,7 @@ public class VoiceCommandDictionary {
                 new String[]{"filter", "timeframe", "date", "period", "span", "duration"},
                 new String[]{"reset", "delete", "undo", "cancel", "all", "remove", "revoke", "reverse", "void"}));
 
-        // ══ TRANSMISSION MODE (existing — kept on Control/Mode topic) ════
+        // ══ TRANSMISSION MODE
         r.add(Rule.of(VoiceCommand.MODE_STREAM,
                 new String[]{"stream", "real time", "live", "continuously"}));
 
@@ -183,58 +175,56 @@ public class VoiceCommandDictionary {
         r.add(Rule.of(VoiceCommand.MODE_AVERAGE,
                 new String[]{"average", "median", "mean"}));
 
-        // ══ QUERIES (forwarded to LLM) ════════════════════════════════════
+        // ══ QUERIES (forwarded to LLM) — MUST come before simple NAV_* rules so
+        //    natural questions like "what is the gyro?" route to LLM, not navigation.
         r.add(Rule.of(VoiceCommand.QUERY_ACCEL_VALUE,
-                new String[]{"how", "current", "latest", "value", "show"},
+                new String[]{"what", "how", "is", "are", "get", "check", "current", "latest", "value"},
                 new String[]{"acceleration", "accel", "movement", "motion"}));
 
         r.add(Rule.of(VoiceCommand.QUERY_GYRO_VALUE,
-                new String[]{"how", "current", "latest", "value", "show"},
+                new String[]{"what", "how", "is", "are", "get", "check", "current", "latest", "value"},
                 new String[]{"gyro", "gyroscope", "rotation", "spin"}));
 
         r.add(Rule.of(VoiceCommand.QUERY_MAGNET_STATUS,
-                new String[]{"active", "status", "how", "recognized"},
+                new String[]{"what", "active", "status", "how", "is", "check", "recognized"},
                 new String[]{"magnet", "hall", "magnetic field"}));
 
         r.add(Rule.of(VoiceCommand.QUERY_MIC_LEVEL,
-                new String[]{"how", "loud", "level", "value"},
+                new String[]{"what", "how", "loud", "level", "value", "check"},
                 new String[]{"loud", "microphone", "mic", "noise", "sound"}));
 
         r.add(Rule.of(VoiceCommand.QUERY_ANOMALY,
                 new String[]{"anomaly", "anomalies", "strange", "unusual", "uncommon", "warning", "problem"}));
 
         r.add(Rule.of(VoiceCommand.QUERY_RECENT_EVENTS,
-                new String[]{"happened", "recent", "letzten", "kürzlich"},
+                new String[]{"happened", "recent", "last", "latest"},
                 new String[]{"events", "event", "minutes", "minute", "hour", "hours"}));
 
-        // ══ SIMPLE NAVIGATION ═════════════════════════════════════════════
+        // ══ SIMPLE NAVIGATION
         r.add(Rule.of(VoiceCommand.NAV_ACCEL,
-                new String[]{"acceleration", "accel", "beschleunigung", "movement", "motion", "bewegung"}));
+                new String[]{"acceleration", "accel", "movement", "motion"}));
 
         r.add(Rule.of(VoiceCommand.NAV_GYRO,
-                new String[]{"gyro", "gyroscope", "gyroskop", "rotation", "spin"}));
+                new String[]{"gyro", "gyroscope", "rotation", "spin"}));
 
         r.add(Rule.of(VoiceCommand.NAV_MAGNET,
-                new String[]{"magnet", "hall", "magnetic field", "magnetic sensor", "magnetfeld"}));
-
-        r.add(Rule.of(VoiceCommand.NAV_MIC,
-                new String[]{"microphone", "mic", "sound", "volume", "mikrofon"}));
+                new String[]{"magnet", "hall", "magnetic field", "magnetic sensor"}));
 
         r.add(Rule.of(VoiceCommand.NAV_GRAPH,
-                new String[]{"graph", "chart", "diagram", "table", "course", "timeframe", "curve", "graphen"}));
+                new String[]{"graph", "chart", "diagram", "table", "course", "timeframe", "curve"}));
 
         r.add(Rule.of(VoiceCommand.NAV_EVENTS,
-                new String[]{"event", "events", "ereignisse", "log", "report"}));
+                new String[]{"event", "events", "log", "report"}));
 
         r.add(Rule.of(VoiceCommand.NAV_HOME,
-                new String[]{"home", "start", "main", "overview", "dashboard", "back", "hauptseite"}));
+                new String[]{"home", "start", "main", "overview", "dashboard", "back"}));
 
         r.add(Rule.of(VoiceCommand.NAV_SETTINGS,
-                new String[]{"settings", "configuration", "options", "einstellungen"}));
+                new String[]{"settings", "configuration", "options"}));
 
-        // ══ SYSTEM ════════════════════════════════════════════════════════
+        // ══ SYSTEM
         r.add(Rule.of(VoiceCommand.SYSTEM_HELP,
-                new String[]{"hilfe", "help", "commands", "how can i", "voice commands"}));
+                new String[]{"help", "commands", "how can i", "voice commands"}));
 
         return r;
     }

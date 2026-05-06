@@ -70,9 +70,9 @@ public class AppContainer {
 
     // ── Application-scope getters ─────────────────────────────────────────────
 
-    public SensorRepository    sensorRepository() { return sensorRepository; }
-    public McpDataSyncService  mcpDataSync()       { return mcpDataSync; }
-    public ILlmQueryHandler    llmQueryHandler()   { return llmQueryHandler; }
+    public SensorRepository    sensorRepository()  { return sensorRepository; }
+    public McpDataSyncService  mcpDataSync()        { return mcpDataSync; }
+    public ILlmQueryHandler    llmQueryHandler()    { return llmQueryHandler; }
     public MutableLiveData<LlmAction> liveAction() { return liveAction; }
     public LiveData<Boolean>   llmLoading()        { return llmLoading; }
 
@@ -96,7 +96,7 @@ public class AppContainer {
             throw new IllegalStateException("Could not create MqttHandler", e);
         }
 
-        ttsManager = new TtsManager(activity, LanguageManager.getLocale(activity));
+        ttsManager = new TtsManager(activity);
         Log.i(TAG, "Activity scope initialised.");
     }
 

@@ -35,7 +35,7 @@ import java.util.List;
  * Usage in MainActivity
  * ──────────────────────
  * <pre>
- *   voiceInputManager = new VoiceInputManager(this, (transcript, hypotheses) -> {
+ *   voiceInputManager = new VoiceInputManager(this, new VoiceInputManager.VoiceResultListener() {
  *       VoiceCommand cmd = VoiceCommandResolver.resolveFromList(hypotheses);
  *       VoiceCommandExecutor.execute(this, cmd, mqttHandler, llmHandler, transcript);
  *   });
@@ -104,7 +104,7 @@ public class VoiceInputManager {
      * @param listener Callback receiving results and state changes.
      * @throws IllegalStateException if the device does not support speech recognition.
      */
-    public VoiceInputManager(Context context, String languageTag, VoiceResultListener listener) {
+    public VoiceInputManager(Context context, VoiceResultListener listener) {
         if (!SpeechRecognizer.isRecognitionAvailable(context)) {
             throw new IllegalStateException(
                     "SpeechRecognizer not available on this device. " +
@@ -120,7 +120,7 @@ public class VoiceInputManager {
         recognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag);
+        recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US");
         // Return up to 5 ranked hypotheses so VoiceCommandResolver can pick the best match
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5);
         // Do not play the "beep" sound (less disruptive in an IoT context)

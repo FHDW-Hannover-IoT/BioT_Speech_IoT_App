@@ -12,6 +12,9 @@ import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
 import org.eclipse.paho.mqttv5.common.MqttException;
 import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -40,6 +43,7 @@ public class MqttHandler implements IMqttPublisher {
     });
 
     private final MutableLiveData<Boolean> connectionStatus = new MutableLiveData<>(false);
+    private final Set<String> subscribedTopics = Collections.synchronizedSet(new HashSet<>());
 
     public LiveData<Boolean> connectionStatus() { return connectionStatus; }
 
@@ -90,6 +94,7 @@ public class MqttHandler implements IMqttPublisher {
                 connected = true;
                 connectionStatus.postValue(true);
                 Log.i(TAG, "Connect complete → " + serverURI + " (reconnect=" + reconnect + ")");
+                if (reconnect) resubscribeAll();
             }
 
             @Override
@@ -129,8 +134,9 @@ public class MqttHandler implements IMqttPublisher {
     // ── Subscribe ─────────────────────────────────────────────────────────────
 
     public void subscribe(String topic) {
+        subscribedTopics.add(topic);
         if (!isConnected()) {
-            Log.w(TAG, "Cannot subscribe — not connected: " + topic);
+            Log.w(TAG, "Not connected — topic queued for next connect: " + topic);
             return;
         }
         executor.submit(() -> {
@@ -139,6 +145,19 @@ public class MqttHandler implements IMqttPublisher {
                 Log.i(TAG, "Subscribed → " + topic);
             } catch (Exception e) {
                 Log.e(TAG, "Subscribe failed → " + topic + ": " + e.getMessage(), e);
+            }
+        });
+    }
+
+    private void resubscribeAll() {
+        executor.submit(() -> {
+            for (String topic : subscribedTopics) {
+                try {
+                    client.subscribe(topic, 1);
+                    Log.i(TAG, "Resubscribed → " + topic);
+                } catch (Exception e) {
+                    Log.e(TAG, "Resubscribe failed → " + topic + ": " + e.getMessage(), e);
+                }
             }
         });
     }

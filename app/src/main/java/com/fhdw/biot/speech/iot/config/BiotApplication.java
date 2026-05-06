@@ -1,7 +1,6 @@
 package com.fhdw.biot.speech.iot.config;
 
 import android.app.Application;
-import android.content.Context;
 import android.util.Log;
 
 /**
@@ -16,12 +15,6 @@ public class BiotApplication extends Application {
     private static final String TAG = "BiotApplication";
 
     private AppContainer container;
-
-    @Override
-    protected void attachBaseContext(Context base) {
-        // Apply saved locale before any resource resolution happens.
-        super.attachBaseContext(LanguageManager.applyLocale(base));
-    }
 
     @Override
     public void onCreate() {

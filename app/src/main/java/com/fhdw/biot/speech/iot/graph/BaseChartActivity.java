@@ -41,6 +41,15 @@ public abstract class BaseChartActivity extends BiotBaseActivity {
         // Chart background
         chart.setBackgroundColor(Color.rgb(0, 0, 0));
 
+        // User interaction: drag + pinch-to-zoom on both axes
+        chart.setTouchEnabled(true);
+        chart.setDragEnabled(true);
+        chart.setScaleEnabled(true);
+        chart.setPinchZoom(false);          // false = scale X/Y independently
+        chart.setDoubleTapToZoomEnabled(true);
+        chart.setAutoScaleMinMaxEnabled(true);
+        chart.getLegend().setTextColor(Color.WHITE);
+
         // X-axis styling
         XAxis xAxis = chart.getXAxis();
         xAxis.setTextColor(Color.WHITE);

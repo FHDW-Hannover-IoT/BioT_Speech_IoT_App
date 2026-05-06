@@ -93,11 +93,6 @@ public final class VoiceCommandExecutor {
                 navigate(activity, MagnetActivity.class, null, 0);
                 return true;
 
-            case NAV_MIC:
-                Toast.makeText(activity, "Microphone view: home screen", Toast.LENGTH_SHORT).show();
-                navigate(activity, MainActivity.class, null, 0);
-                return true;
-
             case NAV_GRAPH:
                 navigate(activity, MainGraphActivity.class, null, 0);
                 return true;

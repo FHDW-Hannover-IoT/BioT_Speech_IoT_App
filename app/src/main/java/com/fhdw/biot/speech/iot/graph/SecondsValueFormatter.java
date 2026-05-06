@@ -1,6 +1,7 @@
 package com.fhdw.biot.speech.iot.graph;
 
 import com.github.mikephil.charting.formatter.ValueFormatter;
+import java.util.Locale;
 
 /**
  * SecondsValueFormatter --------------------- This formatter is attached to the X-axis of charts
@@ -28,13 +29,9 @@ public class SecondsValueFormatter extends ValueFormatter {
 
     @Override
     public String getFormattedValue(float value) {
-        // Convert the offset (value) into a total timestamp
-        long millis = startTime + (long) value;
-
-        // Convert difference into seconds (float precision)
-        float seconds = (millis - startTime) / 1000.0f;
-
-        // Format to two decimals → "1.42s"
-        return String.format("%.2f", seconds) + "s";
+        int totalSecs = (int) (value / 1000);
+        int m = totalSecs / 60;
+        int s = Math.abs(totalSecs % 60);
+        return String.format(Locale.ENGLISH, "%d:%02d", m, s);
     }
 }

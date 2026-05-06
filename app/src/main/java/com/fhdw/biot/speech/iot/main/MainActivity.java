@@ -19,8 +19,11 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.fhdw.biot.speech.iot.BuildConfig;
 import com.fhdw.biot.speech.iot.R;
+import com.fhdw.biot.speech.iot.database.entities.EreignisData;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 import com.fhdw.biot.speech.iot.config.BiotBaseActivity;
-import com.fhdw.biot.speech.iot.config.LanguageManager;
 import com.fhdw.biot.speech.iot.config.AppContainer;
 import com.fhdw.biot.speech.iot.config.BiotApplication;
 import com.fhdw.biot.speech.iot.database.entities.AccelData;
@@ -163,9 +166,9 @@ public class MainActivity extends BiotBaseActivity {
 
     private void observeLlmLoading() {
         container.llmLoading().observe(this, loading -> {
-            if (Boolean.TRUE.equals(loading)) {
-                Toast.makeText(this, "Asking BioT…", Toast.LENGTH_SHORT).show();
-            }
+            boolean isLoading = Boolean.TRUE.equals(loading);
+            if (isLoading) Toast.makeText(this, "Asking BioT…", Toast.LENGTH_SHORT).show();
+            if (btnVoice != null) btnVoice.setEnabled(!isLoading);
         });
     }
 
@@ -396,6 +399,13 @@ public class MainActivity extends BiotBaseActivity {
                 mqttHandler.subscribe("Control/Mode");
                 mqttHandler.subscribe("Control/OperatingMode");
                 scheduleSimulatorFallback();
+
+                // Pull last 10 min from the LLM server DB into Room.
+                long now = System.currentTimeMillis();
+                long tenMinAgo = now - (10L * 60 * 1000);
+                container.mcpDataSync().fetchAccel(tenMinAgo, now);
+                container.mcpDataSync().fetchGyro(tenMinAgo, now);
+                container.mcpDataSync().fetchMagnet(tenMinAgo, now);
             }
 
             @Override
@@ -417,7 +427,7 @@ public class MainActivity extends BiotBaseActivity {
                 Log.i(TAG, "No live MQTT data after fallback delay — starting simulator");
                 Toast.makeText(this, getString(R.string.toast_no_hardware),
                         Toast.LENGTH_LONG).show();
-                startSimulator();
+                //startSimulator();
             }
         }, BuildConfig.SIMULATOR_FALLBACK_DELAY_MS);
     }
@@ -464,6 +474,7 @@ public class MainActivity extends BiotBaseActivity {
 
             sensorRepository.insertAccel(accelData);
             sensorRepository.insertValueSensor(vs);
+            checkThresholds("ACCEL", x, y, z);
         } catch (NumberFormatException e) {
             Log.e(TAG, "Movement parse error: " + e.getMessage(), e);
         }
@@ -492,6 +503,7 @@ public class MainActivity extends BiotBaseActivity {
 
             sensorRepository.insertGyro(gyroData);
             sensorRepository.insertValueSensor(vs);
+            checkThresholds("GYRO", x, y, z);
         } catch (NumberFormatException e) {
             Log.e(TAG, "Gyro parse error: " + e.getMessage(), e);
         }
@@ -516,8 +528,37 @@ public class MainActivity extends BiotBaseActivity {
             magnetData.magnetX = x; magnetData.magnetY = y; magnetData.magnetZ = z;
 
             sensorRepository.insertMagnet(magnetData);
+            checkThresholds("MAGNET", x, y, z);
         } catch (NumberFormatException e) {
             Log.e(TAG, "Magnet parse error: " + e.getMessage(), e);
+        }
+    }
+
+    private void checkThresholds(String sensorType, float x, float y, float z) {
+        String json = getSharedPreferences("EventRules", MODE_PRIVATE).getString("rules", "[]");
+        try {
+            JSONArray rules = new JSONArray(json);
+            float[] values = {x, y, z};
+            char[] axes = {'X', 'Y', 'Z'};
+            for (int i = 0; i < rules.length(); i++) {
+                JSONObject rule = rules.getJSONObject(i);
+                if (!sensorType.equals(rule.optString("sensorType"))) continue;
+                float threshold = (float) rule.optDouble("threshold", 0);
+                if (threshold <= 0) continue;
+                for (int j = 0; j < 3; j++) {
+                    if (Math.abs(values[j]) > threshold) {
+                        EreignisData event = new EreignisData();
+                        event.timestamp = System.currentTimeMillis();
+                        event.sensorType = sensorType;
+                        event.value = values[j];
+                        event.axis = axes[j];
+                        sensorRepository.insertEreignis(event);
+                        Log.i(TAG, "Event triggered: " + sensorType + " axis=" + axes[j] + " val=" + values[j]);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "checkThresholds error: " + e.getMessage());
         }
     }
 
@@ -557,7 +598,7 @@ public class MainActivity extends BiotBaseActivity {
 
     private void initVoiceInputManager() {
         try {
-            voiceInputManager = new VoiceInputManager(this, LanguageManager.getLanguageTag(this), new VoiceInputManager.VoiceResultListener() {
+            voiceInputManager = new VoiceInputManager(this, new VoiceInputManager.VoiceResultListener() {
                 @Override
                 public void onResult(String topResult, List<String> hypotheses) {
                     Log.i(TAG, "Voice result: \"" + topResult + "\"");
@@ -621,7 +662,6 @@ public class MainActivity extends BiotBaseActivity {
             case NAV_ACCEL:                     return "Opening Acceleration";
             case NAV_GYRO:                      return "Opening Gyroscope";
             case NAV_MAGNET:                    return "Opening Magnetic Field";
-            case NAV_MIC:                       return "Microphone overview";
             case NAV_GRAPH:                     return "Opening Graph";
             case NAV_EVENTS:                    return "Opening Events";
             case NAV_HOME:                      return "Going home";

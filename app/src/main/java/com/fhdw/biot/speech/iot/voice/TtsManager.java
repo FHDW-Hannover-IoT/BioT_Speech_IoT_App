@@ -13,7 +13,7 @@ import java.util.Locale;
  *
  * Responsibilities
  * ─────────────────
- *  - Initialise the TTS engine in German (de-DE).
+ *  - Initialise the TTS engine in English (en-US).
  *  - Speak a string immediately, interrupting any current speech.
  *  - Speak a string queued after current speech finishes.
  *  - Provide a ready-check so callers don't speak before init completes.
@@ -25,7 +25,7 @@ import java.util.Locale;
  *   ttsManager = new TtsManager(this);
  *
  *   // Speak confirmation after a voice command is executed:
- *   ttsManager.speak("Öffne Gyroskop");
+ *   ttsManager.speak("Opening gyroscope");
  *
  *   // In onDestroy():
  *   ttsManager.destroy();
@@ -53,14 +53,14 @@ public class TtsManager {
     /**
      * @param context Activity or application context.
      */
-    public TtsManager(Context context, Locale locale) {
+    public TtsManager(Context context) {
         tts = new TextToSpeech(context, status -> {
             if (status == TextToSpeech.SUCCESS) {
-                int result = tts.setLanguage(locale);
+                int result = tts.setLanguage(Locale.ENGLISH);
                 if (result == TextToSpeech.LANG_MISSING_DATA
                         || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                    tts.setLanguage(Locale.ENGLISH);
-                    Log.w(TAG, "TTS language " + locale + " not available, falling back to English.");
+                    tts.setLanguage(Locale.getDefault());
+                    Log.w(TAG, "English TTS not available, falling back to device default.");
                 }
                 // Slightly slower speech rate — easier to understand in noisy environments
                 tts.setSpeechRate(0.9f);

@@ -2,6 +2,7 @@ package com.fhdw.biot.speech.iot.events;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageButton;
@@ -17,9 +18,11 @@ import com.fhdw.biot.speech.iot.config.BiotBaseActivity;
 import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.fhdw.biot.speech.iot.database.entities.Sensor;
 import com.fhdw.biot.speech.iot.repository.SensorRepository;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * NewEreignisActivity -------------------- Screen where the user can define *event rules*
@@ -39,13 +42,12 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class NewEreignisActivity extends BiotBaseActivity {
 
-    // RecyclerView that displays the list of editable rules
+    private static final String TAG = "NewEreignisActivity";
+    private static final String PREFS_EVENTS = "EventRules";
+    private static final String KEY_RULES    = "rules";
+
     private RecyclerView recyclerView;
-
-    // Adapter to bind EditableSensorEvent objects to row views
     private EditableEventAdapter adapter;
-
-    // In-memory list of event-rule configurations
     private List<EditableSensorEvent> editableEventList;
     public List<Sensor> sensors = new ArrayList<>();
     private SensorRepository sensorRepository;
@@ -85,31 +87,64 @@ public class NewEreignisActivity extends BiotBaseActivity {
                 });
 
         // --- RecyclerView setup ----------------------------------------------
-        // Backing list for the adapter; starts empty.
         editableEventList = new ArrayList<>();
 
         recyclerView = findViewById(R.id.my_table_recyclerview);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        // Adapter binds each EditableSensorEvent to event_configuration_item.xml
         adapter = new EditableEventAdapter(editableEventList);
         recyclerView.setAdapter(adapter);
 
-        // TODO: Datenbanklogik hinzufügen
-        //  - load existing rules from DB
-        //  - populate editableEventList
-        //  - adapter.notifyDataSetChanged()
+        loadSavedRules();
 
         // --- Add new rule row (+) -------------------------------------------
         ImageButton addEreignis = findViewById(R.id.add_ereignis);
-        addEreignis.setOnClickListener(
-                view -> {
-                    // Ask the adapter to append a new blank EditableSensorEvent
-                    long newId = adapter.addEmptyEvent();
+        addEreignis.setOnClickListener(view -> {
+            adapter.addEmptyEvent();
+            recyclerView.scrollToPosition(editableEventList.size() - 1);
+        });
+    }
 
-                    // Scroll RecyclerView to the last item so user sees the new row.
-                    recyclerView.scrollToPosition(editableEventList.size() - 1);
-                });
+    @Override
+    protected void onPause() {
+        super.onPause();
+        saveRules();
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    private void loadSavedRules() {
+        String json = getSharedPreferences(PREFS_EVENTS, MODE_PRIVATE).getString(KEY_RULES, "[]");
+        try {
+            JSONArray arr = new JSONArray(json);
+            editableEventList.clear();
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject obj = arr.getJSONObject(i);
+                EditableSensorEvent e = new EditableSensorEvent(++adapter.nextId);
+                e.sensorType     = obj.optString("sensorType", "ACCEL");
+                e.eventType      = obj.optString("eventType", "");
+                e.thresholdValue = (float) obj.optDouble("threshold", 0.0);
+                editableEventList.add(e);
+            }
+            adapter.notifyDataSetChanged();
+        } catch (JSONException ex) {
+            Log.w(TAG, "loadSavedRules parse error: " + ex.getMessage());
+        }
+    }
+
+    private void saveRules() {
+        JSONArray arr = new JSONArray();
+        for (EditableSensorEvent e : editableEventList) {
+            try {
+                JSONObject obj = new JSONObject();
+                obj.put("sensorType", e.sensorType);
+                obj.put("eventType",  e.eventType);
+                obj.put("threshold",  e.thresholdValue);
+                arr.put(obj);
+            } catch (JSONException ignored) {}
+        }
+        getSharedPreferences(PREFS_EVENTS, MODE_PRIVATE)
+                .edit().putString(KEY_RULES, arr.toString()).apply();
+        Log.i(TAG, "Saved " + editableEventList.size() + " event rules");
     }
 
     @SuppressLint("NotifyDataSetChanged")

@@ -88,11 +88,10 @@ public final class VoiceCommandResolver {
 
     /**
      * Lower-case + remove characters that are neither letters, digits nor spaces.
-     * German umlauts are kept (ä ö ü ß) so keywords like "dreißig" still match.
      */
     private static String normalise(String raw) {
         return raw.toLowerCase(Locale.ENGLISH)
-                .replaceAll("[^a-zäöüß0-9\\s]", " ")
+                .replaceAll("[^a-z0-9\\s]", " ")
                 .replaceAll("\\s+", " ")
                 .trim();
     }

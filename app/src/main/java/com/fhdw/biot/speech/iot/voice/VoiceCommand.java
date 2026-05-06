@@ -29,7 +29,6 @@ public enum VoiceCommand {
     NAV_ACCEL,
     NAV_GYRO,
     NAV_MAGNET,
-    NAV_MIC,
     NAV_GRAPH,
     NAV_EVENTS,
     NAV_HOME,

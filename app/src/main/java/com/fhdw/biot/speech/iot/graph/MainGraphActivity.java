@@ -1,6 +1,9 @@
 package com.fhdw.biot.speech.iot.graph;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -22,7 +25,8 @@ import com.fhdw.biot.speech.iot.sensor.AccelActivity;
 import com.fhdw.biot.speech.iot.sensor.GyroActivity;
 import com.fhdw.biot.speech.iot.sensor.MagnetActivity;
 import com.fhdw.biot.speech.iot.settings.SettingsActivity;
-import com.fhdw.biot.speech.iot.util.DatePickerHandler;
+import com.fhdw.biot.speech.iot.util.DateTimePickerHandler;
+import com.fhdw.biot.speech.iot.voice.VoiceCommandExecutor;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
@@ -208,30 +212,23 @@ public class MainGraphActivity extends BaseChartActivity {
         dateFromCalendar = Calendar.getInstance();
         dateToCalendar = Calendar.getInstance();
 
-        LiveData<Long> oldestTimestampLiveData = sensorRepository.getOldestAccelTimestamp();
-
-        oldestTimestampLiveData.observe(
-                this,
-                new androidx.lifecycle.Observer<Long>() {
-                    @Override
-                    public void onChanged(Long oldest) {
-                        if (oldest != null && oldest > 0) {
-                            if (!isTenMinuteFilterActive) {
-                                dateFromCalendar.setTimeInMillis(oldest);
-                            }
-                            setupFromDatePickers();
-
-                            oldestTimestampLiveData.removeObserver(this);
-                        }
-                    }
-                });
-
+        // Always wire both buttons immediately so they work even when the DB is empty.
+        setupFromDatePickers();
         setupToDatePickers();
+
+        // Update the from-date to the oldest DB record once data is available.
+        sensorRepository.getOldestAccelTimestamp().observe(this, oldest -> {
+            if (oldest != null && oldest > 0 && !isTenMinuteFilterActive) {
+                dateFromCalendar.setTimeInMillis(oldest);
+                updateChartsWithDateFilter();
+            }
+        });
+
         toggleTenMinutesFilter();
     }
 
     private void setupFromDatePickers() {
-        DatePickerHandler.createForButton(
+        DateTimePickerHandler.createForButton(
                 xVonButton,
                 cal -> {
                     stopSlidingWindow();
@@ -242,7 +239,7 @@ public class MainGraphActivity extends BaseChartActivity {
     }
 
     private void setupToDatePickers() {
-        DatePickerHandler.createForButton(
+        DateTimePickerHandler.createForButton(
                 xBisButton,
                 cal -> {
                     stopSlidingWindow();
@@ -355,8 +352,10 @@ public class MainGraphActivity extends BaseChartActivity {
             MagXCheck, MagYCheck, MagZCheck, MagSumCheck
         };
 
-        for (CheckBox box : all)
+        for (CheckBox box : all) {
+            box.setChecked(true);
             box.setOnCheckedChangeListener((button, isChecked) -> updateAccelChart());
+        }
     }
 
     /**
@@ -422,14 +421,8 @@ public class MainGraphActivity extends BaseChartActivity {
         xBisButton.setText(makeDateTimeString(dateToCalendar));
     }
 
-    /** Formats a Calendar into "dd.MM.yyyy" (no time) – used for the quick-filter labels. */
     private String makeDateTimeString(Calendar calendar) {
-        return String.format(
-                Locale.GERMAN,
-                "%02d.%02d.%04d",
-                calendar.get(Calendar.DAY_OF_MONTH),
-                calendar.get(Calendar.MONTH) + 1,
-                calendar.get(Calendar.YEAR));
+        return DateTimePickerHandler.format(calendar);
     }
 
     // =====================================================================
@@ -691,6 +684,44 @@ public class MainGraphActivity extends BaseChartActivity {
                 lineChartMag.clear();
             }
         }
+    }
+
+    // =====================================================================
+    // VOICE FILTER BROADCAST RECEIVER
+    // Handles FILTER_ACTION sent by VoiceCommandExecutor / LlmQueryHandler.
+    // =====================================================================
+
+    private final BroadcastReceiver filterReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int minutes = intent.getIntExtra(VoiceCommandExecutor.EXTRA_FILTER_MINUTES, -1);
+            if (minutes < 0) return;
+            stopSlidingWindow();
+            long now = System.currentTimeMillis();
+            if (minutes == 0) {
+                dateFromCalendar.setTimeInMillis(0);
+                dateToCalendar.setTimeInMillis(now);
+            } else {
+                dateFromCalendar.setTimeInMillis(now - (long) minutes * 60_000);
+                dateToCalendar.setTimeInMillis(now);
+            }
+            syncDateButtonTexts();
+            updateChartsWithDateFilter();
+        }
+    };
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        ContextCompat.registerReceiver(this, filterReceiver,
+                new IntentFilter("com.fhdw.biot.speech.iot.FILTER_ACTION"),
+                ContextCompat.RECEIVER_NOT_EXPORTED);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(filterReceiver);
     }
 
     @Override

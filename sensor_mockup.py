@@ -8,7 +8,7 @@ import random
 import time
 import paho.mqtt.client as mqtt
 
-BROKER_HOST = "172.21.152.161"   # ← Laptop A IP
+BROKER_HOST = "172.21.152.4"   # ← Laptop A IP
 BROKER_PORT = 1883
 PUBLISH_INTERVAL = 0.5         # seconds between publishes
 

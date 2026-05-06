@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.ImageButton;
-import android.widget.RadioGroup;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -14,7 +13,6 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.config.BiotBaseActivity;
-import com.fhdw.biot.speech.iot.config.LanguageManager;
 import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
@@ -38,28 +36,6 @@ public class SettingsActivity extends BiotBaseActivity {
         ImageButton buttonHome = findViewById(R.id.home_button);
         buttonHome.setOnClickListener(view ->
                 startActivity(new Intent(SettingsActivity.this, MainActivity.class)));
-
-        // ── Language selector ────────────────────────────────────────────────
-        RadioGroup rgLanguage = findViewById(R.id.rg_language);
-
-        // Pre-select the currently saved language
-        switch (LanguageManager.getCode(this)) {
-            case "en": rgLanguage.check(R.id.rb_lang_en); break;
-            case "zh": rgLanguage.check(R.id.rb_lang_zh); break;
-            default:   rgLanguage.check(R.id.rb_lang_de); break;
-        }
-
-        rgLanguage.setOnCheckedChangeListener((group, checkedId) -> {
-            String code;
-            if      (checkedId == R.id.rb_lang_en) code = "en";
-            else if (checkedId == R.id.rb_lang_zh) code = "zh";
-            else                                    code = "de";
-
-            if (!code.equals(LanguageManager.getCode(this))) {
-                LanguageManager.save(this, code);
-                recreate(); // re-inflate in the new locale
-            }
-        });
 
         // ── Douglas-Peucker section ──────────────────────────────────────────
         SwitchMaterial swActive  = findViewById(R.id.switch_dp_active);
