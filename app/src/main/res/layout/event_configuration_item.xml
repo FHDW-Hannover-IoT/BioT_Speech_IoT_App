@@ -54,7 +54,58 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:textColor="@color/text"
                 android:spinnerMode="dropdown" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:paddingBottom="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Achsen:"
+                android:textColor="@color/text"
+                android:minWidth="80dp"/>
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="X"
+                android:textColor="@color/text"
+                android:checked="true"
+                android:id="@+id/MagxCheck"/>
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Y"
+                android:textColor="@color/text"
+                android:checked="true"
+                android:id="@+id/MagyCheck"/>
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Z"
+                android:textColor="@color/text"
+                android:checked="true"
+                android:id="@+id/MagzCheck"/>
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Summe"
+                android:textColor="@color/text"
+                android:checked="false"
+                android:id="@+id/MagSumCheck"/>
+
         </LinearLayout>
 
         <LinearLayout
@@ -108,6 +159,14 @@
                 android:hint="Wert eingeben"
                 android:textColor="@color/text"
                 android:textColorHint="@color/text"/>
+
+            <Spinner
+                android:id="@+id/spinner_direction"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.5"
+                android:textColor="@color/text"
+                android:spinnerMode="dropdown" />
         </LinearLayout>
 
     </LinearLayout>

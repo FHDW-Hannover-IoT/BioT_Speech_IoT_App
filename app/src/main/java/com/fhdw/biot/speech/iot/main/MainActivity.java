@@ -2,6 +2,7 @@ package com.fhdw.biot.speech.iot.main;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -48,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
     // ---- MQTT broker urls ---------------------------------------------------
 
     /** Broker for a *real phone* on the same LAN as your PC. */
+
     private static final String PHONE_BROKER = "tcp://192.168.178.80:1883";
 
     /** Broker for the *Android emulator* (10.0.2.2 = host PC). */
@@ -65,6 +67,10 @@ public class MainActivity extends AppCompatActivity {
     private SensorDao sensorDao; // accel / gyro / magnet tables etc.
     private ValueSensorDAO valueSensorDao; // combined ValueSensor table
 
+    private List<database.entities.EreignisType> activeRules;
+    private java.util.Map<Integer, Long> lastTriggeredMap = new java.util.HashMap<>();
+    private static final long COOLDOWN_MS = 2000;
+
     // ---- UI elements --------------------------------------------------------
     // We reuse your existing TextViews from the sensor app:
     //  - Bewegung (accelerometer-like) → accelX/Y/ZValue
@@ -73,6 +79,8 @@ public class MainActivity extends AppCompatActivity {
     private TextView accelXValue, accelYValue, accelZValue;
     private TextView gyroXValue, gyroYValue, gyroZValue;
     private TextView magXValue, magYValue, magZValue;
+
+    private View cardMqttError;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -147,10 +155,16 @@ public class MainActivity extends AppCompatActivity {
         magYValue = findViewById(R.id.magYValue);
         magZValue = findViewById(R.id.magZValue);
 
+        cardMqttError = findViewById(R.id.card_mqtt_error);
+
         // ---- Room: DB / DAOs ----------------------------------------------
         DB db = DB.getDatabase(this);
         sensorDao = db.sensorDao();
         valueSensorDao = db.valueSensorDao();
+
+        DB.databaseWriteExecutor.execute(() -> {
+            activeRules = db.sensorDao().getAllEreignisTypes();
+        });
 
         // ---- MQTT: create client ------------------------------------------
         final String clientId = "Nutzer_" + UUID.randomUUID().toString().substring(0, 8);
@@ -200,52 +214,46 @@ public class MainActivity extends AppCompatActivity {
                             });
                 });
 
-        // ---- MQTT: connect & then subscribe + start simulator -------------
-        mqttHandler.connect(
-                new MqttHandler.ConnectionListener() {
-                    @Override
-                    public void onConnected() {
-                        Log.i(TAG, "MQTT connected");
+    // ---- MQTT: connect & then subscribe + start simulator -------------
+    mqttHandler.connect(
+        new MqttHandler.ConnectionListener() {
+          @Override
+          public void onConnected() {
+            Log.i(TAG, "MQTT connected");
 
-                        runOnUiThread(
-                                () ->
-                                        Toast.makeText(
-                                                        MainActivity.this,
-                                                        "MQTT verbunden",
-                                                        Toast.LENGTH_SHORT)
-                                                .show());
-
-                        mqttHandler.subscribe("Sensor/Bewegung");
-                        mqttHandler.subscribe("Sensor/Gyro");
-                        mqttHandler.subscribe("Sensor/Magnet");
-
-                        // just for debugging:
-                        loadDatabaseValues();
-
-                        // Start the fake data publisher: "remote sensor"
-                        dataSimulator = new SensorDataSimulator(mqttHandler, 1000L);
-                        dataSimulator.start();
-                    }
-
-                    @Override
-                    public void onFailure(Throwable t) {
-                        Log.e(
-                                TAG,
-                                "MQTT connect failed: " + (t == null ? "unknown" : t.getMessage()),
-                                t);
-
-                        runOnUiThread(
-                                () ->
-                                        Toast.makeText(
-                                                        MainActivity.this,
-                                                        "MQTT Fehler: "
-                                                                + (t == null
-                                                                        ? "unknown"
-                                                                        : t.getMessage()),
-                                                        Toast.LENGTH_LONG)
-                                                .show());
-                    }
+            runOnUiThread(
+                () -> {
+                  cardMqttError.setVisibility(View.GONE);
+                  Toast.makeText(MainActivity.this, "MQTT verbunden", Toast.LENGTH_SHORT).show();
                 });
+
+            mqttHandler.subscribe("Sensor/Bewegung");
+            mqttHandler.subscribe("Sensor/Gyro");
+            mqttHandler.subscribe("Sensor/Magnet");
+
+            // just for debugging:
+            loadDatabaseValues();
+
+            // Start the fake data publisher: "remote sensor"
+            dataSimulator = new SensorDataSimulator(mqttHandler, 1000L);
+            dataSimulator.start();
+          }
+
+          @Override
+          public void onFailure(Throwable t) {
+            Log.e(TAG, "MQTT connect failed: " + (t == null ? "unknown" : t.getMessage()), t);
+
+            runOnUiThread(
+                () -> {
+                    cardMqttError.setVisibility(View.VISIBLE);
+                  Toast.makeText(
+                          MainActivity.this,
+                          "MQTT Fehler: " + (t == null ? "unknown" : t.getMessage()),
+                          Toast.LENGTH_LONG)
+                      .show();
+                });
+          }
+        });
     }
 
     // ------------------------------------------------------------------------
@@ -278,6 +286,8 @@ public class MainActivity extends AppCompatActivity {
             float x = Float.parseFloat(p[0].trim());
             float y = Float.parseFloat(p[1].trim());
             float z = Float.parseFloat(p[2].trim());
+
+            checkRulesAndTriggerEvents("Accel", x, y, z);
 
             // UI (reuse your existing strings for accelerometer)
             accelXValue.setText(getString(R.string.beschleunigung_x, x));
@@ -323,6 +333,8 @@ public class MainActivity extends AppCompatActivity {
             float y = Float.parseFloat(g[1].trim());
             float z = Float.parseFloat(g[2].trim());
 
+            checkRulesAndTriggerEvents("Gyro", x, y, z);
+
             // UI
             gyroXValue.setText(getString(R.string.gyro_x, x));
             gyroYValue.setText(getString(R.string.gyro_y, y));
@@ -366,6 +378,8 @@ public class MainActivity extends AppCompatActivity {
             float x = Float.parseFloat(m[0].trim());
             float y = Float.parseFloat(m[1].trim());
             float z = Float.parseFloat(m[2].trim());
+
+            checkRulesAndTriggerEvents("Magnet", x, y, z);
 
             // UI – show magnet vector components
             magXValue.setText(getString(R.string.magnet_x, x));
@@ -411,6 +425,10 @@ public class MainActivity extends AppCompatActivity {
     // Emulator detection → choose correct broker URL
     // ------------------------------------------------------------------------
     private String getBrokerUrl() {
+        android.content.SharedPreferences sharedPref =
+            getSharedPreferences("AppPreferences", android.content.Context.MODE_PRIVATE);
+
+        String savedBrokerUrl = sharedPref.getString("MQTT_BROKER", PHONE_BROKER);
         String f =
                 (android.os.Build.FINGERPRINT == null ? "" : android.os.Build.FINGERPRINT)
                         .toLowerCase(Locale.US);
@@ -430,6 +448,83 @@ public class MainActivity extends AppCompatActivity {
                         || m.contains("android sdk built for x86")
                         || p.contains("sdk_gphone");
 
-        return isEmulator ? EMULATOR_BROKER : PHONE_BROKER;
+        return isEmulator ? EMULATOR_BROKER : savedBrokerUrl;
     }
+
+    private void checkRulesAndTriggerEvents(String sensorType, float x, float y, float z) {
+        if (activeRules == null || activeRules.isEmpty()) return;
+
+        long now = System.currentTimeMillis();
+
+        float sum = (float) Math.sqrt(x * x + y * y + z * z);
+
+        for (database.entities.EreignisType rule : activeRules) {
+
+            if (rule.sensorType != null && rule.sensorType.equalsIgnoreCase(sensorType)) {
+
+                Long lastTrigger = lastTriggeredMap.get(rule.ereignisID);
+                if (lastTrigger != null && (now - lastTrigger) < COOLDOWN_MS) {
+                    continue;
+                }
+                boolean triggered = false;
+                if (rule.axisX && checkThreshold(x, rule.ereignisThreshold, rule.thresholdDirection)) {
+                    triggerEvent(now, sensorType, x, rule.ereignisName, "X");
+                    triggered = true;
+                }
+
+                if (rule.axisY && checkThreshold(y, rule.ereignisThreshold, rule.thresholdDirection)) {
+                    triggerEvent(now, sensorType, y, rule.ereignisName, "Y");
+                    triggered = true;
+                }
+
+                if (rule.axisZ && checkThreshold(z, rule.ereignisThreshold, rule.thresholdDirection)) {
+                    triggerEvent(now, sensorType, z, rule.ereignisName, "Z");
+                    triggered = true;
+                }
+
+                if (rule.axisSum && checkThreshold(sum, rule.ereignisThreshold, rule.thresholdDirection)) {
+                    triggerEvent(now, sensorType, sum, rule.ereignisName, "Summe");
+                }
+
+                if (triggered) {
+                    lastTriggeredMap.put(rule.ereignisID, now);
+                }
+            }
+        }
+    }
+
+    private boolean checkThreshold(float sensorValue, float threshold, String direction) {
+        float absValue = Math.abs(sensorValue);
+
+        if (direction == null) direction = ">=";
+
+        if (direction.equals(">=")) {
+            return absValue >= threshold;
+        } else if (direction.equals("<=")) {
+            return absValue <= threshold;
+        }
+        return false;
+    }
+
+    private void triggerEvent(long timestamp, String sensorType, float triggerValue, String eventName, String axis) {
+
+        Log.w(TAG, "!!! Ereignis ausgelöst !!! " + eventName + " auf Sensor " + sensorType);
+
+        com.fhdw.biot.speech.iot.events.SensorEreignis ereignis = new com.fhdw.biot.speech.iot.events.SensorEreignis(
+            timestamp,
+            sensorType,
+            triggerValue,
+            eventName != null ? eventName : "Unbekanntes Ereignis",
+            this,
+            axis
+        );
+
+        DB.databaseWriteExecutor.execute(() -> {
+            sensorDao.insert(ereignis.getEreignisData());
+        });
+
+        // OPTIONAL: Hier könntest du einen Cooldown einbauen, damit die App nicht
+        // 50 Benachrichtigungen pro Sekunde schickt, wenn man das Handy schüttelt!
+    }
+
 }

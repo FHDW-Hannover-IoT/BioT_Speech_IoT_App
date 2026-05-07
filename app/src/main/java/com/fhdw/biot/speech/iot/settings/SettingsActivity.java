@@ -1,8 +1,10 @@
 package com.fhdw.biot.speech.iot.settings;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -15,11 +17,25 @@ import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
 public class SettingsActivity extends AppCompatActivity {
+    private SwitchMaterial switchPushNotifications;
+    private EditText etMqttBrokerUrl;
+
+    private static final String PREF_NAME = "AppPreferences";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
+        switchPushNotifications = findViewById(R.id.switch_push_notifications);
+        etMqttBrokerUrl = findViewById(R.id.et_mqtt_broker_url);
+
+        SharedPreferences sharedPref = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+
+        boolean isPushActive = sharedPref.getBoolean("PUSH_ACTIVE", true);
+        String brokerUrl = sharedPref.getString("MQTT_BROKER", "tcp://192.168.178.80:1883");
+
+        switchPushNotifications.setChecked(isPushActive);
+        etMqttBrokerUrl.setText(brokerUrl);
         // Ensure content is not hidden under system bars (status/navigation).
         ViewCompat.setOnApplyWindowInsetsListener(
                 findViewById(R.id.settings),
@@ -37,6 +53,16 @@ public class SettingsActivity extends AppCompatActivity {
                     Intent intent = new Intent(SettingsActivity.this, MainActivity.class);
                     startActivity(intent);
                 });
+
+        ImageButton btnInfoServer = findViewById(R.id.btn_info_server_data);
+        btnInfoServer.setOnClickListener(v -> {
+            new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Server-Datenabruf")
+                .setMessage("Wenn diese Option aktiviert ist, lädt die App zusätzliche Daten vom Server herunter. \n\nAchtung: Hierfür ist eine aktive Internetverbindung (WLAN oder mobile Daten) erforderlich, was zu Datenverbrauch führen kann.")
+                .setPositiveButton("Verstanden", (dialog, which) -> dialog.dismiss())
+                .setIcon(R.drawable.outline_info_24)
+                .show();
+        });
 
         SwitchMaterial swActive = findViewById(R.id.switch_dp_active);
         SeekBar sbEpsilon = findViewById(R.id.seekbar_epsilon);
@@ -84,5 +110,18 @@ public class SettingsActivity extends AppCompatActivity {
                     @Override
                     public void onStopTrackingTouch(SeekBar seekBar) {}
                 });
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        SharedPreferences sharedPref = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+
+        editor.putBoolean("PUSH_ACTIVE", switchPushNotifications.isChecked());
+        editor.putString("MQTT_BROKER", etMqttBrokerUrl.getText().toString());
+
+        editor.apply();
     }
 }
