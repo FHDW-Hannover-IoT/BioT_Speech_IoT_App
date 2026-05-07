@@ -166,7 +166,7 @@ public class EreignisActivity extends AppCompatActivity {
                             break;
 
                         case "TYPE":
-                            if(e1.getEventType() != null && e2.getEventType() != null) {
+                            if (e1.getEventType() != null && e2.getEventType() != null) {
                                 cmp = e1.getEventType().compareTo(e2.getEventType());
                             }
                             break;

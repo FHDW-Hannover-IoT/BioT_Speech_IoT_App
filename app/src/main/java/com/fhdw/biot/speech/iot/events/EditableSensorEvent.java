@@ -3,12 +3,9 @@ package com.fhdw.biot.speech.iot.events;
 /**
  * EditableSensorEvent -------------------- Represents one editable rule configuration row.
  *
- * <p>Fields:
- * id → internal identifier for adapter tracking
- * sensorType → Accel / Gyro / Magnet (default: Accel)
- * axisX, axisY, axisZ, axisSum -> boolean flags for selected axes
- * eventType → "Overshoot", "Fall", "Shake", etc.
- * thresholdValue → numeric threshold that triggers the event
+ * <p>Fields: id → internal identifier for adapter tracking sensorType → Accel / Gyro / Magnet
+ * (default: Accel) axisX, axisY, axisZ, axisSum -> boolean flags for selected axes eventType →
+ * "Overshoot", "Fall", "Shake", etc. thresholdValue → numeric threshold that triggers the event
  * tresholdDirection -> ">=" oder "<="
  *
  * <p>These objects are NOT the final events stored in the database. Instead, they are templates

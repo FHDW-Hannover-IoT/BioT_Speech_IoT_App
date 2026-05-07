@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageButton;
 import android.widget.Toast;
-
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -21,7 +20,6 @@ import database.entities.EreignisType;
 import database.entities.Sensor;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * NewEreignisActivity -------------------- Screen where the user can define *event rules*
@@ -124,9 +122,10 @@ public class NewEreignisActivity extends AppCompatActivity {
     private void loadAvailableSensors() {
         DB.databaseWriteExecutor.execute(
                 () -> {
-                    List<Sensor> dbSensors = DB.getDatabase(getApplicationContext())
-                        .sensorDao()
-                        .getAllKnownSensors();
+                    List<Sensor> dbSensors =
+                            DB.getDatabase(getApplicationContext())
+                                    .sensorDao()
+                                    .getAllKnownSensors();
 
                     runOnUiThread(
                             () -> {
@@ -143,65 +142,84 @@ public class NewEreignisActivity extends AppCompatActivity {
 
     private void saveEventsToDatabase() {
         List<EditableSensorEvent> listToSave = new ArrayList<>(editableEventList);
-        DB.databaseWriteExecutor.execute(() -> {
-            DB.getDatabase(getApplicationContext()).sensorDao().deleteAllEreignisTypes();
-            for (EditableSensorEvent editableEvent : listToSave) {
-                EreignisType dbEvent = new EreignisType();
-                dbEvent.ereignisName = editableEvent.eventType;
-                dbEvent.ereignisThreshold = (int) editableEvent.thresholdValue; // Cast auf int, da deine DB int erwartet
-                dbEvent.thresholdDirection = editableEvent.thresholdDirection;
+        DB.databaseWriteExecutor.execute(
+                () -> {
+                    DB.getDatabase(getApplicationContext()).sensorDao().deleteAllEreignisTypes();
+                    for (EditableSensorEvent editableEvent : listToSave) {
+                        EreignisType dbEvent = new EreignisType();
+                        dbEvent.ereignisName = editableEvent.eventType;
+                        dbEvent.ereignisThreshold =
+                                (int) editableEvent.thresholdValue; // Cast auf int, da deine DB int
+                        // erwartet
+                        dbEvent.thresholdDirection = editableEvent.thresholdDirection;
 
-                dbEvent.axisX = editableEvent.axisX;
-                dbEvent.axisY = editableEvent.axisY;
-                dbEvent.axisZ = editableEvent.axisZ;
-                dbEvent.axisSum = editableEvent.axisSum;
+                        dbEvent.axisX = editableEvent.axisX;
+                        dbEvent.axisY = editableEvent.axisY;
+                        dbEvent.axisZ = editableEvent.axisZ;
+                        dbEvent.axisSum = editableEvent.axisSum;
 
-                dbEvent.sensorType = editableEvent.sensorType;
+                        dbEvent.sensorType = editableEvent.sensorType;
 
-                DB.getDatabase(getApplicationContext()).sensorDao().insertEreignisType(dbEvent);
-            }
-            runOnUiThread(() -> {
-                Toast.makeText(NewEreignisActivity.this, "Regeln erfolgreich gespeichert!", Toast.LENGTH_SHORT).show();
-            });
-        });
+                        DB.getDatabase(getApplicationContext())
+                                .sensorDao()
+                                .insertEreignisType(dbEvent);
+                    }
+                    runOnUiThread(
+                            () -> {
+                                Toast.makeText(
+                                                NewEreignisActivity.this,
+                                                "Regeln erfolgreich gespeichert!",
+                                                Toast.LENGTH_SHORT)
+                                        .show();
+                            });
+                });
     }
 
     private void loadExistingEvents() {
-        DB.databaseWriteExecutor.execute(() -> {
-            List<EreignisType> savedRules = DB.getDatabase(getApplicationContext())
-                .sensorDao()
-                .getAllEreignisTypes();
+        DB.databaseWriteExecutor.execute(
+                () -> {
+                    List<EreignisType> savedRules =
+                            DB.getDatabase(getApplicationContext())
+                                    .sensorDao()
+                                    .getAllEreignisTypes();
 
-            if (savedRules != null) {
+                    if (savedRules != null) {
 
-                List<EditableSensorEvent> loadedList = new ArrayList<>();
+                        List<EditableSensorEvent> loadedList = new ArrayList<>();
 
-                for (EreignisType dbRule : savedRules) {
-                    EditableSensorEvent editableEvent = new EditableSensorEvent(dbRule.ereignisID);
+                        for (EreignisType dbRule : savedRules) {
+                            EditableSensorEvent editableEvent =
+                                    new EditableSensorEvent(dbRule.ereignisID);
 
-                    editableEvent.eventType = dbRule.ereignisName;
-                    editableEvent.thresholdValue = (float) dbRule.ereignisThreshold; // DB hat int, Adapter nutzt float
+                            editableEvent.eventType = dbRule.ereignisName;
+                            editableEvent.thresholdValue =
+                                    (float) dbRule.ereignisThreshold; // DB hat int, Adapter nutzt
+                            // float
 
-                    editableEvent.thresholdDirection = (dbRule.thresholdDirection != null) ? dbRule.thresholdDirection : ">=";
+                            editableEvent.thresholdDirection =
+                                    (dbRule.thresholdDirection != null)
+                                            ? dbRule.thresholdDirection
+                                            : ">=";
 
-                    editableEvent.axisX = dbRule.axisX;
-                    editableEvent.axisY = dbRule.axisY;
-                    editableEvent.axisZ = dbRule.axisZ;
-                    editableEvent.axisSum = dbRule.axisSum;
+                            editableEvent.axisX = dbRule.axisX;
+                            editableEvent.axisY = dbRule.axisY;
+                            editableEvent.axisZ = dbRule.axisZ;
+                            editableEvent.axisSum = dbRule.axisSum;
 
-                    if (dbRule.sensorType != null) {
-                        editableEvent.sensorType = dbRule.sensorType;
+                            if (dbRule.sensorType != null) {
+                                editableEvent.sensorType = dbRule.sensorType;
+                            }
+
+                            loadedList.add(editableEvent);
+                        }
+
+                        runOnUiThread(
+                                () -> {
+                                    editableEventList.clear();
+                                    editableEventList.addAll(loadedList);
+                                    adapter.notifyDataSetChanged();
+                                });
                     }
-
-                    loadedList.add(editableEvent);
-                }
-
-                runOnUiThread(() -> {
-                    editableEventList.clear();
-                    editableEventList.addAll(loadedList);
-                    adapter.notifyDataSetChanged();
                 });
-            }
-        });
     }
 }

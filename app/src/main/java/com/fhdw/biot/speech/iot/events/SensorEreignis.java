@@ -40,7 +40,6 @@ public class SensorEreignis {
     // Actual sensor reading that exceeded the threshold
     private float value;
 
-
     // Optional identifier; can be used to correlate rules or sources.
     private String id;
 
@@ -63,7 +62,12 @@ public class SensorEreignis {
      * @param axis 'X', 'Y', 'Z' or 'Sum' depending on which axis exceeded threshold.
      */
     public SensorEreignis(
-            long timestamp, String sensorType, float value, String id, Context context, String axis) {
+            long timestamp,
+            String sensorType,
+            float value,
+            String id,
+            Context context,
+            String axis) {
 
         this.timestamp = timestamp;
         this.sensorType = sensorType;

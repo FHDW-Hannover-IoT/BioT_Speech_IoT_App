@@ -30,5 +30,8 @@ public class EreignisData {
     public String getAxis() {
         return axis;
     }
-    public String getEventType() {return ereignisName; }
+
+    public String getEventType() {
+        return ereignisName;
+    }
 }
