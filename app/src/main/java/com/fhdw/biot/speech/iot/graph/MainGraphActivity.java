@@ -76,12 +76,12 @@ public class MainGraphActivity extends BaseChartActivity {
 
     // -----------------------------------------------
     // DATASETS FOR ALL AXES AND TOTAL MAGNITUDE
-    // These objects hold the chart data before deciding
-    // which datasets will be shown depending on checkboxes.
+    // Each axis is a list of segments so gaps in sensor data appear as
+    // disconnected lines rather than bridged interpolations (TC15).
     // -----------------------------------------------
-    private LineDataSet lineDataAccelx, lineDataAccely, lineDataAccelz, lineDataAccelTotal;
-    private LineDataSet lineDataGyrox, lineDataGyroy, lineDataGyroz, lineDataGyroTotal;
-    private LineDataSet lineDataMagx, lineDataMagy, lineDataMagz, lineDataMagTotal;
+    private List<LineDataSet> lineDataAccelx, lineDataAccely, lineDataAccelz, lineDataAccelTotal;
+    private List<LineDataSet> lineDataGyrox, lineDataGyroy, lineDataGyroz, lineDataGyroTotal;
+    private List<LineDataSet> lineDataMagx, lineDataMagy, lineDataMagz, lineDataMagTotal;
 
     // -----------------------------------------------
     // CHECKBOXES controlling which lines are visible
@@ -511,18 +511,10 @@ public class MainGraphActivity extends BaseChartActivity {
                                                     + d.accelZ * d.accelZ)));
         }
 
-        lineDataAccelx = new LineDataSet(xs, "X-Achse");
-        lineDataAccelx.setColor(Color.CYAN);
-        lineDataAccelx.setDrawCircles(false);
-        lineDataAccely = new LineDataSet(ys, "Y-Achse");
-        lineDataAccely.setColor(Color.WHITE);
-        lineDataAccely.setDrawCircles(false);
-        lineDataAccelz = new LineDataSet(zs, "Z-Achse");
-        lineDataAccelz.setColor(Color.GREEN);
-        lineDataAccelz.setDrawCircles(false);
-        lineDataAccelTotal = new LineDataSet(totals, "Summe");
-        lineDataAccelTotal.setColor(Color.RED);
-        lineDataAccelTotal.setDrawCircles(false);
+        lineDataAccelx     = GraphUtils.buildSegmented(xs,     "X-Achse", Color.CYAN);
+        lineDataAccely     = GraphUtils.buildSegmented(ys,     "Y-Achse", Color.WHITE);
+        lineDataAccelz     = GraphUtils.buildSegmented(zs,     "Z-Achse", Color.GREEN);
+        lineDataAccelTotal = GraphUtils.buildSegmented(totals, "Summe",   Color.RED);
     }
 
     private void initializeGyroDataSets(List<GyroData> list) {
@@ -560,18 +552,10 @@ public class MainGraphActivity extends BaseChartActivity {
                                                     + d.gyroZ * d.gyroZ)));
         }
 
-        lineDataGyrox = new LineDataSet(xs, "X-Achse");
-        lineDataGyrox.setColor(Color.CYAN);
-        lineDataGyrox.setDrawCircles(false);
-        lineDataGyroy = new LineDataSet(ys, "Y-Achse");
-        lineDataGyroy.setColor(Color.WHITE);
-        lineDataGyroy.setDrawCircles(false);
-        lineDataGyroz = new LineDataSet(zs, "Z-Achse");
-        lineDataGyroz.setColor(Color.GREEN);
-        lineDataGyroz.setDrawCircles(false);
-        lineDataGyroTotal = new LineDataSet(totals, "Summe");
-        lineDataGyroTotal.setColor(Color.RED);
-        lineDataGyroTotal.setDrawCircles(false);
+        lineDataGyrox     = GraphUtils.buildSegmented(xs,     "X-Achse", Color.CYAN);
+        lineDataGyroy     = GraphUtils.buildSegmented(ys,     "Y-Achse", Color.WHITE);
+        lineDataGyroz     = GraphUtils.buildSegmented(zs,     "Z-Achse", Color.GREEN);
+        lineDataGyroTotal = GraphUtils.buildSegmented(totals, "Summe",   Color.RED);
     }
 
     private void initializeMagDataSets(List<MagnetData> list) {
@@ -609,18 +593,10 @@ public class MainGraphActivity extends BaseChartActivity {
                                                     + d.magnetZ * d.magnetZ)));
         }
 
-        lineDataMagx = new LineDataSet(xs, "X-Achse");
-        lineDataMagx.setColor(Color.CYAN);
-        lineDataMagx.setDrawCircles(false);
-        lineDataMagy = new LineDataSet(ys, "Y-Achse");
-        lineDataMagy.setColor(Color.WHITE);
-        lineDataMagy.setDrawCircles(false);
-        lineDataMagz = new LineDataSet(zs, "Z-Achse");
-        lineDataMagz.setColor(Color.GREEN);
-        lineDataMagz.setDrawCircles(false);
-        lineDataMagTotal = new LineDataSet(totals, "Summe");
-        lineDataMagTotal.setColor(Color.RED);
-        lineDataMagTotal.setDrawCircles(false);
+        lineDataMagx     = GraphUtils.buildSegmented(xs,     "X-Achse", Color.CYAN);
+        lineDataMagy     = GraphUtils.buildSegmented(ys,     "Y-Achse", Color.WHITE);
+        lineDataMagz     = GraphUtils.buildSegmented(zs,     "Z-Achse", Color.GREEN);
+        lineDataMagTotal = GraphUtils.buildSegmented(totals, "Summe",   Color.RED);
     }
 
     // =====================================================================
@@ -640,10 +616,10 @@ public class MainGraphActivity extends BaseChartActivity {
         // ------------------------ ACCEL CHART ------------------------
         if (lineDataAccelx != null) {
             LineData accel = new LineData();
-            if (AccelXCheck.isChecked()) accel.addDataSet(lineDataAccelx);
-            if (AccelYCheck.isChecked()) accel.addDataSet(lineDataAccely);
-            if (AccelZCheck.isChecked()) accel.addDataSet(lineDataAccelz);
-            if (AccelSumCheck.isChecked()) accel.addDataSet(lineDataAccelTotal);
+            if (AccelXCheck.isChecked())   lineDataAccelx.forEach(accel::addDataSet);
+            if (AccelYCheck.isChecked())   lineDataAccely.forEach(accel::addDataSet);
+            if (AccelZCheck.isChecked())   lineDataAccelz.forEach(accel::addDataSet);
+            if (AccelSumCheck.isChecked()) lineDataAccelTotal.forEach(accel::addDataSet);
 
             if (accel.getDataSetCount() > 0) {
                 lineChartAccel.setData(accel);
@@ -656,10 +632,10 @@ public class MainGraphActivity extends BaseChartActivity {
         // ------------------------ GYRO CHART ------------------------
         if (lineDataGyrox != null) {
             LineData gyro = new LineData();
-            if (GyroXCheck.isChecked()) gyro.addDataSet(lineDataGyrox);
-            if (GyroYCheck.isChecked()) gyro.addDataSet(lineDataGyroy);
-            if (GyroZCheck.isChecked()) gyro.addDataSet(lineDataGyroz);
-            if (GyroSumCheck.isChecked()) gyro.addDataSet(lineDataGyroTotal);
+            if (GyroXCheck.isChecked())   lineDataGyrox.forEach(gyro::addDataSet);
+            if (GyroYCheck.isChecked())   lineDataGyroy.forEach(gyro::addDataSet);
+            if (GyroZCheck.isChecked())   lineDataGyroz.forEach(gyro::addDataSet);
+            if (GyroSumCheck.isChecked()) lineDataGyroTotal.forEach(gyro::addDataSet);
 
             if (gyro.getDataSetCount() > 0) {
                 lineChartGyro.setData(gyro);
@@ -672,10 +648,10 @@ public class MainGraphActivity extends BaseChartActivity {
         // ------------------------ MAGNET CHART ------------------------
         if (lineDataMagx != null) {
             LineData mag = new LineData();
-            if (MagXCheck.isChecked()) mag.addDataSet(lineDataMagx);
-            if (MagYCheck.isChecked()) mag.addDataSet(lineDataMagy);
-            if (MagZCheck.isChecked()) mag.addDataSet(lineDataMagz);
-            if (MagSumCheck.isChecked()) mag.addDataSet(lineDataMagTotal);
+            if (MagXCheck.isChecked())   lineDataMagx.forEach(mag::addDataSet);
+            if (MagYCheck.isChecked())   lineDataMagy.forEach(mag::addDataSet);
+            if (MagZCheck.isChecked())   lineDataMagz.forEach(mag::addDataSet);
+            if (MagSumCheck.isChecked()) lineDataMagTotal.forEach(mag::addDataSet);
 
             if (mag.getDataSetCount() > 0) {
                 lineChartMag.setData(mag);
@@ -716,6 +692,8 @@ public class MainGraphActivity extends BaseChartActivity {
         ContextCompat.registerReceiver(this, filterReceiver,
                 new IntentFilter("com.fhdw.biot.speech.iot.FILTER_ACTION"),
                 ContextCompat.RECEIVER_NOT_EXPORTED);
+        // Re-apply chart data so any Settings changes (DP toggle/epsilon) take effect immediately.
+        updateChartsWithDateFilter();
     }
 
     @Override

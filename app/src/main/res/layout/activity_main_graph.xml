@@ -113,16 +113,16 @@
                 />
 
             <Button
-                android:layout_width="50dp"
+                android:layout_width="wrap_content"
                 android:layout_height="30dp"
                 android:text="10 Min"
                 android:textSize="10sp"
                 android:textColor="@color/background"
-                android:backgroundTint="@color/header"
+                android:backgroundTint="@color/button"
                 android:id="@+id/btn_x_10min"
-                android:layout_marginStart="50dp"
-                android:paddingStart="0dp"
-                android:paddingEnd="0dp"
+                android:layout_marginStart="8dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
                 android:paddingBottom="0dp"
                 android:paddingTop="0dp"/>
 

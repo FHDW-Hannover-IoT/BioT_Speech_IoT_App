@@ -78,8 +78,27 @@ public class EditableEventAdapter
             @Override public void onNothingSelected(AdapterView<?> parent) {}
         });
 
-        // Pre-fill text fields
+        // Pre-fill text fields and wire TextWatchers so user input flows back to the model.
+        // Remove the old watcher before setText to avoid spurious callbacks during rebind.
+        holder.eventType.removeTextChangedListener(holder.eventTypeWatcher);
+        holder.eventType.setText(currentEvent.eventType);
+        holder.eventTypeWatcher = simpleWatcher(text -> currentEvent.eventType = text);
+        holder.eventType.addTextChangedListener(holder.eventTypeWatcher);
 
+        holder.treshholdValue.removeTextChangedListener(holder.thresholdWatcher);
+        holder.treshholdValue.setText(
+                currentEvent.thresholdValue == 0 ? "" : String.valueOf(currentEvent.thresholdValue));
+        holder.thresholdWatcher = simpleWatcher(text -> {
+            try { currentEvent.thresholdValue = Float.parseFloat(text); }
+            catch (NumberFormatException ignored) { currentEvent.thresholdValue = 0; }
+        });
+        holder.treshholdValue.addTextChangedListener(holder.thresholdWatcher);
+
+        // Delete button
+        holder.btnDelete.setOnClickListener(v -> {
+            int pos = holder.getAdapterPosition();
+            if (pos != RecyclerView.NO_ID) deleteEvent(pos);
+        });
     }
 
     private static TextWatcher simpleWatcher(SimpleTextCallback cb) {
