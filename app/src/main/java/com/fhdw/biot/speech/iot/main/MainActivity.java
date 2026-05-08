@@ -249,6 +249,7 @@ public class MainActivity extends BiotBaseActivity {
 
     private void broadcastFilter(int minutes) {
         Intent broadcast = new Intent("com.fhdw.biot.speech.iot.FILTER_ACTION");
+        broadcast.setPackage(getApplicationContext().getPackageName());
         broadcast.putExtra(VoiceCommandExecutor.EXTRA_FILTER_MINUTES, minutes);
         sendBroadcast(broadcast);
     }
@@ -557,7 +558,7 @@ public class MainActivity extends BiotBaseActivity {
                                                 getString(R.string.toast_no_hardware),
                                                 Toast.LENGTH_LONG)
                                         .show();
-                                // startSimulator();
+                                startSimulator();
                             }
                         },
                         BuildConfig.SIMULATOR_FALLBACK_DELAY_MS);
