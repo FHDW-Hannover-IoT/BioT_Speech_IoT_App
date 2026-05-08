@@ -341,6 +341,7 @@ public final class VoiceCommandExecutor {
 
     private static void broadcastFilter(Activity activity, int minutes) {
         Intent broadcast = new Intent("com.fhdw.biot.speech.iot.FILTER_ACTION");
+        broadcast.setPackage(activity.getPackageName());
         broadcast.putExtra(EXTRA_FILTER_MINUTES, minutes);
         activity.sendBroadcast(broadcast);
 
@@ -348,9 +349,9 @@ public final class VoiceCommandExecutor {
                 minutes == 0
                         ? "Filter: reset"
                         : "Filter: last "
-                                + (minutes >= 60
-                                        ? (minutes / 60) + " hour(s)"
-                                        : minutes + " minutes");
+                        + (minutes >= 60
+                        ? (minutes / 60) + " hour(s)"
+                        : minutes + " minutes");
         Toast.makeText(activity, msg, Toast.LENGTH_SHORT).show();
     }
 
