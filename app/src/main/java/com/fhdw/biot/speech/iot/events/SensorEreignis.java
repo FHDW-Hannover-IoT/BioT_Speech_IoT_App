@@ -43,13 +43,11 @@ public class SensorEreignis {
     // Optional identifier; can be used to correlate rules or sources.
     private String id;
 
-    private String eventName;
-
     // Android Context, required for notification + DB etc.
     private Context context;
 
-    // Axis along which the event occurred (e.g., 'X', 'Y', 'Z', 'Sum')
-    private String axis;
+    // Axis along which the event occurred (e.g., 'X', 'Y', 'Z')
+    private char axis;
 
     /**
      * Builds a new SensorEreignis and directly shows a notification.
@@ -59,15 +57,10 @@ public class SensorEreignis {
      * @param value The sensor reading that triggered the event.
      * @param id Arbitrary identifier for this event.
      * @param context Android Context used for notifications.
-     * @param axis 'X', 'Y', 'Z' or 'Sum' depending on which axis exceeded threshold.
+     * @param axis 'X', 'Y', or 'Z' depending on which axis exceeded threshold.
      */
     public SensorEreignis(
-            long timestamp,
-            String sensorType,
-            float value,
-            String id,
-            Context context,
-            String axis) {
+            long timestamp, String sensorType, float value, String id, Context context, char axis) {
 
         this.timestamp = timestamp;
         this.sensorType = sensorType;
@@ -79,11 +72,9 @@ public class SensorEreignis {
         // Immediately show a notification to the user when the event is created.
         // NOTE: Currently title and text are generic ("SensorEvent", "text").
         //       You may want to adapt this to display sensorType/value/axis.
-        int reqCode = (int) (System.currentTimeMillis() % 1000);
+        int reqCode = 1;
         Intent intent = new Intent(this.context, MainActivity.class); // Go to Home when tapped
-
-        String message = sensorType + " hat auf Achse " + axis + " ausgelöst. Wert: " + value;
-        this.showNotification(this.context, eventName, message, intent, reqCode);
+        this.showNotification(this.context, "SensorEvent", "text", intent, reqCode);
     }
 
     // --- Simple getters for further usage -----------------------------------
@@ -116,7 +107,6 @@ public class SensorEreignis {
         ereignisData.value = this.value;
         ereignisData.timestamp = this.timestamp;
         ereignisData.axis = this.axis;
-        ereignisData.ereignisName = this.eventName;
 
         Log.d("CREATE_EREIGNIS_DATA", "creating EreignisData for: " + this.sensorType);
 

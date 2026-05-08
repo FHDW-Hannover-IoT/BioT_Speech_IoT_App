@@ -2,7 +2,6 @@ package com.fhdw.biot.speech.iot.main;
 
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -77,8 +76,6 @@ public class MainActivity extends AppCompatActivity {
     private TextView ModeLabel;
 
     private Button btnStream, btnBurst, btnAverage;
-
-    private View cardMqttError;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

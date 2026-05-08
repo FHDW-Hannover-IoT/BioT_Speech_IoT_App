@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageButton;
-import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -70,7 +69,6 @@ public class NewEreignisActivity extends AppCompatActivity {
         ImageButton buttonHome = findViewById(R.id.home_button);
         buttonHome.setOnClickListener(
                 view -> {
-                    saveEventsToDatabase();
                     Intent intent = new Intent(NewEreignisActivity.this, MainActivity.class);
                     startActivity(intent);
                 });
@@ -79,7 +77,6 @@ public class NewEreignisActivity extends AppCompatActivity {
         ImageButton buttonEreignis = findViewById(R.id.notification_button);
         buttonEreignis.setOnClickListener(
                 view -> {
-                    saveEventsToDatabase();
                     Intent intent = new Intent(NewEreignisActivity.this, EreignisActivity.class);
                     startActivity(intent);
                 });
