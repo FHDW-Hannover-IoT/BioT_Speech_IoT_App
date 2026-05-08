@@ -137,22 +137,25 @@ public class MainActivity extends AppCompatActivity {
                                 new android.content.Intent(
                                         MainActivity.this, SettingsActivity.class)));
 
-        btnStream  = findViewById(R.id.btnStream);
-        btnBurst   = findViewById(R.id.btnBurst);
+        btnStream = findViewById(R.id.btnStream);
+        btnBurst = findViewById(R.id.btnBurst);
         btnAverage = findViewById(R.id.btnAverage);
 
-        btnStream.setOnClickListener(v -> {
-            mqttHandler.publish("Control/Mode", "STREAM", true); // true = retained
-            highlightActiveMode(btnStream, "Stream", btnBurst, btnAverage);
-        });
-        btnBurst.setOnClickListener(v -> {
-            mqttHandler.publish("Control/Mode", "BURST", true);
-            highlightActiveMode(btnBurst, "Burst", btnStream, btnAverage);
-        });
-        btnAverage.setOnClickListener(v -> {
-            mqttHandler.publish("Control/Mode", "AVERAGE", true);
-            highlightActiveMode(btnAverage, "Average", btnStream, btnBurst);
-        });
+        btnStream.setOnClickListener(
+                v -> {
+                    mqttHandler.publish("Control/Mode", "STREAM", true); // true = retained
+                    highlightActiveMode(btnStream, "Stream", btnBurst, btnAverage);
+                });
+        btnBurst.setOnClickListener(
+                v -> {
+                    mqttHandler.publish("Control/Mode", "BURST", true);
+                    highlightActiveMode(btnBurst, "Burst", btnStream, btnAverage);
+                });
+        btnAverage.setOnClickListener(
+                v -> {
+                    mqttHandler.publish("Control/Mode", "AVERAGE", true);
+                    highlightActiveMode(btnAverage, "Average", btnStream, btnBurst);
+                });
 
         // ---- bind TextViews -------------------------------------------------
         accelXValue = findViewById(R.id.accelXValue);
@@ -210,9 +213,27 @@ public class MainActivity extends AppCompatActivity {
                                             break;
                                         case "Control/Mode":
                                             switch (message) {
-                                                case "STREAM":  highlightActiveMode(btnStream,  "Stream",  btnBurst, btnAverage); break;
-                                                case "BURST":   highlightActiveMode(btnBurst,   "Burst",   btnStream, btnAverage); break;
-                                                case "AVERAGE": highlightActiveMode(btnAverage, "Average", btnStream, btnBurst); break;
+                                                case "STREAM":
+                                                    highlightActiveMode(
+                                                            btnStream,
+                                                            "Stream",
+                                                            btnBurst,
+                                                            btnAverage);
+                                                    break;
+                                                case "BURST":
+                                                    highlightActiveMode(
+                                                            btnBurst,
+                                                            "Burst",
+                                                            btnStream,
+                                                            btnAverage);
+                                                    break;
+                                                case "AVERAGE":
+                                                    highlightActiveMode(
+                                                            btnAverage,
+                                                            "Average",
+                                                            btnStream,
+                                                            btnBurst);
+                                                    break;
                                             }
                                             break;
                                         default:
@@ -251,8 +272,8 @@ public class MainActivity extends AppCompatActivity {
                         loadDatabaseValues();
 
                         // Start the fake data publisher: "remote sensor"
-                        //dataSimulator = new SensorDataSimulator(mqttHandler, 1000L);
-                        //dataSimulator.start();
+                        // dataSimulator = new SensorDataSimulator(mqttHandler, 1000L);
+                        // dataSimulator.start();
                     }
 
                     @Override
