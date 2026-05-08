@@ -558,7 +558,7 @@ public class MainActivity extends BiotBaseActivity {
                                                 getString(R.string.toast_no_hardware),
                                                 Toast.LENGTH_LONG)
                                         .show();
-                                //startSimulator();
+                                startSimulator();
                             }
                         },
                         BuildConfig.SIMULATOR_FALLBACK_DELAY_MS);
