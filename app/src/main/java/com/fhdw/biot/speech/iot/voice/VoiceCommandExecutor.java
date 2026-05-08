@@ -345,13 +345,14 @@ public final class VoiceCommandExecutor {
         broadcast.putExtra(EXTRA_FILTER_MINUTES, minutes);
         activity.sendBroadcast(broadcast);
 
-        String msg =
-                minutes == 0
-                        ? "Filter: reset"
-                        : "Filter: last "
-                        + (minutes >= 60
-                        ? (minutes / 60) + " hour(s)"
-                        : minutes + " minutes");
+        String msg;
+        if (minutes == 0) {
+            msg = "Filter: reset";
+        } else if (minutes >= 60) {
+            msg = "Filter: last " + (minutes / 60) + " hour(s)";
+        } else {
+            msg = "Filter: last " + minutes + " minutes";
+        }
         Toast.makeText(activity, msg, Toast.LENGTH_SHORT).show();
     }
 
