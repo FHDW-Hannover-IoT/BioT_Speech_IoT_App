@@ -539,7 +539,7 @@ public class MainActivity extends BiotBaseActivity {
                                                             t == null ? "?" : t.getMessage()),
                                                     Toast.LENGTH_LONG)
                                             .show();
-                                    //startSimulator();
+                                    // startSimulator();
                                 });
                     }
                 });
