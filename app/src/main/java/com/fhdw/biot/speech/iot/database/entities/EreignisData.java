@@ -1,4 +1,4 @@
-package database.entities;
+package com.fhdw.biot.speech.iot.database.entities;
 
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
@@ -13,20 +13,10 @@ public class EreignisData {
     public String sensorType;
     public float value;
     public char axis;
+    public String ereignisName;
 
-    public String getSensorType() {
-        return sensorType;
-    }
-
-    public long getTimestamp() {
-        return timestamp;
-    }
-
-    public float getValue() {
-        return value;
-    }
-
-    public char getAxis() {
-        return axis;
-    }
+    public String getSensorType() { return sensorType; }
+    public long getTimestamp() { return timestamp; }
+    public float getValue() { return value; }
+    public char getAxis() { return axis; }
 }

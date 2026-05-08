@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
-        android:layout_width="match_parent"
-        android:id="@+id/main"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:background="@color/background"
-        tools:context=".main.MainActivity">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:id="@+id/main"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/background"
+    tools:context=".main.MainActivity">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -32,7 +32,7 @@
             android:layout_height="80dp"
             android:background="@color/header"
             android:gravity="center_vertical|center_horizontal"
-            android:text="Sensordaten"
+            android:text="@string/main_header"
             android:textColor="@color/text"
             android:textSize="28sp"
             android:textStyle="bold" />
@@ -50,268 +50,375 @@
             android:color="@color/text"/>
     </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/contentArea"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:padding="16dp">
+    <LinearLayout
+        android:id="@+id/contentArea"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:padding="16dp">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingBottom="8dp">
-
-                <TextView
-                    android:id="@+id/accelTitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Beschleunigungssensor"
-                    android:textColor="@color/text"
-                    android:textStyle="bold"
-                    android:textSize="20sp"
-                    android:paddingBottom="4dp" />
-
-                <TextView
-                    android:id="@+id/accelXValue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/beschleunigung_x"
-                    android:textColor="@color/highlight"
-                    android:layout_gravity="center"
-                    android:textSize="28sp" />
-
-                <TextView
-                    android:id="@+id/accelYValue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/beschleunigung_y"
-                    android:textColor="@color/highlight"
-                    android:layout_gravity="center"
-                    android:textSize="28sp" />
-
-                <TextView
-                    android:id="@+id/accelZValue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/beschleunigung_z"
-                    android:textColor="@color/highlight"
-                    android:layout_gravity="center"
-                    android:textSize="28sp" />
-            </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/button" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp">
-
-                <TextView
-                    android:id="@+id/gyroTitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Gyroskop"
-                    android:textColor="@color/text"
-                    android:textStyle="bold"
-                    android:textSize="20sp"
-                    android:paddingBottom="4dp" />
-
-                <TextView
-                    android:id="@+id/gyroXValue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/gyro_x"
-                    android:textColor="@color/highlight"
-                    android:layout_gravity="center"
-                    android:textSize="28sp" />
-
-                <TextView
-                    android:id="@+id/gyroYValue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/gyro_y"
-                    android:textColor="@color/highlight"
-                    android:layout_gravity="center"
-                    android:textSize="28sp" />
-
-                <TextView
-                    android:id="@+id/gyroZValue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/gyro_z"
-                    android:textColor="@color/highlight"
-                    android:layout_gravity="center"
-                    android:textSize="28sp" />
-            </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/button" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp">
-
-                <TextView
-                    android:id="@+id/magTitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Magnetfeldsensor"
-                    android:textColor="@color/text"
-                    android:textStyle="bold"
-                    android:textSize="20sp"
-                    android:paddingBottom="4dp" />
-
-                <TextView
-                    android:id="@+id/magXValue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/magnet_x"
-                    android:textColor="@color/highlight"
-                    android:layout_gravity="center"
-                    android:textSize="28sp" />
-
-                <TextView
-                    android:id="@+id/magYValue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/magnet_y"
-                    android:textColor="@color/highlight"
-                    android:layout_gravity="center"
-                    android:textSize="28sp" />
-
-                <TextView
-                    android:id="@+id/magZValue"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/magnet_z"
-                    android:textColor="@color/highlight"
-                    android:layout_gravity="center"
-                    android:textSize="28sp" />
-            </LinearLayout>
-
-            <Button
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="Zur Grapenansicht"
-                android:layout_marginTop="30dp"
-                android:backgroundTint="@color/button"
-                android:textColor="@color/background"
-                android:id="@+id/graphenansicht"/>
-
-        </LinearLayout>
-
-        <!-- Divider -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/button" />
-
-        <!-- Divider -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/button" />
-
-        <!-- Data mode buttons -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingTop="12dp"
-            android:paddingBottom="12dp"
-            android:gravity="center">
+            android:orientation="vertical"
+            android:paddingBottom="8dp">
 
-            <Button
-                android:id="@+id/btnStream"
-                android:layout_width="0dp"
+            <TextView
+                android:id="@+id/accelTitle"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="4dp"
-                android:text="Stream"
-                android:textColor="@color/background"
-                android:backgroundTint="@color/button"
-                android:alpha="1.0" />
+                android:text="@string/sensor_accel_title"
+                android:textColor="@color/text"
+                android:textStyle="bold"
+                android:textSize="20sp"
+                android:paddingBottom="4dp" />
 
-            <Button
-                android:id="@+id/btnBurst"
-                android:layout_width="0dp"
+            <TextView
+                android:id="@+id/accelXValue"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="4dp"
-                android:layout_marginEnd="4dp"
-                android:text="Burst"
-                android:textColor="@color/background"
-                android:backgroundTint="@color/button"
-                android:alpha="0.4" />
+                android:text="@string/beschleunigung_x"
+                android:textColor="@color/highlight"
+                android:layout_gravity="center"
+                android:textSize="28sp" />
 
-            <Button
-                android:id="@+id/btnAverage"
-                android:layout_width="0dp"
+            <TextView
+                android:id="@+id/accelYValue"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="4dp"
-                android:layout_marginEnd="8dp"
-                android:text="Average"
-                android:textColor="@color/background"
-                android:backgroundTint="@color/button"
-                android:alpha="0.4" />
+                android:text="@string/beschleunigung_y"
+                android:textColor="@color/highlight"
+                android:layout_gravity="center"
+                android:textSize="28sp" />
 
+            <TextView
+                android:id="@+id/accelZValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/beschleunigung_z"
+                android:textColor="@color/highlight"
+                android:layout_gravity="center"
+                android:textSize="28sp" />
         </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/button" />
 
         <LinearLayout
-            android:id="@+id/footerBar"
             android:layout_width="match_parent"
-            android:layout_height="80dp"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:background="@color/header">
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
 
-            <Button
-                android:id="@+id/btnAccel"
-                android:layout_width="0dp"
+            <TextView
+                android:id="@+id/gyroTitle"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Accel"
-                android:textColor="@color/background"
-                android:layout_margin="4dp"
-                android:backgroundTint="@color/button"
-                android:textSize="15sp" />
+                android:text="@string/sensor_gyro_title"
+                android:textColor="@color/text"
+                android:textStyle="bold"
+                android:textSize="20sp"
+                android:paddingBottom="4dp" />
 
-            <Button
-                android:id="@+id/btnGyro"
-                android:layout_width="0dp"
+            <TextView
+                android:id="@+id/gyroXValue"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Gyroskop"
-                android:textColor="@color/background"
-                android:layout_margin="4dp"
-                android:backgroundTint="@color/button"
-                android:textSize="15sp"/>
+                android:text="@string/gyro_x"
+                android:textColor="@color/highlight"
+                android:layout_gravity="center"
+                android:textSize="28sp" />
 
-            <Button
-                android:id="@+id/btnMagnet"
-                android:layout_width="0dp"
+            <TextView
+                android:id="@+id/gyroYValue"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Magnetfeld"
-                android:textColor="@color/background"
-                android:layout_margin="4dp"
-                android:backgroundTint="@color/button"
-                android:textSize="15sp"/>
+                android:text="@string/gyro_y"
+                android:textColor="@color/highlight"
+                android:layout_gravity="center"
+                android:textSize="28sp" />
+
+            <TextView
+                android:id="@+id/gyroZValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/gyro_z"
+                android:textColor="@color/highlight"
+                android:layout_gravity="center"
+                android:textSize="28sp" />
         </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/button" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+            <TextView
+                android:id="@+id/magTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/sensor_magnet_title"
+                android:textColor="@color/text"
+                android:textStyle="bold"
+                android:textSize="20sp"
+                android:paddingBottom="4dp" />
+
+            <TextView
+                android:id="@+id/magXValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/magnet_x"
+                android:textColor="@color/highlight"
+                android:layout_gravity="center"
+                android:textSize="28sp" />
+
+            <TextView
+                android:id="@+id/magYValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/magnet_y"
+                android:textColor="@color/highlight"
+                android:layout_gravity="center"
+                android:textSize="28sp" />
+
+            <TextView
+                android:id="@+id/magZValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/magnet_z"
+                android:textColor="@color/highlight"
+                android:layout_gravity="center"
+                android:textSize="28sp" />
+        </LinearLayout>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/btn_graph"
+            android:layout_marginTop="30dp"
+            android:backgroundTint="@color/button"
+            android:textColor="@color/background"
+            android:id="@+id/graphenansicht"/>
+
     </LinearLayout>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/button" />
+
+    <!-- Mode / Operating-mode status labels -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp">
+
+        <TextView
+            android:id="@+id/ModeLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/modus_default"
+            android:textColor="@color/text"
+            android:layout_gravity="center"
+            android:textSize="14sp"
+            android:paddingTop="4dp" />
+
+        <TextView
+            android:id="@+id/OperatingModeLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/betriebsmodus_default"
+            android:textColor="@color/text"
+            android:layout_gravity="center"
+            android:textSize="14sp"
+            android:paddingTop="2dp" />
+
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/button" />
+
+    <!-- Transmission mode buttons (Control/Mode topic) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="12dp"
+        android:paddingBottom="6dp"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/btnStream"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="4dp"
+            android:text="Stream"
+            android:textColor="@color/background"
+            android:backgroundTint="@color/button"
+            android:alpha="1.0" />
+
+        <Button
+            android:id="@+id/btnBurst"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:text="Burst"
+            android:textColor="@color/background"
+            android:backgroundTint="@color/button"
+            android:alpha="0.4" />
+
+        <Button
+            android:id="@+id/btnAverage"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="8dp"
+            android:text="Average"
+            android:textColor="@color/background"
+            android:backgroundTint="@color/button"
+            android:alpha="0.4" />
+
+    </LinearLayout>
+
+    <!-- Operating mode buttons (Control/OperatingMode topic) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="6dp"
+        android:paddingBottom="12dp"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/btnAutark"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="2dp"
+            android:text="Autark"
+            android:textColor="@color/background"
+            android:backgroundTint="@color/header"
+            android:textSize="12sp"
+            android:alpha="0.4" />
+
+        <Button
+            android:id="@+id/btnSupervision"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:text="Supervision"
+            android:textColor="@color/background"
+            android:backgroundTint="@color/header"
+            android:textSize="12sp"
+            android:alpha="1.0" />
+
+        <Button
+            android:id="@+id/btnEvent"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:text="Event"
+            android:textColor="@color/background"
+            android:backgroundTint="@color/header"
+            android:textSize="12sp"
+            android:alpha="0.4" />
+
+        <Button
+            android:id="@+id/btnIdentification"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="8dp"
+            android:text="Identif."
+            android:textColor="@color/background"
+            android:backgroundTint="@color/header"
+            android:textSize="12sp"
+            android:alpha="0.4" />
+
+    </LinearLayout>
+
+    <!-- Footer: sensor nav buttons + voice mic button -->
+    <LinearLayout
+        android:id="@+id/footerBar"
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:background="@color/header">
+
+        <Button
+            android:id="@+id/btnAccel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/btn_accel"
+            android:textColor="@color/background"
+            android:layout_margin="4dp"
+            android:backgroundTint="@color/button"
+            android:textSize="15sp" />
+
+        <Button
+            android:id="@+id/btnGyro"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/btn_gyro"
+            android:textColor="@color/background"
+            android:layout_margin="4dp"
+            android:backgroundTint="@color/button"
+            android:textSize="15sp"/>
+
+        <Button
+            android:id="@+id/btnMagnet"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/btn_magnet"
+            android:textColor="@color/background"
+            android:layout_margin="4dp"
+            android:backgroundTint="@color/button"
+            android:textSize="15sp"/>
+
+        <!-- Voice command button — triggers Android SpeechRecognizer -->
+        <ImageButton
+            android:id="@+id/btnVoice"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:src="@android:drawable/ic_btn_speak_now"
+            android:background="@color/button"
+            android:contentDescription="Sprachbefehl"
+            android:padding="12dp" />
+
+    </LinearLayout>
+</LinearLayout>

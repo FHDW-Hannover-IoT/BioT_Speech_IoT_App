@@ -16,11 +16,16 @@ import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.events.EreignisActivity;
 import com.fhdw.biot.speech.iot.graph.BaseChartActivity;
 import com.fhdw.biot.speech.iot.main.MainActivity;
-import com.fhdw.biot.speech.iot.util.DatePickerHandler;
+import com.fhdw.biot.speech.iot.util.DateTimePickerHandler;
+import com.fhdw.biot.speech.iot.graph.IFilterableChart;
+import com.fhdw.biot.speech.iot.voice.VoiceCommandExecutor;
+import android.view.View;
+import android.widget.CheckBox;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
-import database.DB;
-import database.entities.AccelData;
+import com.fhdw.biot.speech.iot.config.BiotApplication;
+import com.fhdw.biot.speech.iot.database.entities.AccelData;
+import com.fhdw.biot.speech.iot.repository.SensorRepository;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -34,7 +39,7 @@ import java.util.Locale;
  * from Room via DB.sensorDao(). - Applying time filters via date pickers. - Mapping DB entities →
  * MPAndroidChart entries. - Delegating chart styling to BaseChartActivity.
  */
-public class AccelActivity extends BaseChartActivity {
+public class AccelActivity extends BaseChartActivity implements IFilterableChart {
 
     /** Individual charts for each axis of the accelerometer. */
     private LineChart lineChartAccelX, lineChartAccelY, lineChartAccelZ;
@@ -53,6 +58,10 @@ public class AccelActivity extends BaseChartActivity {
     /** Quick filter button: show only last 10 minutes. */
     private Button btnFilterLast10Min;
 
+    /** Chart visibility checkboxes. */
+    private CheckBox cbChartX, cbChartY, cbChartZ;
+
+    private SensorRepository sensorRepository;
     private LiveData<List<AccelData>> currentLiveData;
 
     private Handler slidingWindowHandler = new Handler(Looper.getMainLooper());
@@ -60,10 +69,14 @@ public class AccelActivity extends BaseChartActivity {
     private boolean isTenMinuteFilterActive = false;
     private boolean isStartPointFixed = false;
 
+    /** Fixed reference timestamp for X-axis; reset when user manually changes the date range. */
+    private long windowStart = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_beschleunigung);
+        sensorRepository = ((BiotApplication) getApplication()).getContainer().sensorRepository();
 
         // Ensure content is not hidden under system bars (status/navigation).
         ViewCompat.setOnApplyWindowInsetsListener(
@@ -112,9 +125,6 @@ public class AccelActivity extends BaseChartActivity {
                     startActivity(intent);
                 });
 
-        // Helper for hooking DatePickers to buttons (used below).
-        DatePickerHandler datePickerHandler = new DatePickerHandler(AccelActivity.this);
-
         // --------------------------------------------------------------------
         // Date filter buttons
         // --------------------------------------------------------------------
@@ -150,6 +160,14 @@ public class AccelActivity extends BaseChartActivity {
         setupChart(lineChartAccelY, "Y-Achse", 0);
         setupChart(lineChartAccelZ, "Z-Achse", 0);
 
+        // Chart visibility checkboxes
+        cbChartX = findViewById(R.id.cbChartX);
+        cbChartY = findViewById(R.id.cbChartY);
+        cbChartZ = findViewById(R.id.cbChartZ);
+        if (cbChartX != null) cbChartX.setOnCheckedChangeListener((b, c) -> lineChartAccelX.setVisibility(c ? View.VISIBLE : View.GONE));
+        if (cbChartY != null) cbChartY.setOnCheckedChangeListener((b, c) -> lineChartAccelY.setVisibility(c ? View.VISIBLE : View.GONE));
+        if (cbChartZ != null) cbChartZ.setOnCheckedChangeListener((b, c) -> lineChartAccelZ.setVisibility(c ? View.VISIBLE : View.GONE));
+
         // Configure date pickers and default date range.
         setupDatePickers();
     }
@@ -163,56 +181,35 @@ public class AccelActivity extends BaseChartActivity {
      * "Bis" is set to "today".
      */
     private void setupDatePickers() {
-        // Initialize Calendar objects with "now".
         dateFromCalendar = Calendar.getInstance();
         dateToCalendar = Calendar.getInstance();
 
-        LiveData<Long> oldestTimestampLiveData =
-                DB.getDatabase(getApplicationContext()).sensorDao().getOldestAccelTimestamp();
-
-        oldestTimestampLiveData.observe(
-                this,
-                new androidx.lifecycle.Observer<Long>() {
-                    @Override
-                    public void onChanged(Long oldestTimestamp) {
-                        if (oldestTimestamp != null && oldestTimestamp > 0) {
-
-                            if (!isTenMinuteFilterActive) {
-                                dateFromCalendar.setTimeInMillis(oldestTimestamp);
-                                syncDateButtonTexts();
-                                updateChartsWithDateFilter();
-                            }
-
-                            oldestTimestampLiveData.removeObserver(this);
-                        }
-                    }
-                });
+        // Wire buttons immediately so they work even with an empty DB.
+        setupFromDatePickers(xVonButton);
+        setupToDatePickers(xBisButton);
 
         isTenMinuteFilterActive = true;
         isStartPointFixed = false;
-        btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.button));
+        btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.header));
         startSlidingWindow();
+        checkVoiceFilterIntent();
     }
 
-    /** Wires up DatePickers for all "von" buttons and sets their initial text. */
     private void setupFromDatePickers(Button xVonButton) {
-        DatePickerHandler.createForButton(
+        DateTimePickerHandler.createForButton(
                 xVonButton,
                 calendar -> {
-                    // Update lower bound of filter and refresh charts.
                     stopSlidingWindow();
                     dateFromCalendar = calendar;
+                    windowStart = 0;
                     updateChartsWithDateFilter();
                 },
                 AccelActivity.this);
-
-        // Show the initial "from" date on all three buttons.
-        xVonButton.setText(formatCalendarDate(dateFromCalendar));
+        xVonButton.setText(makeDateTimeString(dateFromCalendar));
     }
 
-    /** Wires up DatePickers for all "bis" buttons and sets their initial text. */
     private void setupToDatePickers(Button xBisButton) {
-        DatePickerHandler.createForButton(
+        DateTimePickerHandler.createForButton(
                 xBisButton,
                 calendar -> {
                     stopSlidingWindow();
@@ -220,9 +217,7 @@ public class AccelActivity extends BaseChartActivity {
                     updateChartsWithDateFilter();
                 },
                 AccelActivity.this);
-
-        // Show the initial "to" date (today) on all three buttons.
-        xBisButton.setText(formatCalendarDate(dateToCalendar));
+        xBisButton.setText(makeDateTimeString(dateToCalendar));
     }
 
     /**
@@ -320,10 +315,7 @@ public class AccelActivity extends BaseChartActivity {
             toTime = adjustedToCalendar.getTimeInMillis();
         }
 
-        currentLiveData =
-                DB.getDatabase(getApplicationContext())
-                        .sensorDao()
-                        .getAccelDataBetween(fromTime, toTime);
+        currentLiveData = sensorRepository.getAccelBetween(fromTime, toTime);
 
         currentLiveData.observe(
                 this,
@@ -346,24 +338,8 @@ public class AccelActivity extends BaseChartActivity {
                 });
     }
 
-    /** Formats a Calendar into "dd.MM.yyyy" for showing in date filter buttons. */
-    private String formatCalendarDate(Calendar calendar) {
-        return String.format(
-                java.util.Locale.GERMANY,
-                "%02d.%02d.%04d",
-                calendar.get(Calendar.DAY_OF_MONTH),
-                calendar.get(Calendar.MONTH) + 1,
-                calendar.get(Calendar.YEAR));
-    }
-
-    /** Formats a Calendar into "dd.MM.yyyy" (no time) – used for the quick-filter labels. */
     private String makeDateTimeString(Calendar calendar) {
-        return String.format(
-                Locale.GERMAN,
-                "%02d.%02d.%04d",
-                calendar.get(Calendar.DAY_OF_MONTH),
-                calendar.get(Calendar.MONTH) + 1,
-                calendar.get(Calendar.YEAR));
+        return DateTimePickerHandler.format(calendar);
     }
 
     // ------------------------------------------------------------------------
@@ -377,33 +353,81 @@ public class AccelActivity extends BaseChartActivity {
      * <p>X-axis values are "elapsed milliseconds since first sample".
      */
     private void displayDataInCharts(List<AccelData> accelDataList) {
-        if (accelDataList.isEmpty()) {
-            return;
-        }
+        if (accelDataList.isEmpty()) return;
+
+        if (windowStart == 0) windowStart = accelDataList.get(0).timestamp;
 
         ArrayList<Entry> entriesX = new ArrayList<>();
         ArrayList<Entry> entriesY = new ArrayList<>();
         ArrayList<Entry> entriesZ = new ArrayList<>();
 
-        long firstTimestamp = accelDataList.get(0).timestamp;
-
         for (AccelData data : accelDataList) {
-            float elapsedTime = data.timestamp - firstTimestamp; // ms offset
-
-            entriesX.add(new Entry(elapsedTime, data.accelX));
-            entriesY.add(new Entry(elapsedTime, data.accelY));
-            entriesZ.add(new Entry(elapsedTime, data.accelZ));
+            float t = data.timestamp - windowStart;
+            entriesX.add(new Entry(t, data.accelX));
+            entriesY.add(new Entry(t, data.accelY));
+            entriesZ.add(new Entry(t, data.accelZ));
         }
 
-        // Delegate dataset creation + chart styling to BaseChartActivity.
-        setData(lineChartAccelX, entriesX, "X-Achse", Color.WHITE);
-        setData(lineChartAccelY, entriesY, "Y-Achse", Color.WHITE);
-        setData(lineChartAccelZ, entriesZ, "Z-Achse", Color.WHITE);
+        setData(lineChartAccelX, entriesX, "X", Color.CYAN);
+        setData(lineChartAccelY, entriesY, "Y", Color.GREEN);
+        setData(lineChartAccelZ, entriesZ, "Z", Color.YELLOW);
+
+        pinViewport(lineChartAccelX, lineChartAccelY, lineChartAccelZ);
+    }
+
+    private void pinViewport(LineChart... charts) {
+        for (LineChart chart : charts) {
+            if (chart.getData() == null) continue;
+            chart.setVisibleXRangeMaximum(120_000f); // default: show last 2 min
+            chart.moveViewToX(chart.getData().getXMax());
+        }
+    }
+
+    private void checkVoiceFilterIntent() {
+        Intent intent = getIntent();
+        if (intent == null) return;
+        int minutes = intent.getIntExtra(VoiceCommandExecutor.EXTRA_FILTER_MINUTES, 0);
+        if (minutes > 0) {
+            applyTimeFilter(minutes);
+            // Remove the extra so it is not reapplied on configuration changes
+            intent.removeExtra(VoiceCommandExecutor.EXTRA_FILTER_MINUTES);
+        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         stopSlidingWindow();
+    }
+
+    @Override
+    public void applyTimeFilter(int minutes) {
+        if (minutes <= 0) {
+            clearFilter();
+            return;
+        }
+        stopSlidingWindow();
+        long now = System.currentTimeMillis();
+        dateFromCalendar.setTimeInMillis(now - ((long) minutes * 60 * 1000));
+        dateToCalendar.setTimeInMillis(now);
+        isTenMinuteFilterActive = true;
+        syncDateButtonTexts();
+        updateChartsWithDateFilter();
+        startSlidingWindow();
+    }
+
+    @Override
+    public void clearFilter() {
+        stopSlidingWindow();
+        dateFromCalendar = Calendar.getInstance();
+        dateToCalendar   = Calendar.getInstance();
+        windowStart = 0;
+        syncDateButtonTexts();
+        updateChartsWithDateFilter();
+    }
+
+    @Override
+    public boolean isFilterActive() {
+        return isTenMinuteFilterActive;
     }
 }

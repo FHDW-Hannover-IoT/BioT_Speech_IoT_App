@@ -1,4 +1,4 @@
-package database.entities;
+package com.fhdw.biot.speech.iot.database.entities;
 
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
@@ -15,23 +15,8 @@ public class MagnetData implements SensorPoint {
     public float magnetY;
     public float magnetZ;
 
-    @Override
-    public long getTimestamp() {
-        return timestamp;
-    }
-
-    @Override
-    public float getX() {
-        return magnetX;
-    }
-
-    @Override
-    public float getY() {
-        return magnetY;
-    }
-
-    @Override
-    public float getZ() {
-        return magnetZ;
-    }
+    @Override public long getTimestamp() { return timestamp; }
+    @Override public float getX() { return magnetX; }
+    @Override public float getY() { return magnetY; }
+    @Override public float getZ() { return magnetZ; }
 }

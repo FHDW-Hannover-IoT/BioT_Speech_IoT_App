@@ -1,8 +1,9 @@
-package database.entities;
+package com.fhdw.biot.speech.iot.database.entities;
 
 import androidx.room.PrimaryKey;
 
 public class EreignisType {
+
     @PrimaryKey(autoGenerate = true)
     public int ereignisID;
 
