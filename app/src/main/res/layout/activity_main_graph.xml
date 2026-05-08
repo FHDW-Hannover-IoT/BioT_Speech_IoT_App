@@ -59,58 +59,65 @@
         android:padding="16dp">
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="vertical">
 
-            <TextView
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Von: "
-                android:textColor="@color/text"/>
+                android:orientation="horizontal">
 
-            <Button
-                android:layout_width="wrap_content"
-                android:layout_height="30dp"
-                android:text=""
-                android:textSize="10dp"
-                android:textColor="@color/background"
-                android:backgroundTint="@color/button"
-                android:id="@+id/button_Accel_von"
-                android:paddingStart="0dp"
-                android:paddingEnd="0dp"
-                android:paddingBottom="0dp"
-                android:paddingTop="0dp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Von: "
+                    android:textColor="@color/text"/>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Bis: "
-                android:textColor="@color/text"
-                android:layout_marginStart="10dp"/>
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="30dp"
+                    android:text=""
+                    android:textSize="10dp"
+                    android:textColor="@color/background"
+                    android:backgroundTint="@color/button"
+                    android:id="@+id/button_Accel_von"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp"
+                    android:paddingBottom="0dp"
+                    android:paddingTop="0dp"/>
 
-            <Button
-                android:layout_width="wrap_content"
-                android:layout_height="30dp"
-                android:text=""
-                android:textSize="10sp"
-                android:textColor="@color/background"
-                android:backgroundTint="@color/button"
-                android:id="@+id/button_Accel_bis"
-                android:paddingStart="0dp"
-                android:paddingEnd="0dp"
-                android:paddingBottom="0dp"
-                android:paddingTop="0dp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Bis: "
+                    android:textColor="@color/text"
+                    android:layout_marginStart="10dp"/>
 
-            <ImageButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/outline_reset_focus_24"
-                android:background="@color/background"
-                android:layout_marginStart="10dp"
-                android:paddingTop="3dp"
-                android:id="@+id/resetAccel"
-                />
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="30dp"
+                    android:text=""
+                    android:textSize="10sp"
+                    android:textColor="@color/background"
+                    android:backgroundTint="@color/button"
+                    android:id="@+id/button_Accel_bis"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp"
+                    android:paddingBottom="0dp"
+                    android:paddingTop="0dp"/>
+
+                <ImageButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/outline_reset_focus_24"
+                    android:background="@color/background"
+                    android:layout_marginStart="10dp"
+                    android:paddingTop="3dp"
+                    android:id="@+id/resetAccel"
+                    />
+
+            </LinearLayout>
 
             <Button
                 android:layout_width="wrap_content"
@@ -120,7 +127,7 @@
                 android:textColor="@color/background"
                 android:backgroundTint="@color/button"
                 android:id="@+id/btn_x_10min"
-                android:layout_marginStart="8dp"
+                android:layout_marginTop="4dp"
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp"
                 android:paddingBottom="0dp"

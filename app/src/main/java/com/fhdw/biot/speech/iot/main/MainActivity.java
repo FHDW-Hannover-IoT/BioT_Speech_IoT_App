@@ -552,6 +552,7 @@ public class MainActivity extends BiotBaseActivity {
                         event.sensorType = sensorType;
                         event.value = values[j];
                         event.axis = axes[j];
+                        event.ereignisName = rule.optString("eventType", "");
                         sensorRepository.insertEreignis(event);
                         Log.i(TAG, "Event triggered: " + sensorType + " axis=" + axes[j] + " val=" + values[j]);
                     }

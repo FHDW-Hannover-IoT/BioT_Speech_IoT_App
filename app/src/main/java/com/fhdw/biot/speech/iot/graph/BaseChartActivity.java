@@ -5,6 +5,7 @@ import com.fhdw.biot.speech.iot.config.BiotBaseActivity;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Description;
 import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
@@ -54,9 +55,9 @@ public abstract class BaseChartActivity extends BiotBaseActivity {
         XAxis xAxis = chart.getXAxis();
         xAxis.setTextColor(Color.WHITE);
 
-        // If we know the first timestamp → convert X values into seconds
+        // If we know the first timestamp → apply absolute time formatter
         if (startTime > 0) {
-            xAxis.setValueFormatter(new SecondsValueFormatter(startTime));
+            applyAbsoluteXAxis(chart, startTime);
         }
 
         // Y-axis styling
@@ -64,6 +65,17 @@ public abstract class BaseChartActivity extends BiotBaseActivity {
 
         // Trigger chart redraw
         chart.invalidate();
+    }
+
+    /**
+     * Apply absolute HH:mm:ss X-axis labels with 5-minute granularity.
+     * X-values must be millisecond offsets from {@code startTime}.
+     */
+    protected void applyAbsoluteXAxis(LineChart chart, long startTime) {
+        XAxis xAxis = chart.getXAxis();
+        xAxis.setValueFormatter(new SecondsValueFormatter(startTime));
+        xAxis.setGranularity(5 * 60 * 1000f);
+        xAxis.setGranularityEnabled(true);
     }
 
     /**

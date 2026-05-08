@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.MotionEvent;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageButton;
@@ -18,6 +19,8 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.LiveData;
+import com.github.mikephil.charting.listener.ChartTouchListener;
+import com.github.mikephil.charting.listener.OnChartGestureListener;
 import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.events.EreignisActivity;
 import com.fhdw.biot.speech.iot.main.MainActivity;
@@ -101,6 +104,7 @@ public class MainGraphActivity extends BaseChartActivity {
     private Runnable slidingWindowRunnable;
     private boolean isTenMinuteFilterActive = false;
     private boolean isStartPointFixed = false;
+    private boolean isUserInteracting = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -187,6 +191,10 @@ public class MainGraphActivity extends BaseChartActivity {
         setupChart(lineChartAccel, "Beschleunigung", 0);
         setupChart(lineChartGyro, "Gyroskop", 0);
         setupChart(lineChartMag, "Magnetfeld", 0);
+
+        attachGestureTracking(lineChartAccel);
+        attachGestureTracking(lineChartGyro);
+        attachGestureTracking(lineChartMag);
 
         // Reset buttons restore the zoom and clear date fields
         findViewById(R.id.resetAccel)
@@ -387,22 +395,43 @@ public class MainGraphActivity extends BaseChartActivity {
                     public void run() {
                         if (!isTenMinuteFilterActive) return;
 
-                        long now = System.currentTimeMillis();
+                        if (!isUserInteracting) {
+                            long now = System.currentTimeMillis();
 
-                        if (!isStartPointFixed) {
-                            long tenMinutesAgo = now - (10 * 60 * 1000);
-                            dateFromCalendar.setTimeInMillis(tenMinutesAgo);
+                            if (!isStartPointFixed) {
+                                long tenMinutesAgo = now - (10 * 60 * 1000);
+                                dateFromCalendar.setTimeInMillis(tenMinutesAgo);
+                            }
+
+                            dateToCalendar.setTimeInMillis(now);
+
+                            syncDateButtonTexts();
+                            updateChartsWithDateFilter();
                         }
-
-                        dateToCalendar.setTimeInMillis(now);
-
-                        syncDateButtonTexts();
-                        updateChartsWithDateFilter();
 
                         slidingWindowHandler.postDelayed(this, 5000);
                     }
                 };
         slidingWindowHandler.post(slidingWindowRunnable);
+    }
+
+    private void attachGestureTracking(LineChart chart) {
+        chart.setOnChartGestureListener(new OnChartGestureListener() {
+            @Override
+            public void onChartGestureStart(MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {
+                isUserInteracting = true;
+            }
+            @Override
+            public void onChartGestureEnd(MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {
+                isUserInteracting = false;
+            }
+            @Override public void onChartLongPressed(MotionEvent me) {}
+            @Override public void onChartDoubleTapped(MotionEvent me) {}
+            @Override public void onChartSingleTapped(MotionEvent me) {}
+            @Override public void onChartFling(MotionEvent me1, MotionEvent me2, float velocityX, float velocityY) {}
+            @Override public void onChartScale(MotionEvent me, float scaleX, float scaleY) {}
+            @Override public void onChartTranslate(MotionEvent me, float dX, float dY) {}
+        });
     }
 
     private void stopSlidingWindow() {
@@ -515,6 +544,8 @@ public class MainGraphActivity extends BaseChartActivity {
         lineDataAccely     = GraphUtils.buildSegmented(ys,     "Y-Achse", Color.WHITE);
         lineDataAccelz     = GraphUtils.buildSegmented(zs,     "Z-Achse", Color.GREEN);
         lineDataAccelTotal = GraphUtils.buildSegmented(totals, "Summe",   Color.RED);
+
+        applyAbsoluteXAxis(lineChartAccel, first);
     }
 
     private void initializeGyroDataSets(List<GyroData> list) {
@@ -556,6 +587,8 @@ public class MainGraphActivity extends BaseChartActivity {
         lineDataGyroy     = GraphUtils.buildSegmented(ys,     "Y-Achse", Color.WHITE);
         lineDataGyroz     = GraphUtils.buildSegmented(zs,     "Z-Achse", Color.GREEN);
         lineDataGyroTotal = GraphUtils.buildSegmented(totals, "Summe",   Color.RED);
+
+        applyAbsoluteXAxis(lineChartGyro, first);
     }
 
     private void initializeMagDataSets(List<MagnetData> list) {
@@ -597,6 +630,8 @@ public class MainGraphActivity extends BaseChartActivity {
         lineDataMagy     = GraphUtils.buildSegmented(ys,     "Y-Achse", Color.WHITE);
         lineDataMagz     = GraphUtils.buildSegmented(zs,     "Z-Achse", Color.GREEN);
         lineDataMagTotal = GraphUtils.buildSegmented(totals, "Summe",   Color.RED);
+
+        applyAbsoluteXAxis(lineChartMag, first);
     }
 
     // =====================================================================

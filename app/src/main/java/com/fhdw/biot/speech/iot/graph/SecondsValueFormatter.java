@@ -1,6 +1,8 @@
 package com.fhdw.biot.speech.iot.graph;
 
 import com.github.mikephil.charting.formatter.ValueFormatter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Locale;
 
 /**
@@ -27,11 +29,12 @@ public class SecondsValueFormatter extends ValueFormatter {
         this.startTime = startTime;
     }
 
+    private static final SimpleDateFormat TIME_FORMAT =
+            new SimpleDateFormat("HH:mm:ss", Locale.ENGLISH);
+
     @Override
     public String getFormattedValue(float value) {
-        int totalSecs = (int) (value / 1000);
-        int m = totalSecs / 60;
-        int s = Math.abs(totalSecs % 60);
-        return String.format(Locale.ENGLISH, "%d:%02d", m, s);
+        long absMs = startTime + (long) value;
+        return TIME_FORMAT.format(new Date(absMs));
     }
 }
