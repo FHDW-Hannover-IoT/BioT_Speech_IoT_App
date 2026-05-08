@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageButton;
+import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -15,10 +16,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.main.MainActivity;
 import database.DB;
+import database.entities.EreignisType;
 import database.entities.Sensor;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * NewEreignisActivity -------------------- Screen where the user can define *event rules*
@@ -47,7 +48,7 @@ public class NewEreignisActivity extends AppCompatActivity {
     // In-memory list of event-rule configurations
     private List<EditableSensorEvent> editableEventList;
 
-    public List<Sensor> sensors = loadAvailableSensors();
+    public List<Sensor> sensors = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +70,7 @@ public class NewEreignisActivity extends AppCompatActivity {
         ImageButton buttonHome = findViewById(R.id.home_button);
         buttonHome.setOnClickListener(
                 view -> {
+                    saveEventsToDatabase();
                     Intent intent = new Intent(NewEreignisActivity.this, MainActivity.class);
                     startActivity(intent);
                 });
@@ -77,6 +79,7 @@ public class NewEreignisActivity extends AppCompatActivity {
         ImageButton buttonEreignis = findViewById(R.id.notification_button);
         buttonEreignis.setOnClickListener(
                 view -> {
+                    saveEventsToDatabase();
                     Intent intent = new Intent(NewEreignisActivity.this, EreignisActivity.class);
                     startActivity(intent);
                 });
@@ -91,6 +94,12 @@ public class NewEreignisActivity extends AppCompatActivity {
         // Adapter binds each EditableSensorEvent to event_configuration_item.xml
         adapter = new EditableEventAdapter(editableEventList);
         recyclerView.setAdapter(adapter);
+
+        adapter = new EditableEventAdapter(editableEventList);
+        recyclerView.setAdapter(adapter);
+
+        loadAvailableSensors();
+        loadExistingEvents();
 
         // TODO: Datenbanklogik hinzufügen
         //  - load existing rules from DB
@@ -110,25 +119,107 @@ public class NewEreignisActivity extends AppCompatActivity {
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    private List<Sensor> loadAvailableSensors() {
-        AtomicReference<List<Sensor>> allEventsList = new AtomicReference<>();
+    private void loadAvailableSensors() {
         DB.databaseWriteExecutor.execute(
                 () -> {
-                    allEventsList.set(
+                    List<Sensor> dbSensors =
                             DB.getDatabase(getApplicationContext())
                                     .sensorDao()
-                                    .getAllKnownSensors());
+                                    .getAllKnownSensors();
 
                     runOnUiThread(
                             () -> {
-                                if (allEventsList.get() == null) {
+                                if (dbSensors != null) {
+                                    sensors.clear();
+                                    sensors.addAll(dbSensors);
+                                    adapter.notifyDataSetChanged();
+                                } else {
                                     Log.e("ERROR", "Event list returned null!");
-                                    return;
                                 }
-
-                                adapter.notifyDataSetChanged();
                             });
                 });
-        return allEventsList.get();
+    }
+
+    private void saveEventsToDatabase() {
+        List<EditableSensorEvent> listToSave = new ArrayList<>(editableEventList);
+        DB.databaseWriteExecutor.execute(
+                () -> {
+                    DB.getDatabase(getApplicationContext()).sensorDao().deleteAllEreignisTypes();
+                    for (EditableSensorEvent editableEvent : listToSave) {
+                        EreignisType dbEvent = new EreignisType();
+                        dbEvent.ereignisName = editableEvent.eventType;
+                        dbEvent.ereignisThreshold =
+                                (int) editableEvent.thresholdValue; // Cast auf int, da deine DB int
+                        // erwartet
+                        dbEvent.thresholdDirection = editableEvent.thresholdDirection;
+
+                        dbEvent.axisX = editableEvent.axisX;
+                        dbEvent.axisY = editableEvent.axisY;
+                        dbEvent.axisZ = editableEvent.axisZ;
+                        dbEvent.axisSum = editableEvent.axisSum;
+
+                        dbEvent.sensorType = editableEvent.sensorType;
+
+                        DB.getDatabase(getApplicationContext())
+                                .sensorDao()
+                                .insertEreignisType(dbEvent);
+                    }
+                    runOnUiThread(
+                            () -> {
+                                Toast.makeText(
+                                                NewEreignisActivity.this,
+                                                "Regeln erfolgreich gespeichert!",
+                                                Toast.LENGTH_SHORT)
+                                        .show();
+                            });
+                });
+    }
+
+    private void loadExistingEvents() {
+        DB.databaseWriteExecutor.execute(
+                () -> {
+                    List<EreignisType> savedRules =
+                            DB.getDatabase(getApplicationContext())
+                                    .sensorDao()
+                                    .getAllEreignisTypes();
+
+                    if (savedRules != null) {
+
+                        List<EditableSensorEvent> loadedList = new ArrayList<>();
+
+                        for (EreignisType dbRule : savedRules) {
+                            EditableSensorEvent editableEvent =
+                                    new EditableSensorEvent(dbRule.ereignisID);
+
+                            editableEvent.eventType = dbRule.ereignisName;
+                            editableEvent.thresholdValue =
+                                    (float) dbRule.ereignisThreshold; // DB hat int, Adapter nutzt
+                            // float
+
+                            editableEvent.thresholdDirection =
+                                    (dbRule.thresholdDirection != null)
+                                            ? dbRule.thresholdDirection
+                                            : ">=";
+
+                            editableEvent.axisX = dbRule.axisX;
+                            editableEvent.axisY = dbRule.axisY;
+                            editableEvent.axisZ = dbRule.axisZ;
+                            editableEvent.axisSum = dbRule.axisSum;
+
+                            if (dbRule.sensorType != null) {
+                                editableEvent.sensorType = dbRule.sensorType;
+                            }
+
+                            loadedList.add(editableEvent);
+                        }
+
+                        runOnUiThread(
+                                () -> {
+                                    editableEventList.clear();
+                                    editableEventList.addAll(loadedList);
+                                    adapter.notifyDataSetChanged();
+                                });
+                    }
+                });
     }
 }
