@@ -5,7 +5,9 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ImageButton;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
@@ -13,23 +15,20 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.LiveData;
 import com.fhdw.biot.speech.iot.R;
-import com.fhdw.biot.speech.iot.events.EreignisActivity;
-import com.fhdw.biot.speech.iot.graph.BaseChartActivity;
-import com.fhdw.biot.speech.iot.main.MainActivity;
-import com.fhdw.biot.speech.iot.util.DateTimePickerHandler;
-import com.fhdw.biot.speech.iot.graph.IFilterableChart;
-import com.fhdw.biot.speech.iot.voice.VoiceCommandExecutor;
-import android.view.View;
-import android.widget.CheckBox;
-import com.github.mikephil.charting.charts.LineChart;
-import com.github.mikephil.charting.data.Entry;
 import com.fhdw.biot.speech.iot.config.BiotApplication;
 import com.fhdw.biot.speech.iot.database.entities.GyroData;
+import com.fhdw.biot.speech.iot.events.EreignisActivity;
+import com.fhdw.biot.speech.iot.graph.BaseChartActivity;
+import com.fhdw.biot.speech.iot.graph.IFilterableChart;
+import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.fhdw.biot.speech.iot.repository.SensorRepository;
+import com.fhdw.biot.speech.iot.util.DateTimePickerHandler;
+import com.fhdw.biot.speech.iot.voice.VoiceCommandExecutor;
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.data.Entry;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * GyroActivity ------------ Screen that visualizes gyroscope sensor data in three separate line
@@ -173,9 +172,15 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
         cbChartX = findViewById(R.id.cbChartX);
         cbChartY = findViewById(R.id.cbChartY);
         cbChartZ = findViewById(R.id.cbChartZ);
-        if (cbChartX != null) cbChartX.setOnCheckedChangeListener((b, c) -> lineChartGyroX.setVisibility(c ? View.VISIBLE : View.GONE));
-        if (cbChartY != null) cbChartY.setOnCheckedChangeListener((b, c) -> lineChartGyroY.setVisibility(c ? View.VISIBLE : View.GONE));
-        if (cbChartZ != null) cbChartZ.setOnCheckedChangeListener((b, c) -> lineChartGyroZ.setVisibility(c ? View.VISIBLE : View.GONE));
+        if (cbChartX != null)
+            cbChartX.setOnCheckedChangeListener(
+                    (b, c) -> lineChartGyroX.setVisibility(c ? View.VISIBLE : View.GONE));
+        if (cbChartY != null)
+            cbChartY.setOnCheckedChangeListener(
+                    (b, c) -> lineChartGyroY.setVisibility(c ? View.VISIBLE : View.GONE));
+        if (cbChartZ != null)
+            cbChartZ.setOnCheckedChangeListener(
+                    (b, c) -> lineChartGyroZ.setVisibility(c ? View.VISIBLE : View.GONE));
 
         setupDatePickers();
     }
@@ -442,7 +447,7 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
     public void clearFilter() {
         stopSlidingWindow();
         dateFromCalendar = Calendar.getInstance();
-        dateToCalendar   = Calendar.getInstance();
+        dateToCalendar = Calendar.getInstance();
         windowStart = 0;
         syncDateButtonTexts();
         updateChartsWithDateFilter();

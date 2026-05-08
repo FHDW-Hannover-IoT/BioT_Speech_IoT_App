@@ -19,11 +19,14 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.LiveData;
-import com.github.mikephil.charting.listener.ChartTouchListener;
-import com.github.mikephil.charting.listener.OnChartGestureListener;
 import com.fhdw.biot.speech.iot.R;
+import com.fhdw.biot.speech.iot.config.BiotApplication;
+import com.fhdw.biot.speech.iot.database.entities.AccelData;
+import com.fhdw.biot.speech.iot.database.entities.GyroData;
+import com.fhdw.biot.speech.iot.database.entities.MagnetData;
 import com.fhdw.biot.speech.iot.events.EreignisActivity;
 import com.fhdw.biot.speech.iot.main.MainActivity;
+import com.fhdw.biot.speech.iot.repository.SensorRepository;
 import com.fhdw.biot.speech.iot.sensor.AccelActivity;
 import com.fhdw.biot.speech.iot.sensor.GyroActivity;
 import com.fhdw.biot.speech.iot.sensor.MagnetActivity;
@@ -34,15 +37,11 @@ import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
-import com.fhdw.biot.speech.iot.config.BiotApplication;
-import com.fhdw.biot.speech.iot.database.entities.AccelData;
-import com.fhdw.biot.speech.iot.database.entities.GyroData;
-import com.fhdw.biot.speech.iot.database.entities.MagnetData;
-import com.fhdw.biot.speech.iot.repository.SensorRepository;
+import com.github.mikephil.charting.listener.ChartTouchListener;
+import com.github.mikephil.charting.listener.OnChartGestureListener;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * MainGraphActivity ----------------- THIS IS THE MAIN VISUALIZATION SCREEN FOR THE ENTIRE APP.
@@ -225,12 +224,16 @@ public class MainGraphActivity extends BaseChartActivity {
         setupToDatePickers();
 
         // Update the from-date to the oldest DB record once data is available.
-        sensorRepository.getOldestAccelTimestamp().observe(this, oldest -> {
-            if (oldest != null && oldest > 0 && !isTenMinuteFilterActive) {
-                dateFromCalendar.setTimeInMillis(oldest);
-                updateChartsWithDateFilter();
-            }
-        });
+        sensorRepository
+                .getOldestAccelTimestamp()
+                .observe(
+                        this,
+                        oldest -> {
+                            if (oldest != null && oldest > 0 && !isTenMinuteFilterActive) {
+                                dateFromCalendar.setTimeInMillis(oldest);
+                                updateChartsWithDateFilter();
+                            }
+                        });
 
         toggleTenMinutesFilter();
     }
@@ -416,22 +419,39 @@ public class MainGraphActivity extends BaseChartActivity {
     }
 
     private void attachGestureTracking(LineChart chart) {
-        chart.setOnChartGestureListener(new OnChartGestureListener() {
-            @Override
-            public void onChartGestureStart(MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {
-                isUserInteracting = true;
-            }
-            @Override
-            public void onChartGestureEnd(MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {
-                isUserInteracting = false;
-            }
-            @Override public void onChartLongPressed(MotionEvent me) {}
-            @Override public void onChartDoubleTapped(MotionEvent me) {}
-            @Override public void onChartSingleTapped(MotionEvent me) {}
-            @Override public void onChartFling(MotionEvent me1, MotionEvent me2, float velocityX, float velocityY) {}
-            @Override public void onChartScale(MotionEvent me, float scaleX, float scaleY) {}
-            @Override public void onChartTranslate(MotionEvent me, float dX, float dY) {}
-        });
+        chart.setOnChartGestureListener(
+                new OnChartGestureListener() {
+                    @Override
+                    public void onChartGestureStart(
+                            MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {
+                        isUserInteracting = true;
+                    }
+
+                    @Override
+                    public void onChartGestureEnd(
+                            MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {
+                        isUserInteracting = false;
+                    }
+
+                    @Override
+                    public void onChartLongPressed(MotionEvent me) {}
+
+                    @Override
+                    public void onChartDoubleTapped(MotionEvent me) {}
+
+                    @Override
+                    public void onChartSingleTapped(MotionEvent me) {}
+
+                    @Override
+                    public void onChartFling(
+                            MotionEvent me1, MotionEvent me2, float velocityX, float velocityY) {}
+
+                    @Override
+                    public void onChartScale(MotionEvent me, float scaleX, float scaleY) {}
+
+                    @Override
+                    public void onChartTranslate(MotionEvent me, float dX, float dY) {}
+                });
     }
 
     private void stopSlidingWindow() {
@@ -459,7 +479,8 @@ public class MainGraphActivity extends BaseChartActivity {
     // =====================================================================
 
     private void observeAccelData() {
-        sensorRepository.getAllAccelData()
+        sensorRepository
+                .getAllAccelData()
                 .observe(
                         this,
                         list -> {
@@ -473,7 +494,8 @@ public class MainGraphActivity extends BaseChartActivity {
     }
 
     private void observeGyroData() {
-        sensorRepository.getAllGyroData()
+        sensorRepository
+                .getAllGyroData()
                 .observe(
                         this,
                         list -> {
@@ -487,7 +509,8 @@ public class MainGraphActivity extends BaseChartActivity {
     }
 
     private void observeMagnetData() {
-        sensorRepository.getAllMagnetData()
+        sensorRepository
+                .getAllMagnetData()
                 .observe(
                         this,
                         list -> {
@@ -540,10 +563,10 @@ public class MainGraphActivity extends BaseChartActivity {
                                                     + d.accelZ * d.accelZ)));
         }
 
-        lineDataAccelx     = GraphUtils.buildSegmented(xs,     "X-Achse", Color.CYAN);
-        lineDataAccely     = GraphUtils.buildSegmented(ys,     "Y-Achse", Color.WHITE);
-        lineDataAccelz     = GraphUtils.buildSegmented(zs,     "Z-Achse", Color.GREEN);
-        lineDataAccelTotal = GraphUtils.buildSegmented(totals, "Summe",   Color.RED);
+        lineDataAccelx = GraphUtils.buildSegmented(xs, "X-Achse", Color.CYAN);
+        lineDataAccely = GraphUtils.buildSegmented(ys, "Y-Achse", Color.WHITE);
+        lineDataAccelz = GraphUtils.buildSegmented(zs, "Z-Achse", Color.GREEN);
+        lineDataAccelTotal = GraphUtils.buildSegmented(totals, "Summe", Color.RED);
 
         applyAbsoluteXAxis(lineChartAccel, first);
     }
@@ -583,10 +606,10 @@ public class MainGraphActivity extends BaseChartActivity {
                                                     + d.gyroZ * d.gyroZ)));
         }
 
-        lineDataGyrox     = GraphUtils.buildSegmented(xs,     "X-Achse", Color.CYAN);
-        lineDataGyroy     = GraphUtils.buildSegmented(ys,     "Y-Achse", Color.WHITE);
-        lineDataGyroz     = GraphUtils.buildSegmented(zs,     "Z-Achse", Color.GREEN);
-        lineDataGyroTotal = GraphUtils.buildSegmented(totals, "Summe",   Color.RED);
+        lineDataGyrox = GraphUtils.buildSegmented(xs, "X-Achse", Color.CYAN);
+        lineDataGyroy = GraphUtils.buildSegmented(ys, "Y-Achse", Color.WHITE);
+        lineDataGyroz = GraphUtils.buildSegmented(zs, "Z-Achse", Color.GREEN);
+        lineDataGyroTotal = GraphUtils.buildSegmented(totals, "Summe", Color.RED);
 
         applyAbsoluteXAxis(lineChartGyro, first);
     }
@@ -626,10 +649,10 @@ public class MainGraphActivity extends BaseChartActivity {
                                                     + d.magnetZ * d.magnetZ)));
         }
 
-        lineDataMagx     = GraphUtils.buildSegmented(xs,     "X-Achse", Color.CYAN);
-        lineDataMagy     = GraphUtils.buildSegmented(ys,     "Y-Achse", Color.WHITE);
-        lineDataMagz     = GraphUtils.buildSegmented(zs,     "Z-Achse", Color.GREEN);
-        lineDataMagTotal = GraphUtils.buildSegmented(totals, "Summe",   Color.RED);
+        lineDataMagx = GraphUtils.buildSegmented(xs, "X-Achse", Color.CYAN);
+        lineDataMagy = GraphUtils.buildSegmented(ys, "Y-Achse", Color.WHITE);
+        lineDataMagz = GraphUtils.buildSegmented(zs, "Z-Achse", Color.GREEN);
+        lineDataMagTotal = GraphUtils.buildSegmented(totals, "Summe", Color.RED);
 
         applyAbsoluteXAxis(lineChartMag, first);
     }
@@ -651,9 +674,9 @@ public class MainGraphActivity extends BaseChartActivity {
         // ------------------------ ACCEL CHART ------------------------
         if (lineDataAccelx != null) {
             LineData accel = new LineData();
-            if (AccelXCheck.isChecked())   lineDataAccelx.forEach(accel::addDataSet);
-            if (AccelYCheck.isChecked())   lineDataAccely.forEach(accel::addDataSet);
-            if (AccelZCheck.isChecked())   lineDataAccelz.forEach(accel::addDataSet);
+            if (AccelXCheck.isChecked()) lineDataAccelx.forEach(accel::addDataSet);
+            if (AccelYCheck.isChecked()) lineDataAccely.forEach(accel::addDataSet);
+            if (AccelZCheck.isChecked()) lineDataAccelz.forEach(accel::addDataSet);
             if (AccelSumCheck.isChecked()) lineDataAccelTotal.forEach(accel::addDataSet);
 
             if (accel.getDataSetCount() > 0) {
@@ -667,9 +690,9 @@ public class MainGraphActivity extends BaseChartActivity {
         // ------------------------ GYRO CHART ------------------------
         if (lineDataGyrox != null) {
             LineData gyro = new LineData();
-            if (GyroXCheck.isChecked())   lineDataGyrox.forEach(gyro::addDataSet);
-            if (GyroYCheck.isChecked())   lineDataGyroy.forEach(gyro::addDataSet);
-            if (GyroZCheck.isChecked())   lineDataGyroz.forEach(gyro::addDataSet);
+            if (GyroXCheck.isChecked()) lineDataGyrox.forEach(gyro::addDataSet);
+            if (GyroYCheck.isChecked()) lineDataGyroy.forEach(gyro::addDataSet);
+            if (GyroZCheck.isChecked()) lineDataGyroz.forEach(gyro::addDataSet);
             if (GyroSumCheck.isChecked()) lineDataGyroTotal.forEach(gyro::addDataSet);
 
             if (gyro.getDataSetCount() > 0) {
@@ -683,9 +706,9 @@ public class MainGraphActivity extends BaseChartActivity {
         // ------------------------ MAGNET CHART ------------------------
         if (lineDataMagx != null) {
             LineData mag = new LineData();
-            if (MagXCheck.isChecked())   lineDataMagx.forEach(mag::addDataSet);
-            if (MagYCheck.isChecked())   lineDataMagy.forEach(mag::addDataSet);
-            if (MagZCheck.isChecked())   lineDataMagz.forEach(mag::addDataSet);
+            if (MagXCheck.isChecked()) lineDataMagx.forEach(mag::addDataSet);
+            if (MagYCheck.isChecked()) lineDataMagy.forEach(mag::addDataSet);
+            if (MagZCheck.isChecked()) lineDataMagz.forEach(mag::addDataSet);
             if (MagSumCheck.isChecked()) lineDataMagTotal.forEach(mag::addDataSet);
 
             if (mag.getDataSetCount() > 0) {
@@ -702,29 +725,32 @@ public class MainGraphActivity extends BaseChartActivity {
     // Handles FILTER_ACTION sent by VoiceCommandExecutor / LlmQueryHandler.
     // =====================================================================
 
-    private final BroadcastReceiver filterReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            int minutes = intent.getIntExtra(VoiceCommandExecutor.EXTRA_FILTER_MINUTES, -1);
-            if (minutes < 0) return;
-            stopSlidingWindow();
-            long now = System.currentTimeMillis();
-            if (minutes == 0) {
-                dateFromCalendar.setTimeInMillis(0);
-                dateToCalendar.setTimeInMillis(now);
-            } else {
-                dateFromCalendar.setTimeInMillis(now - (long) minutes * 60_000);
-                dateToCalendar.setTimeInMillis(now);
-            }
-            syncDateButtonTexts();
-            updateChartsWithDateFilter();
-        }
-    };
+    private final BroadcastReceiver filterReceiver =
+            new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    int minutes = intent.getIntExtra(VoiceCommandExecutor.EXTRA_FILTER_MINUTES, -1);
+                    if (minutes < 0) return;
+                    stopSlidingWindow();
+                    long now = System.currentTimeMillis();
+                    if (minutes == 0) {
+                        dateFromCalendar.setTimeInMillis(0);
+                        dateToCalendar.setTimeInMillis(now);
+                    } else {
+                        dateFromCalendar.setTimeInMillis(now - (long) minutes * 60_000);
+                        dateToCalendar.setTimeInMillis(now);
+                    }
+                    syncDateButtonTexts();
+                    updateChartsWithDateFilter();
+                }
+            };
 
     @Override
     protected void onResume() {
         super.onResume();
-        ContextCompat.registerReceiver(this, filterReceiver,
+        ContextCompat.registerReceiver(
+                this,
+                filterReceiver,
                 new IntentFilter("com.fhdw.biot.speech.iot.FILTER_ACTION"),
                 ContextCompat.RECEIVER_NOT_EXPORTED);
         // Re-apply chart data so any Settings changes (DP toggle/epsilon) take effect immediately.

@@ -15,8 +15,23 @@ public class GyroData implements SensorPoint {
     public float gyroY;
     public float gyroZ;
 
-    @Override public long getTimestamp() { return timestamp; }
-    @Override public float getX() { return gyroX; }
-    @Override public float getY() { return gyroY; }
-    @Override public float getZ() { return gyroZ; }
+    @Override
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    @Override
+    public float getX() {
+        return gyroX;
+    }
+
+    @Override
+    public float getY() {
+        return gyroY;
+    }
+
+    @Override
+    public float getZ() {
+        return gyroZ;
+    }
 }

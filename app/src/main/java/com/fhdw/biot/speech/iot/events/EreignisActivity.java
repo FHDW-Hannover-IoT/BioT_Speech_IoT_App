@@ -14,8 +14,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.config.BiotApplication;
 import com.fhdw.biot.speech.iot.config.BiotBaseActivity;
-import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.fhdw.biot.speech.iot.database.entities.EreignisData;
+import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.fhdw.biot.speech.iot.repository.SensorRepository;
 import java.util.ArrayList;
 import java.util.List;
@@ -100,48 +100,52 @@ public class EreignisActivity extends BiotBaseActivity {
 
     /** Loads event data from ROOM → optionally filtered by sensor category. */
     private void loadEventData(String filter) {
-        new Thread(() -> {
-                    List<EreignisData> allEventsList = sensorRepository.getAllEreignisData();
+        new Thread(
+                        () -> {
+                            List<EreignisData> allEventsList =
+                                    sensorRepository.getAllEreignisData();
 
-                    runOnUiThread(
-                            () -> {
-                                if (allEventsList == null) {
-                                    Log.e("ERROR", "Event list returned null!");
-                                    return;
-                                }
-
-                                filteredEvents.clear();
-
-                                if ("ALL".equals(filter)) {
-                                    filteredEvents.addAll(allEventsList);
-                                    headerTextView.setText("Ereignisse");
-                                } else {
-                                    // Filter by sensor type
-                                    for (EreignisData event : allEventsList) {
-                                        if (event.sensorType.equals(filter)) {
-                                            filteredEvents.add(event);
+                            runOnUiThread(
+                                    () -> {
+                                        if (allEventsList == null) {
+                                            Log.e("ERROR", "Event list returned null!");
+                                            return;
                                         }
-                                    }
 
-                                    // Adjust screen header text
-                                    switch (filter) {
-                                        case "ACCEL":
-                                            headerTextView.setText("Ereignisse Beschleunigung");
-                                            break;
-                                        case "MAGNET":
-                                            headerTextView.setText("Ereignisse Magnetfeld");
-                                            break;
-                                        case "GYRO":
-                                            headerTextView.setText("Ereignisse Gyroskop");
-                                            break;
-                                        default:
+                                        filteredEvents.clear();
+
+                                        if ("ALL".equals(filter)) {
+                                            filteredEvents.addAll(allEventsList);
                                             headerTextView.setText("Ereignisse");
-                                    }
-                                }
+                                        } else {
+                                            // Filter by sensor type
+                                            for (EreignisData event : allEventsList) {
+                                                if (event.sensorType.equals(filter)) {
+                                                    filteredEvents.add(event);
+                                                }
+                                            }
 
-                                adapter.notifyDataSetChanged();
-                            });
-                }).start();
+                                            // Adjust screen header text
+                                            switch (filter) {
+                                                case "ACCEL":
+                                                    headerTextView.setText(
+                                                            "Ereignisse Beschleunigung");
+                                                    break;
+                                                case "MAGNET":
+                                                    headerTextView.setText("Ereignisse Magnetfeld");
+                                                    break;
+                                                case "GYRO":
+                                                    headerTextView.setText("Ereignisse Gyroskop");
+                                                    break;
+                                                default:
+                                                    headerTextView.setText("Ereignisse");
+                                            }
+                                        }
+
+                                        adapter.notifyDataSetChanged();
+                                    });
+                        })
+                .start();
     }
 
     /** Sorts events based on column clicked by user. */

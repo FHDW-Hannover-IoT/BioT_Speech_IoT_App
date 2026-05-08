@@ -74,16 +74,21 @@ public class MyEventAdapter extends RecyclerView.Adapter<MyEventAdapter.EventVie
 
         // Ereignistyp → name defined in event rule, fallback to axis direction
         String name = currentEvent.ereignisName;
-        holder.tvAxis.setText((name != null && !name.isEmpty()) ? name : "In " + currentEvent.axis + "-Richtung");
+        holder.tvAxis.setText(
+                (name != null && !name.isEmpty()) ? name : "In " + currentEvent.axis + "-Richtung");
     }
 
     private static String mqttTopicFor(String sensorType) {
         if (sensorType == null) return "—";
         switch (sensorType) {
-            case "ACCEL":  return "Sensor/Bewegung";
-            case "GYRO":   return "Sensor/Gyro";
-            case "MAGNET": return "Sensor/Magnet";
-            default:       return sensorType;
+            case "ACCEL":
+                return "Sensor/Bewegung";
+            case "GYRO":
+                return "Sensor/Gyro";
+            case "MAGNET":
+                return "Sensor/Magnet";
+            default:
+                return sensorType;
         }
     }
 

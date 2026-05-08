@@ -6,9 +6,9 @@ import android.util.Log;
 /**
  * BiotApplication — process-singleton that owns the {@link AppContainer}.
  *
- * Registered in AndroidManifest.xml via android:name=".config.BiotApplication".
- * Activities retrieve the container via:
- *   AppContainer container = ((BiotApplication) getApplication()).getContainer();
+ * <p>Registered in AndroidManifest.xml via android:name=".config.BiotApplication". Activities
+ * retrieve the container via: AppContainer container = ((BiotApplication)
+ * getApplication()).getContainer();
  */
 public class BiotApplication extends Application {
 

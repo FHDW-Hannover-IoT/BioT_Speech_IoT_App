@@ -147,8 +147,8 @@ public class SensorDataSimulator {
                                 // Publish under Sensor/Sim/* so the app can distinguish
                                 // simulator traffic from real hardware on Sensor/*.
                                 mqttHandler.publish("Sensor/Sim/Bewegung", bewegungPayload, false);
-                                mqttHandler.publish("Sensor/Sim/Gyro",     gyroPayload,     false);
-                                mqttHandler.publish("Sensor/Sim/Magnet",   magnetPayload,   false);
+                                mqttHandler.publish("Sensor/Sim/Gyro", gyroPayload, false);
+                                mqttHandler.publish("Sensor/Sim/Magnet", magnetPayload, false);
 
                             } catch (Exception e) {
                                 Log.e(TAG, "Simulator error: " + e.getMessage(), e);

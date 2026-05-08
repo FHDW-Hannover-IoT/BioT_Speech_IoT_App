@@ -15,8 +15,19 @@ public class EreignisData {
     public char axis;
     public String ereignisName;
 
-    public String getSensorType() { return sensorType; }
-    public long getTimestamp() { return timestamp; }
-    public float getValue() { return value; }
-    public char getAxis() { return axis; }
+    public String getSensorType() {
+        return sensorType;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public float getValue() {
+        return value;
+    }
+
+    public char getAxis() {
+        return axis;
+    }
 }

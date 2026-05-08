@@ -11,11 +11,24 @@ public class ValueSensor {
     @ColumnInfo(name = "PrimeID")
     public int primeID;
 
-    @ColumnInfo(name = "BewegungX") public float value1;
-    @ColumnInfo(name = "BewegungY") public float value2;
-    @ColumnInfo(name = "BewegungZ") public float value3;
-    @ColumnInfo(name = "GyroX")     public float value4;
-    @ColumnInfo(name = "GyroY")     public float value5;
-    @ColumnInfo(name = "GyroZ")     public float value6;
-    @ColumnInfo(name = "Zeit")      public String value7;
+    @ColumnInfo(name = "BewegungX")
+    public float value1;
+
+    @ColumnInfo(name = "BewegungY")
+    public float value2;
+
+    @ColumnInfo(name = "BewegungZ")
+    public float value3;
+
+    @ColumnInfo(name = "GyroX")
+    public float value4;
+
+    @ColumnInfo(name = "GyroY")
+    public float value5;
+
+    @ColumnInfo(name = "GyroZ")
+    public float value6;
+
+    @ColumnInfo(name = "Zeit")
+    public String value7;
 }

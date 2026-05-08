@@ -1,7 +1,6 @@
 package com.fhdw.biot.speech.iot.config;
 
 import com.fhdw.biot.speech.iot.BuildConfig;
-
 import java.util.Locale;
 
 public final class AppConfig {
@@ -9,7 +8,9 @@ public final class AppConfig {
     private AppConfig() {}
 
     public static String mqttBrokerUrl() {
-        return isEmulator() ? BuildConfig.MQTT_EMULATOR_BROKER_URL : BuildConfig.MQTT_PHONE_BROKER_URL;
+        return isEmulator()
+                ? BuildConfig.MQTT_EMULATOR_BROKER_URL
+                : BuildConfig.MQTT_PHONE_BROKER_URL;
     }
 
     public static String mcpBaseUrl() {

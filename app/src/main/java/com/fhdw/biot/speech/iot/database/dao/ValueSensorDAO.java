@@ -11,9 +11,14 @@ import java.util.List;
 @Dao
 public interface ValueSensorDAO {
 
-    @Insert void insert(ValueSensor sensor);
-    @Update void update(ValueSensor sensor);
-    @Delete void delete(ValueSensor sensor);
+    @Insert
+    void insert(ValueSensor sensor);
+
+    @Update
+    void update(ValueSensor sensor);
+
+    @Delete
+    void delete(ValueSensor sensor);
 
     @Query("SELECT * FROM sensor WHERE PrimeID = :primeID")
     ValueSensor getvalueByID(int primeID);

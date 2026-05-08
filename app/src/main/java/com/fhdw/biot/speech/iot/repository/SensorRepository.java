@@ -15,12 +15,11 @@ import java.util.List;
 /**
  * SensorRepository — single access point for sensor data.
  *
- * Writes always go through {@link DbContext} (ACID, background thread).
- * Reads return Room-managed {@link LiveData} so the UI auto-updates
- * without polling.
+ * <p>Writes always go through {@link DbContext} (ACID, background thread). Reads return
+ * Room-managed {@link LiveData} so the UI auto-updates without polling.
  *
- * No Activity or Fragment reference is held here — the LiveData lifecycle
- * is managed by the observer (Activity/Fragment) at call site.
+ * <p>No Activity or Fragment reference is held here — the LiveData lifecycle is managed by the
+ * observer (Activity/Fragment) at call site.
  */
 public class SensorRepository {
 
@@ -36,31 +35,85 @@ public class SensorRepository {
 
     // ── Writes ────────────────────────────────────────────────────────────────
 
-    public void insertAccel(AccelData data)      { ctx.insertAccel(data); }
-    public void insertGyro(GyroData data)         { ctx.insertGyro(data); }
-    public void insertMagnet(MagnetData data)     { ctx.insertMagnet(data); }
-    public void insertEreignis(EreignisData data) { ctx.insertEreignis(data); }
-    public void insertValueSensor(ValueSensor vs) { ctx.insertValueSensor(vs); }
+    public void insertAccel(AccelData data) {
+        ctx.insertAccel(data);
+    }
 
-    public void insertAccelBatch(List<AccelData> batch)   { ctx.insertAccelBatch(batch); }
-    public void insertGyroBatch(List<GyroData> batch)     { ctx.insertGyroBatch(batch); }
-    public void insertMagnetBatch(List<MagnetData> batch) { ctx.insertMagnetBatch(batch); }
+    public void insertGyro(GyroData data) {
+        ctx.insertGyro(data);
+    }
+
+    public void insertMagnet(MagnetData data) {
+        ctx.insertMagnet(data);
+    }
+
+    public void insertEreignis(EreignisData data) {
+        ctx.insertEreignis(data);
+    }
+
+    public void insertValueSensor(ValueSensor vs) {
+        ctx.insertValueSensor(vs);
+    }
+
+    public void insertAccelBatch(List<AccelData> batch) {
+        ctx.insertAccelBatch(batch);
+    }
+
+    public void insertGyroBatch(List<GyroData> batch) {
+        ctx.insertGyroBatch(batch);
+    }
+
+    public void insertMagnetBatch(List<MagnetData> batch) {
+        ctx.insertMagnetBatch(batch);
+    }
 
     // ── Live reads ────────────────────────────────────────────────────────────
 
-    public LiveData<List<AccelData>>  getAllAccelData()  { return dao.getAllAccelData(); }
-    public LiveData<List<GyroData>>   getAllGyroData()   { return dao.getAllGyroData(); }
-    public LiveData<List<MagnetData>> getAllMagnetData() { return dao.getAllMagnetData(); }
+    public LiveData<List<AccelData>> getAllAccelData() {
+        return dao.getAllAccelData();
+    }
 
-    public LiveData<Long> getOldestAccelTimestamp()  { return dao.getOldestAccelTimestamp(); }
-    public LiveData<Long> getOldestGyroTimestamp()   { return dao.getOldestGyroTimestamp(); }
-    public LiveData<Long> getOldestMagnetTimestamp() { return dao.getOldestMagnetTimestamp(); }
+    public LiveData<List<GyroData>> getAllGyroData() {
+        return dao.getAllGyroData();
+    }
 
-    public LiveData<List<AccelData>>  getAccelBetween(long from, long to)  { return dao.getAccelDataBetween(from, to); }
-    public LiveData<List<GyroData>>   getGyroBetween(long from, long to)   { return dao.getGyroDataBetween(from, to); }
-    public LiveData<List<MagnetData>> getMagnetBetween(long from, long to) { return dao.getMagnetDataBetween(from, to); }
+    public LiveData<List<MagnetData>> getAllMagnetData() {
+        return dao.getAllMagnetData();
+    }
 
-    public List<EreignisData> getAllEreignisData()  { return dao.getAllEreignisData(); }
-    public List<Sensor>       getAllKnownSensors()  { return dao.getAllKnownSensors(); }
-    public List<ValueSensor>  getAllValueSensors()  { return valueSensorDao.getAllvalue(); }
+    public LiveData<Long> getOldestAccelTimestamp() {
+        return dao.getOldestAccelTimestamp();
+    }
+
+    public LiveData<Long> getOldestGyroTimestamp() {
+        return dao.getOldestGyroTimestamp();
+    }
+
+    public LiveData<Long> getOldestMagnetTimestamp() {
+        return dao.getOldestMagnetTimestamp();
+    }
+
+    public LiveData<List<AccelData>> getAccelBetween(long from, long to) {
+        return dao.getAccelDataBetween(from, to);
+    }
+
+    public LiveData<List<GyroData>> getGyroBetween(long from, long to) {
+        return dao.getGyroDataBetween(from, to);
+    }
+
+    public LiveData<List<MagnetData>> getMagnetBetween(long from, long to) {
+        return dao.getMagnetDataBetween(from, to);
+    }
+
+    public List<EreignisData> getAllEreignisData() {
+        return dao.getAllEreignisData();
+    }
+
+    public List<Sensor> getAllKnownSensors() {
+        return dao.getAllKnownSensors();
+    }
+
+    public List<ValueSensor> getAllValueSensors() {
+        return valueSensorDao.getAllvalue();
+    }
 }

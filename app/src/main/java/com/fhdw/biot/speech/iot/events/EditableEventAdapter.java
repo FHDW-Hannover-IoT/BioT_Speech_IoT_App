@@ -55,10 +55,11 @@ public class EditableEventAdapter
         EditableSensorEvent currentEvent = eventList.get(position);
 
         // Populate sensor type spinner
-        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(
-                holder.itemView.getContext(),
-                android.R.layout.simple_spinner_item,
-                SENSOR_TYPES);
+        ArrayAdapter<String> spinnerAdapter =
+                new ArrayAdapter<>(
+                        holder.itemView.getContext(),
+                        android.R.layout.simple_spinner_item,
+                        SENSOR_TYPES);
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         holder.spinnerSensorType.setAdapter(spinnerAdapter);
 
@@ -70,13 +71,16 @@ public class EditableEventAdapter
                 break;
             }
         }
-        holder.spinnerSensorType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-                currentEvent.sensorType = SENSOR_TYPES[pos];
-            }
-            @Override public void onNothingSelected(AdapterView<?> parent) {}
-        });
+        holder.spinnerSensorType.setOnItemSelectedListener(
+                new AdapterView.OnItemSelectedListener() {
+                    @Override
+                    public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+                        currentEvent.sensorType = SENSOR_TYPES[pos];
+                    }
+
+                    @Override
+                    public void onNothingSelected(AdapterView<?> parent) {}
+                });
 
         // Pre-fill text fields and wire TextWatchers so user input flows back to the model.
         // Remove the old watcher before setText to avoid spurious callbacks during rebind.
@@ -87,29 +91,46 @@ public class EditableEventAdapter
 
         holder.treshholdValue.removeTextChangedListener(holder.thresholdWatcher);
         holder.treshholdValue.setText(
-                currentEvent.thresholdValue == 0 ? "" : String.valueOf(currentEvent.thresholdValue));
-        holder.thresholdWatcher = simpleWatcher(text -> {
-            try { currentEvent.thresholdValue = Float.parseFloat(text); }
-            catch (NumberFormatException ignored) { currentEvent.thresholdValue = 0; }
-        });
+                currentEvent.thresholdValue == 0
+                        ? ""
+                        : String.valueOf(currentEvent.thresholdValue));
+        holder.thresholdWatcher =
+                simpleWatcher(
+                        text -> {
+                            try {
+                                currentEvent.thresholdValue = Float.parseFloat(text);
+                            } catch (NumberFormatException ignored) {
+                                currentEvent.thresholdValue = 0;
+                            }
+                        });
         holder.treshholdValue.addTextChangedListener(holder.thresholdWatcher);
 
         // Delete button
-        holder.btnDelete.setOnClickListener(v -> {
-            int pos = holder.getAdapterPosition();
-            if (pos != RecyclerView.NO_ID) deleteEvent(pos);
-        });
+        holder.btnDelete.setOnClickListener(
+                v -> {
+                    int pos = holder.getAdapterPosition();
+                    if (pos != RecyclerView.NO_ID) deleteEvent(pos);
+                });
     }
 
     private static TextWatcher simpleWatcher(SimpleTextCallback cb) {
         return new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
-            @Override public void onTextChanged(CharSequence s, int st, int b, int c) {}
-            @Override public void afterTextChanged(Editable s) { cb.onChanged(s.toString()); }
+            @Override
+            public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int st, int b, int c) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                cb.onChanged(s.toString());
+            }
         };
     }
 
-    interface SimpleTextCallback { void onChanged(String text); }
+    interface SimpleTextCallback {
+        void onChanged(String text);
+    }
 
     @Override
     public int getItemCount() {

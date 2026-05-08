@@ -14,9 +14,9 @@ import com.fhdw.biot.speech.iot.database.entities.Sensor;
 import com.fhdw.biot.speech.iot.database.entities.ValueSensor;
 
 /**
- * In-memory Room database — lives only for the duration of the process.
- * Cleared automatically when the app is killed, giving the live-session-only
- * semantics the charts require without any migration overhead.
+ * In-memory Room database — lives only for the duration of the process. Cleared automatically when
+ * the app is killed, giving the live-session-only semantics the charts require without any
+ * migration overhead.
  */
 @Database(
         entities = {
@@ -32,6 +32,7 @@ import com.fhdw.biot.speech.iot.database.entities.ValueSensor;
 public abstract class DB extends RoomDatabase {
 
     public abstract SensorDao sensorDao();
+
     public abstract ValueSensorDAO valueSensorDao();
 
     private static volatile DB INSTANCE;
@@ -40,10 +41,9 @@ public abstract class DB extends RoomDatabase {
         if (INSTANCE == null) {
             synchronized (DB.class) {
                 if (INSTANCE == null) {
-                    INSTANCE = Room.inMemoryDatabaseBuilder(
-                                    context.getApplicationContext(),
-                                    DB.class)
-                            .build();
+                    INSTANCE =
+                            Room.inMemoryDatabaseBuilder(context.getApplicationContext(), DB.class)
+                                    .build();
                 }
             }
         }

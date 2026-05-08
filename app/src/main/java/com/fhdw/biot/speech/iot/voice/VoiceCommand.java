@@ -1,27 +1,21 @@
 package com.fhdw.biot.speech.iot.voice;
 
 /**
- * VoiceCommand
- * ─────────────────────────────────────────────────────────────────────────────
- * Every intent the voice system can recognise is listed here as an enum value.
+ * VoiceCommand ───────────────────────────────────────────────────────────────────────────── Every
+ * intent the voice system can recognise is listed here as an enum value.
  *
- * Intent groups
- * ─────────────────────────────────────────────────────────────────────────────
- *  NAVIGATION       – open a screen
- *  FILTER           – apply a time filter to the current chart
- *  TRANSMISSION_MODE – Stream / Burst / Average (how the ESP8266 batches MQTT data)
- *  OPERATING_MODE   – Autark / Supervision / Event / Identification
- *                     (per BioT_Speech_IoT_Doc/doc/content/command-dictionary.adoc)
- *  CALIBRATION      – calibration & epsilon tuning commands
- *  EVENT_MGMT       – create / list events with optional sensor + threshold
- *  TELL_VALUE       – ask the assistant to read out a sensor value
- *  COMBINED         – multi-sensor dashboards
- *  QUERY            – natural-language questions forwarded to the LLM
- *  SYSTEM           – help, dashboard, etc.
- *  UNKNOWN          – nothing matched
+ * <p>Intent groups ─────────────────────────────────────────────────────────────────────────────
+ * NAVIGATION – open a screen FILTER – apply a time filter to the current chart TRANSMISSION_MODE –
+ * Stream / Burst / Average (how the ESP8266 batches MQTT data) OPERATING_MODE – Autark /
+ * Supervision / Event / Identification (per
+ * BioT_Speech_IoT_Doc/doc/content/command-dictionary.adoc) CALIBRATION – calibration & epsilon
+ * tuning commands EVENT_MGMT – create / list events with optional sensor + threshold TELL_VALUE –
+ * ask the assistant to read out a sensor value COMBINED – multi-sensor dashboards QUERY –
+ * natural-language questions forwarded to the LLM SYSTEM – help, dashboard, etc. UNKNOWN – nothing
+ * matched
  *
- * Source of truth: BioT_Speech_IoT_Doc/doc/content/command-dictionary.adoc
- *                 + LLM_App/docs/LLM_USE_CASES.md
+ * <p>Source of truth: BioT_Speech_IoT_Doc/doc/content/command-dictionary.adoc +
+ * LLM_App/docs/LLM_USE_CASES.md
  */
 public enum VoiceCommand {
 

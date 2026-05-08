@@ -3,7 +3,6 @@ package com.fhdw.biot.speech.iot.voice;
 import android.app.Activity;
 import android.content.Intent;
 import android.widget.Toast;
-
 import com.fhdw.biot.speech.iot.events.EreignisActivity;
 import com.fhdw.biot.speech.iot.graph.MainGraphActivity;
 import com.fhdw.biot.speech.iot.main.MainActivity;
@@ -15,30 +14,29 @@ import com.fhdw.biot.speech.iot.settings.SettingsActivity;
 
 /**
  * VoiceCommandExecutor
- * ─────────────────────────────────────────────────────────────────────────────
- * Bridges a resolved {@link VoiceCommand} to concrete app actions.
+ * ───────────────────────────────────────────────────────────────────────────── Bridges a resolved
+ * {@link VoiceCommand} to concrete app actions.
  *
- * Dependencies are injected as interfaces (no concrete imports of MqttHandler
- * or any HTTP client):
- *   • {@link IMqttPublisher}   – for mode-switching commands
- *   • {@link ILlmQueryHandler} – for query commands that need the LLM
+ * <p>Dependencies are injected as interfaces (no concrete imports of MqttHandler or any HTTP
+ * client): • {@link IMqttPublisher} – for mode-switching commands • {@link ILlmQueryHandler} – for
+ * query commands that need the LLM
  *
- * Topic conventions (must match the ESP8266 firmware):
- *   • Control/Mode           → STREAM | BURST | AVERAGE        (transmission cadence)
- *   • Control/OperatingMode  → AUTARK | SUPERVISION |
- *                              EVENT  | IDENTIFICATION         (operating mode)
+ * <p>Topic conventions (must match the ESP8266 firmware): • Control/Mode → STREAM | BURST | AVERAGE
+ * (transmission cadence) • Control/OperatingMode → AUTARK | SUPERVISION | EVENT | IDENTIFICATION
+ * (operating mode)
  *
- * Return value semantics:
- *   {@code true}  – the command was fully handled locally (toast / nav / publish).
- *   {@code false} – the command was forwarded to {@link ILlmQueryHandler};
- *                   the LLM will produce the user-visible response (TTS).
+ * <p>Return value semantics: {@code true} – the command was fully handled locally (toast / nav /
+ * publish). {@code false} – the command was forwarded to {@link ILlmQueryHandler}; the LLM will
+ * produce the user-visible response (TTS).
  */
 public final class VoiceCommandExecutor {
 
     /** Topic the ESP8266 listens on for transmission cadence (Stream/Burst/Average). */
     public static final String TOPIC_MODE = "Control/Mode";
 
-    /** Topic the ESP8266 listens on for operating mode (Autark/Supervision/Event/Identification). */
+    /**
+     * Topic the ESP8266 listens on for operating mode (Autark/Supervision/Event/Identification).
+     */
     public static final String TOPIC_OPERATING_MODE = "Control/OperatingMode";
 
     /** Topic used to request the ESP8266 publish its current operating mode. */
@@ -59,11 +57,11 @@ public final class VoiceCommandExecutor {
     /**
      * Execute a resolved voice command.
      *
-     * @param activity   The activity that received the voice input (used for navigation/toasts).
-     * @param command    The resolved {@link VoiceCommand}.
-     * @param mqtt       An {@link IMqttPublisher}. May be null — mode commands skip silently then.
-     * @param llm        An {@link ILlmQueryHandler}. May be null in early phases — QUERY_*
-     *                   and TELL_VALUE will fall back to a polite toast in that case.
+     * @param activity The activity that received the voice input (used for navigation/toasts).
+     * @param command The resolved {@link VoiceCommand}.
+     * @param mqtt An {@link IMqttPublisher}. May be null — mode commands skip silently then.
+     * @param llm An {@link ILlmQueryHandler}. May be null in early phases — QUERY_* and TELL_VALUE
+     *     will fall back to a polite toast in that case.
      * @param transcript The original raw transcript (needed when forwarding to the LLM).
      * @return {@code true} if handled locally; {@code false} if forwarded to LLM.
      */
@@ -98,7 +96,8 @@ public final class VoiceCommandExecutor {
                 return true;
 
             case NAV_EVENTS:
-                navigateWithStringExtra(activity, EreignisActivity.class, EXTRA_SENSOR_FILTER, "ALL");
+                navigateWithStringExtra(
+                        activity, EreignisActivity.class, EXTRA_SENSOR_FILTER, "ALL");
                 return true;
 
             case NAV_SETTINGS:
@@ -119,12 +118,24 @@ public final class VoiceCommandExecutor {
                 return true;
 
             // ── TIME FILTERS ─────────────────────────────────────────────
-            case FILTER_LAST_5MIN:   broadcastFilter(activity, 5);    return true;
-            case FILTER_LAST_10MIN:  broadcastFilter(activity, 10);   return true;
-            case FILTER_LAST_30MIN:  broadcastFilter(activity, 30);   return true;
-            case FILTER_LAST_1H:     broadcastFilter(activity, 60);   return true;
-            case FILTER_LAST_24H:    broadcastFilter(activity, 1440); return true;
-            case FILTER_CLEAR:       broadcastFilter(activity, 0);    return true;
+            case FILTER_LAST_5MIN:
+                broadcastFilter(activity, 5);
+                return true;
+            case FILTER_LAST_10MIN:
+                broadcastFilter(activity, 10);
+                return true;
+            case FILTER_LAST_30MIN:
+                broadcastFilter(activity, 30);
+                return true;
+            case FILTER_LAST_1H:
+                broadcastFilter(activity, 60);
+                return true;
+            case FILTER_LAST_24H:
+                broadcastFilter(activity, 1440);
+                return true;
+            case FILTER_CLEAR:
+                broadcastFilter(activity, 0);
+                return true;
 
             // ── TRANSMISSION MODE (Control/Mode) ──────────────────────────
             case MODE_STREAM:
@@ -145,7 +156,11 @@ public final class VoiceCommandExecutor {
             // ── OPERATING MODE (Control/OperatingMode) ───────────────────
             case OPMODE_AUTARK:
                 publish(mqtt, TOPIC_OPERATING_MODE, "AUTARK", true);
-                Toast.makeText(activity, "Operating Mode: Autark (power saving)", Toast.LENGTH_SHORT).show();
+                Toast.makeText(
+                                activity,
+                                "Operating Mode: Autark (power saving)",
+                                Toast.LENGTH_SHORT)
+                        .show();
                 return true;
 
             case OPMODE_SUPERVISION:
@@ -155,12 +170,17 @@ public final class VoiceCommandExecutor {
 
             case OPMODE_EVENT:
                 publish(mqtt, TOPIC_OPERATING_MODE, "EVENT", true);
-                Toast.makeText(activity, "Operating Mode: Event (threshold-based)", Toast.LENGTH_SHORT).show();
+                Toast.makeText(
+                                activity,
+                                "Operating Mode: Event (threshold-based)",
+                                Toast.LENGTH_SHORT)
+                        .show();
                 return true;
 
             case OPMODE_IDENTIFICATION:
                 publish(mqtt, TOPIC_OPERATING_MODE, "IDENTIFICATION", true);
-                Toast.makeText(activity, "Operating Mode: Identification", Toast.LENGTH_SHORT).show();
+                Toast.makeText(activity, "Operating Mode: Identification", Toast.LENGTH_SHORT)
+                        .show();
                 return true;
 
             case OPMODE_GET:
@@ -171,25 +191,31 @@ public final class VoiceCommandExecutor {
                     llm.handleQuery(transcript);
                     return false;
                 }
-                Toast.makeText(activity, "Asked sensor for current mode…", Toast.LENGTH_SHORT).show();
+                Toast.makeText(activity, "Asked sensor for current mode…", Toast.LENGTH_SHORT)
+                        .show();
                 return true;
 
             // ── CALIBRATION & EPSILON (rails laid; feature work comes later) ──
             case START_CALIBRATION:
-                Toast.makeText(activity,
-                        "Calibration command received. Calibration UI is not yet implemented.",
-                        Toast.LENGTH_LONG).show();
+                Toast.makeText(
+                                activity,
+                                "Calibration command received. Calibration UI is not yet implemented.",
+                                Toast.LENGTH_LONG)
+                        .show();
                 return true;
 
             case SET_EPSILON:
-                // Forward to the LLM if available — it can extract sensor + axis from the transcript.
+                // Forward to the LLM if available — it can extract sensor + axis from the
+                // transcript.
                 if (llm != null && transcript != null && !transcript.isEmpty()) {
                     llm.handleQuery(transcript);
                     return false;
                 }
-                Toast.makeText(activity,
-                        "Set-epsilon recognised. Use the Settings screen to adjust epsilon manually.",
-                        Toast.LENGTH_LONG).show();
+                Toast.makeText(
+                                activity,
+                                "Set-epsilon recognised. Use the Settings screen to adjust epsilon manually.",
+                                Toast.LENGTH_LONG)
+                        .show();
                 return true;
 
             // ── EVENT MANAGEMENT ─────────────────────────────────────────
@@ -200,20 +226,25 @@ public final class VoiceCommandExecutor {
                     llm.handleQuery(transcript);
                     return false;
                 }
-                navigateWithStringExtra(activity, EreignisActivity.class, EXTRA_SENSOR_FILTER, "ALL");
-                Toast.makeText(activity,
-                        "Open the events screen to define a new threshold rule.",
-                        Toast.LENGTH_LONG).show();
+                navigateWithStringExtra(
+                        activity, EreignisActivity.class, EXTRA_SENSOR_FILTER, "ALL");
+                Toast.makeText(
+                                activity,
+                                "Open the events screen to define a new threshold rule.",
+                                Toast.LENGTH_LONG)
+                        .show();
                 return true;
 
             case SHOW_EVENTS:
-                navigateWithStringExtra(activity, EreignisActivity.class, EXTRA_SENSOR_FILTER, "ALL");
+                navigateWithStringExtra(
+                        activity, EreignisActivity.class, EXTRA_SENSOR_FILTER, "ALL");
                 return true;
 
             case SHOW_NOTIFICATIONS:
                 // The .adoc separates "events" (rules) from "notifications" (triggered events).
                 // The current EreignisActivity shows triggered events, so it covers both for now.
-                navigateWithStringExtra(activity, EreignisActivity.class, EXTRA_SENSOR_FILTER, "ALL");
+                navigateWithStringExtra(
+                        activity, EreignisActivity.class, EXTRA_SENSOR_FILTER, "ALL");
                 return true;
 
             // ── TELL VALUE ───────────────────────────────────────────────
@@ -224,9 +255,11 @@ public final class VoiceCommandExecutor {
                     llm.handleQuery(transcript);
                     return false;
                 }
-                Toast.makeText(activity,
-                        "Cannot read value: LLM not connected.",
-                        Toast.LENGTH_SHORT).show();
+                Toast.makeText(
+                                activity,
+                                "Cannot read value: LLM not connected.",
+                                Toast.LENGTH_SHORT)
+                        .show();
                 return true;
 
             // ── COMBINED VIEWS ────────────────────────────────────────────
@@ -235,11 +268,13 @@ public final class VoiceCommandExecutor {
                 return true;
 
             case COMBINED_VIBRATION_SOUND:
-                navigateWithStringExtra(activity, MainGraphActivity.class, "VIEW_MODE", "VIBRATION_SOUND");
+                navigateWithStringExtra(
+                        activity, MainGraphActivity.class, "VIEW_MODE", "VIBRATION_SOUND");
                 return true;
 
             case COMBINED_ORIENTATION_MAGNETIC:
-                navigateWithStringExtra(activity, MainGraphActivity.class, "VIEW_MODE", "ORIENTATION_MAGNETIC");
+                navigateWithStringExtra(
+                        activity, MainGraphActivity.class, "VIEW_MODE", "ORIENTATION_MAGNETIC");
                 return true;
 
             case COMBINED_ALL_SENSORS:
@@ -262,9 +297,11 @@ public final class VoiceCommandExecutor {
                     llm.handleQuery(transcript);
                     return false;
                 }
-                Toast.makeText(activity,
-                        "LLM not connected. Question can't be answered.",
-                        Toast.LENGTH_SHORT).show();
+                Toast.makeText(
+                                activity,
+                                "LLM not connected. Question can't be answered.",
+                                Toast.LENGTH_SHORT)
+                        .show();
                 return true;
 
             // ── UNKNOWN → fall back to LLM if connected ───────────────────
@@ -276,9 +313,11 @@ public final class VoiceCommandExecutor {
                     llm.handleQuery(transcript);
                     return false;
                 }
-                Toast.makeText(activity,
-                        "Command not recognised. Say \"Help\" for an overview.",
-                        Toast.LENGTH_SHORT).show();
+                Toast.makeText(
+                                activity,
+                                "Command not recognised. Say \"Help\" for an overview.",
+                                Toast.LENGTH_SHORT)
+                        .show();
                 return true;
         }
     }
@@ -293,8 +332,8 @@ public final class VoiceCommandExecutor {
         from.startActivity(intent);
     }
 
-    private static void navigateWithStringExtra(Activity from, Class<?> to,
-                                                String key, String value) {
+    private static void navigateWithStringExtra(
+            Activity from, Class<?> to, String key, String value) {
         Intent intent = new Intent(from, to);
         intent.putExtra(key, value);
         from.startActivity(intent);
@@ -305,23 +344,29 @@ public final class VoiceCommandExecutor {
         broadcast.putExtra(EXTRA_FILTER_MINUTES, minutes);
         activity.sendBroadcast(broadcast);
 
-        String msg = minutes == 0
-                ? "Filter: reset"
-                : "Filter: last "
-                  + (minutes >= 60 ? (minutes / 60) + " hour(s)" : minutes + " minutes");
+        String msg =
+                minutes == 0
+                        ? "Filter: reset"
+                        : "Filter: last "
+                                + (minutes >= 60
+                                        ? (minutes / 60) + " hour(s)"
+                                        : minutes + " minutes");
         Toast.makeText(activity, msg, Toast.LENGTH_SHORT).show();
     }
 
-    private static void publish(IMqttPublisher mqtt, String topic, String payload, boolean retained) {
+    private static void publish(
+            IMqttPublisher mqtt, String topic, String payload, boolean retained) {
         if (mqtt != null && mqtt.isConnected()) {
             mqtt.publish(topic, payload, retained);
         }
     }
 
     private static void showHelpToast(Activity activity) {
-        Toast.makeText(activity,
-                "Try: \"Show Gyro\", \"last 10 minutes\", \"Burst mode\", " +
-                "\"Supervision mode\", \"tell me the accel value\", \"any anomalies?\"",
-                Toast.LENGTH_LONG).show();
+        Toast.makeText(
+                        activity,
+                        "Try: \"Show Gyro\", \"last 10 minutes\", \"Burst mode\", "
+                                + "\"Supervision mode\", \"tell me the accel value\", \"any anomalies?\"",
+                        Toast.LENGTH_LONG)
+                .show();
     }
 }

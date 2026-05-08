@@ -5,7 +5,6 @@ import com.fhdw.biot.speech.iot.config.BiotBaseActivity;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Description;
 import com.github.mikephil.charting.components.XAxis;
-import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
@@ -46,7 +45,7 @@ public abstract class BaseChartActivity extends BiotBaseActivity {
         chart.setTouchEnabled(true);
         chart.setDragEnabled(true);
         chart.setScaleEnabled(true);
-        chart.setPinchZoom(false);          // false = scale X/Y independently
+        chart.setPinchZoom(false); // false = scale X/Y independently
         chart.setDoubleTapToZoomEnabled(true);
         chart.setAutoScaleMinMaxEnabled(true);
         chart.getLegend().setTextColor(Color.WHITE);
@@ -68,8 +67,8 @@ public abstract class BaseChartActivity extends BiotBaseActivity {
     }
 
     /**
-     * Apply absolute HH:mm:ss X-axis labels with 5-minute granularity.
-     * X-values must be millisecond offsets from {@code startTime}.
+     * Apply absolute HH:mm:ss X-axis labels with 5-minute granularity. X-values must be millisecond
+     * offsets from {@code startTime}.
      */
     protected void applyAbsoluteXAxis(LineChart chart, long startTime) {
         XAxis xAxis = chart.getXAxis();

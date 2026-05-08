@@ -7,7 +7,6 @@ import com.fhdw.biot.speech.iot.database.entities.EreignisData;
 import com.fhdw.biot.speech.iot.database.entities.GyroData;
 import com.fhdw.biot.speech.iot.database.entities.MagnetData;
 import com.fhdw.biot.speech.iot.database.entities.ValueSensor;
-
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -15,13 +14,13 @@ import java.util.concurrent.Executors;
 /**
  * DbContext — ACID-compliant write gateway over the in-memory Room database.
  *
- * Every write goes through {@link DB#runInTransaction(Runnable)}, which wraps the
- * operation in a SQLite transaction and rolls back automatically on any exception.
- * This matches the EF Core DbContext pattern: callers never touch the DAO directly
- * for writes; they call DbContext which owns the executor and the transaction boundary.
+ * <p>Every write goes through {@link DB#runInTransaction(Runnable)}, which wraps the operation in a
+ * SQLite transaction and rolls back automatically on any exception. This matches the EF Core
+ * DbContext pattern: callers never touch the DAO directly for writes; they call DbContext which
+ * owns the executor and the transaction boundary.
  *
- * Reads (LiveData) are exposed via the DAO accessors so Room can manage the
- * observer lifecycle automatically.
+ * <p>Reads (LiveData) are exposed via the DAO accessors so Room can manage the observer lifecycle
+ * automatically.
  */
 public class DbContext {
 
@@ -34,11 +33,14 @@ public class DbContext {
         this.db = db;
         this.sensorDao = db.sensorDao();
         this.valueSensorDao = db.valueSensorDao();
-        this.executor = Executors.newFixedThreadPool(4, r -> {
-            Thread t = new Thread(r, "db-write-pool");
-            t.setDaemon(true);
-            return t;
-        });
+        this.executor =
+                Executors.newFixedThreadPool(
+                        4,
+                        r -> {
+                            Thread t = new Thread(r, "db-write-pool");
+                            t.setDaemon(true);
+                            return t;
+                        });
     }
 
     // ── Single-row writes ─────────────────────────────────────────────────────
@@ -67,27 +69,41 @@ public class DbContext {
 
     public void insertAccelBatch(List<AccelData> batch) {
         if (batch == null || batch.isEmpty()) return;
-        executor.execute(() -> db.runInTransaction(() -> {
-            for (AccelData d : batch) sensorDao.insert(d);
-        }));
+        executor.execute(
+                () ->
+                        db.runInTransaction(
+                                () -> {
+                                    for (AccelData d : batch) sensorDao.insert(d);
+                                }));
     }
 
     public void insertGyroBatch(List<GyroData> batch) {
         if (batch == null || batch.isEmpty()) return;
-        executor.execute(() -> db.runInTransaction(() -> {
-            for (GyroData d : batch) sensorDao.insert(d);
-        }));
+        executor.execute(
+                () ->
+                        db.runInTransaction(
+                                () -> {
+                                    for (GyroData d : batch) sensorDao.insert(d);
+                                }));
     }
 
     public void insertMagnetBatch(List<MagnetData> batch) {
         if (batch == null || batch.isEmpty()) return;
-        executor.execute(() -> db.runInTransaction(() -> {
-            for (MagnetData d : batch) sensorDao.insert(d);
-        }));
+        executor.execute(
+                () ->
+                        db.runInTransaction(
+                                () -> {
+                                    for (MagnetData d : batch) sensorDao.insert(d);
+                                }));
     }
 
     // ── DAO accessors (for read LiveData) ─────────────────────────────────────
 
-    public SensorDao sensorDao() { return sensorDao; }
-    public ValueSensorDAO valueSensorDao() { return valueSensorDao; }
+    public SensorDao sensorDao() {
+        return sensorDao;
+    }
+
+    public ValueSensorDAO valueSensorDao() {
+        return valueSensorDao;
+    }
 }

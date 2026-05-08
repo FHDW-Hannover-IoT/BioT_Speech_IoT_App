@@ -2,7 +2,6 @@ package com.fhdw.biot.speech.iot.events;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageButton;
@@ -15,14 +14,14 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.config.BiotApplication;
 import com.fhdw.biot.speech.iot.config.BiotBaseActivity;
-import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.fhdw.biot.speech.iot.database.entities.Sensor;
+import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.fhdw.biot.speech.iot.repository.SensorRepository;
+import java.util.ArrayList;
+import java.util.List;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * NewEreignisActivity -------------------- Screen where the user can define *event rules*
@@ -44,7 +43,7 @@ public class NewEreignisActivity extends BiotBaseActivity {
 
     private static final String TAG = "NewEreignisActivity";
     private static final String PREFS_EVENTS = "EventRules";
-    private static final String KEY_RULES    = "rules";
+    private static final String KEY_RULES = "rules";
 
     private RecyclerView recyclerView;
     private EditableEventAdapter adapter;
@@ -99,10 +98,11 @@ public class NewEreignisActivity extends BiotBaseActivity {
 
         // --- Add new rule row (+) -------------------------------------------
         ImageButton addEreignis = findViewById(R.id.add_ereignis);
-        addEreignis.setOnClickListener(view -> {
-            adapter.addEmptyEvent();
-            recyclerView.scrollToPosition(editableEventList.size() - 1);
-        });
+        addEreignis.setOnClickListener(
+                view -> {
+                    adapter.addEmptyEvent();
+                    recyclerView.scrollToPosition(editableEventList.size() - 1);
+                });
     }
 
     @Override
@@ -120,8 +120,8 @@ public class NewEreignisActivity extends BiotBaseActivity {
             for (int i = 0; i < arr.length(); i++) {
                 JSONObject obj = arr.getJSONObject(i);
                 EditableSensorEvent e = new EditableSensorEvent(++adapter.nextId);
-                e.sensorType     = obj.optString("sensorType", "ACCEL");
-                e.eventType      = obj.optString("eventType", "");
+                e.sensorType = obj.optString("sensorType", "ACCEL");
+                e.eventType = obj.optString("eventType", "");
                 e.thresholdValue = (float) obj.optDouble("threshold", 0.0);
                 editableEventList.add(e);
             }
@@ -137,27 +137,33 @@ public class NewEreignisActivity extends BiotBaseActivity {
             try {
                 JSONObject obj = new JSONObject();
                 obj.put("sensorType", e.sensorType);
-                obj.put("eventType",  e.eventType);
-                obj.put("threshold",  e.thresholdValue);
+                obj.put("eventType", e.eventType);
+                obj.put("threshold", e.thresholdValue);
                 arr.put(obj);
-            } catch (JSONException ignored) {}
+            } catch (JSONException ignored) {
+            }
         }
         getSharedPreferences(PREFS_EVENTS, MODE_PRIVATE)
-                .edit().putString(KEY_RULES, arr.toString()).apply();
+                .edit()
+                .putString(KEY_RULES, arr.toString())
+                .apply();
         Log.i(TAG, "Saved " + editableEventList.size() + " event rules");
     }
 
     @SuppressLint("NotifyDataSetChanged")
     private void loadAvailableSensors() {
-        new Thread(() -> {
-            List<Sensor> knownSensors = sensorRepository.getAllKnownSensors();
-            runOnUiThread(() -> {
-                if (knownSensors != null) {
-                    sensors.clear();
-                    sensors.addAll(knownSensors);
-                }
-                if (adapter != null) adapter.notifyDataSetChanged();
-            });
-        }).start();
+        new Thread(
+                        () -> {
+                            List<Sensor> knownSensors = sensorRepository.getAllKnownSensors();
+                            runOnUiThread(
+                                    () -> {
+                                        if (knownSensors != null) {
+                                            sensors.clear();
+                                            sensors.addAll(knownSensors);
+                                        }
+                                        if (adapter != null) adapter.notifyDataSetChanged();
+                                    });
+                        })
+                .start();
     }
 }

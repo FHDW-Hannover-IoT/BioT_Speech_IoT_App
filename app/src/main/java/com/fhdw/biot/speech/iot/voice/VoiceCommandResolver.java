@@ -5,20 +5,18 @@ import java.util.Locale;
 
 /**
  * VoiceCommandResolver
- * ─────────────────────────────────────────────────────────────────────────────
- * Turns a raw speech-recogniser transcript into a {@link VoiceCommand}.
+ * ───────────────────────────────────────────────────────────────────────────── Turns a raw
+ * speech-recogniser transcript into a {@link VoiceCommand}.
  *
- * Usage
- * ─────
- *   VoiceCommand cmd = VoiceCommandResolver.resolve("zeige mir den Gyro");
- *   // → VoiceCommand.NAV_GYRO
+ * <p>Usage ───── VoiceCommand cmd = VoiceCommandResolver.resolve("zeige mir den Gyro"); // →
+ * VoiceCommand.NAV_GYRO
  *
- * The resolver is intentionally stateless and dependency-free so it can be
- * called from any thread and unit-tested without Android stubs.
+ * <p>The resolver is intentionally stateless and dependency-free so it can be called from any
+ * thread and unit-tested without Android stubs.
  */
 public final class VoiceCommandResolver {
 
-    private VoiceCommandResolver() {}   // utility class – no instances
+    private VoiceCommandResolver() {} // utility class – no instances
 
     // ─────────────────────────────────────────────────────────────────────────
     // Public API
@@ -27,7 +25,7 @@ public final class VoiceCommandResolver {
     /**
      * Resolve a speech transcript to the best matching {@link VoiceCommand}.
      *
-     * @param transcript Raw text from the speech recogniser.  May be null.
+     * @param transcript Raw text from the speech recogniser. May be null.
      * @return The matched command, or {@link VoiceCommand#UNKNOWN} if nothing matched.
      */
     public static VoiceCommand resolve(String transcript) {
@@ -48,14 +46,13 @@ public final class VoiceCommandResolver {
     }
 
     /**
-     * Resolve from a list of hypotheses (e.g. Android SpeechRecognizer returns
-     * several alternatives).
+     * Resolve from a list of hypotheses (e.g. Android SpeechRecognizer returns several
+     * alternatives).
      *
-     * All hypotheses are scanned; the match with the lowest rule-index wins.
-     * Rules are ordered most-specific first (QUERY_* before NAV_*), so this
-     * ensures "what is the magnetic value" (→ QUERY_MAGNET_STATUS, rule 30)
-     * beats a shorter hypothesis like "magnetic value" (→ NAV_MAGNET, rule 34)
-     * even when the shorter form arrives as hypothesis[0].
+     * <p>All hypotheses are scanned; the match with the lowest rule-index wins. Rules are ordered
+     * most-specific first (QUERY_* before NAV_*), so this ensures "what is the magnetic value" (→
+     * QUERY_MAGNET_STATUS, rule 30) beats a shorter hypothesis like "magnetic value" (→ NAV_MAGNET,
+     * rule 34) even when the shorter form arrives as hypothesis[0].
      *
      * @param hypotheses Ordered list of transcript hypotheses.
      * @return The best-matched command, or {@link VoiceCommand#UNKNOWN}.
@@ -88,8 +85,8 @@ public final class VoiceCommandResolver {
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * A rule matches iff the transcript contains at least one keyword from
-     * EVERY keyword group (AND between groups, OR within a group).
+     * A rule matches iff the transcript contains at least one keyword from EVERY keyword group (AND
+     * between groups, OR within a group).
      */
     private static boolean matches(String normalised, VoiceCommandDictionary.Rule rule) {
         for (List<String> group : rule.keywordGroups) {
@@ -105,9 +102,7 @@ public final class VoiceCommandResolver {
         return true;
     }
 
-    /**
-     * Lower-case + remove characters that are neither letters, digits nor spaces.
-     */
+    /** Lower-case + remove characters that are neither letters, digits nor spaces. */
     private static String normalise(String raw) {
         return raw.toLowerCase(Locale.ENGLISH)
                 .replaceAll("[^a-z0-9\\s]", " ")

@@ -15,8 +15,23 @@ public class AccelData implements SensorPoint {
     public float accelY;
     public float accelZ;
 
-    @Override public long getTimestamp() { return timestamp; }
-    @Override public float getX() { return accelX; }
-    @Override public float getY() { return accelY; }
-    @Override public float getZ() { return accelZ; }
+    @Override
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    @Override
+    public float getX() {
+        return accelX;
+    }
+
+    @Override
+    public float getY() {
+        return accelY;
+    }
+
+    @Override
+    public float getZ() {
+        return accelZ;
+    }
 }
