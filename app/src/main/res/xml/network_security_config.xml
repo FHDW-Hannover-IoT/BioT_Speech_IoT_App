@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Permits plaintext HTTP for the BioT demo.
+
+    The backend (FastAPI :8001) runs on a local laptop over a phone hotspot
+    with no TLS. Android 9+ blocks cleartext to non-localhost addresses by
+    default, so this config explicitly opts in.
+
+    base-config applies to every connection that is not overridden by a
+    domain-config below. Production apps would restrict this; for a local
+    school demo with a changing hotspot IP this is the correct setting.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

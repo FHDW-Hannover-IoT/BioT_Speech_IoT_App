@@ -16,11 +16,16 @@ import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.events.EreignisActivity;
 import com.fhdw.biot.speech.iot.graph.BaseChartActivity;
 import com.fhdw.biot.speech.iot.main.MainActivity;
-import com.fhdw.biot.speech.iot.util.DatePickerHandler;
+import com.fhdw.biot.speech.iot.util.DateTimePickerHandler;
+import com.fhdw.biot.speech.iot.voice.VoiceCommandExecutor;
+import com.fhdw.biot.speech.iot.graph.IFilterableChart;
+import android.view.View;
+import android.widget.CheckBox;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
-import database.DB;
-import database.entities.MagnetData;
+import com.fhdw.biot.speech.iot.config.BiotApplication;
+import com.fhdw.biot.speech.iot.database.entities.MagnetData;
+import com.fhdw.biot.speech.iot.repository.SensorRepository;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -35,7 +40,7 @@ import java.util.Locale;
  * DatePickerHandler. - Mapping MagnetData rows into MPAndroidChart entries and rendering them. -
  * Reusing BaseChartActivity for common chart styling / behaviour.
  */
-public class MagnetActivity extends BaseChartActivity {
+public class MagnetActivity extends BaseChartActivity implements IFilterableChart {
 
     /** Individual charts for X, Y and Z axis values of the magnetometer. */
     private LineChart lineChartMagnetX, lineChartMagnetY, lineChartMagnetZ;
@@ -51,18 +56,22 @@ public class MagnetActivity extends BaseChartActivity {
     /** Quick filter button: show only last 10 minutes. */
     private Button btnFilterLast10Min;
 
+    private CheckBox cbChartX, cbChartY, cbChartZ;
+
+    private SensorRepository sensorRepository;
     private LiveData<List<MagnetData>> currentLiveData;
 
     private Handler slidingWindowHandler = new Handler(Looper.getMainLooper());
     private Runnable slidingWindowRunnable;
     private boolean isTenMinuteFilterActive = false;
-
     private boolean isStartPointFixed = false;
+    private long windowStart = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_magnetfeld);
+        sensorRepository = ((BiotApplication) getApplication()).getContainer().sensorRepository();
 
         // --------------------------------------------------------------------
         // Window insets handling (edge-to-edge UI + system bars)
@@ -115,9 +124,6 @@ public class MagnetActivity extends BaseChartActivity {
                     startActivity(intent);
                 });
 
-        // Date picker helper (used to wire up the date buttons).
-        DatePickerHandler datePickerHandler = new DatePickerHandler(MagnetActivity.this);
-
         // --------------------------------------------------------------------
         // Date range buttons
         // --------------------------------------------------------------------
@@ -159,7 +165,13 @@ public class MagnetActivity extends BaseChartActivity {
         setupChart(lineChartMagnetY, "Y-Achse", 0);
         setupChart(lineChartMagnetZ, "Z-Achse", 0);
 
-        // Configure date pickers for "from" and "to" range.
+        cbChartX = findViewById(R.id.cbChartX);
+        cbChartY = findViewById(R.id.cbChartY);
+        cbChartZ = findViewById(R.id.cbChartZ);
+        if (cbChartX != null) cbChartX.setOnCheckedChangeListener((b, c) -> lineChartMagnetX.setVisibility(c ? View.VISIBLE : View.GONE));
+        if (cbChartY != null) cbChartY.setOnCheckedChangeListener((b, c) -> lineChartMagnetY.setVisibility(c ? View.VISIBLE : View.GONE));
+        if (cbChartZ != null) cbChartZ.setOnCheckedChangeListener((b, c) -> lineChartMagnetZ.setVisibility(c ? View.VISIBLE : View.GONE));
+
         setupDatePickers();
     }
 
@@ -174,35 +186,17 @@ public class MagnetActivity extends BaseChartActivity {
      * date initially set to today. - On any date change, the charts are re-filtered.
      */
     private void setupDatePickers() {
-        // Initialize Calendar objects with "now".
         dateFromCalendar = Calendar.getInstance();
         dateToCalendar = Calendar.getInstance();
 
-        LiveData<Long> oldestTimestampLiveData =
-                DB.getDatabase(getApplicationContext()).sensorDao().getOldestMagnetTimestamp();
-
-        oldestTimestampLiveData.observe(
-                this,
-                new androidx.lifecycle.Observer<Long>() {
-                    @Override
-                    public void onChanged(Long oldestTimestamp) {
-                        if (oldestTimestamp != null && oldestTimestamp > 0) {
-
-                            if (!isTenMinuteFilterActive) {
-                                dateFromCalendar.setTimeInMillis(oldestTimestamp);
-                                syncDateButtonTexts();
-                                updateChartsWithDateFilter();
-                            }
-
-                            oldestTimestampLiveData.removeObserver(this);
-                        }
-                    }
-                });
+        setupFromDatePickers(xVonButton);
+        setupToDatePickers(xBisButton);
 
         isTenMinuteFilterActive = true;
         isStartPointFixed = false;
-        btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.button));
+        btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.header));
         startSlidingWindow();
+        checkVoiceFilterIntent();
     }
 
     /**
@@ -212,24 +206,20 @@ public class MagnetActivity extends BaseChartActivity {
      * {@link #updateChartsWithDateFilter()}.
      */
     private void setupFromDatePickers(Button xVonButton) {
-        DatePickerHandler.createForButton(
+        DateTimePickerHandler.createForButton(
                 xVonButton,
                 calendar -> {
+                    stopSlidingWindow();
                     dateFromCalendar = calendar;
+                    windowStart = 0;
                     updateChartsWithDateFilter();
                 },
                 MagnetActivity.this);
-
-        // Show initial "from" date on all axes.
-        xVonButton.setText(formatCalendarDate(dateFromCalendar));
+        xVonButton.setText(makeDateTimeString(dateFromCalendar));
     }
 
-    /**
-     * Attaches DatePickers to the three "bis" buttons and sets their initial text to the current
-     * value of {@link #dateToCalendar} (today).
-     */
     private void setupToDatePickers(Button xBisButton) {
-        DatePickerHandler.createForButton(
+        DateTimePickerHandler.createForButton(
                 xBisButton,
                 calendar -> {
                     stopSlidingWindow();
@@ -237,9 +227,7 @@ public class MagnetActivity extends BaseChartActivity {
                     updateChartsWithDateFilter();
                 },
                 MagnetActivity.this);
-
-        // Initial "to" date is today for all axes.
-        xBisButton.setText(formatCalendarDate(dateToCalendar));
+        xBisButton.setText(makeDateTimeString(dateToCalendar));
     }
 
     /**
@@ -343,10 +331,7 @@ public class MagnetActivity extends BaseChartActivity {
             toTime = adjustedToCalendar.getTimeInMillis();
         }
 
-        currentLiveData =
-                DB.getDatabase(getApplicationContext())
-                        .sensorDao()
-                        .getMagnetDataBetween(fromTime, toTime);
+        currentLiveData = sensorRepository.getMagnetBetween(fromTime, toTime);
 
         currentLiveData.observe(
                 this,
@@ -369,24 +354,8 @@ public class MagnetActivity extends BaseChartActivity {
                 });
     }
 
-    /** Formats a Calendar into "dd.MM.yyyy" for button labels. */
-    private String formatCalendarDate(Calendar calendar) {
-        return String.format(
-                java.util.Locale.GERMANY,
-                "%02d.%02d.%04d",
-                calendar.get(Calendar.DAY_OF_MONTH),
-                calendar.get(Calendar.MONTH) + 1,
-                calendar.get(Calendar.YEAR));
-    }
-
-    /** Formats a Calendar into "dd.MM.yyyy" (no time) – used for the quick-filter labels. */
     private String makeDateTimeString(Calendar calendar) {
-        return String.format(
-                Locale.GERMAN,
-                "%02d.%02d.%04d",
-                calendar.get(Calendar.DAY_OF_MONTH),
-                calendar.get(Calendar.MONTH) + 1,
-                calendar.get(Calendar.YEAR));
+        return DateTimePickerHandler.format(calendar);
     }
 
     // ------------------------------------------------------------------------
@@ -401,34 +370,80 @@ public class MagnetActivity extends BaseChartActivity {
      * time-relative data instead of absolute wall-clock time.
      */
     private void displayDataInCharts(List<MagnetData> magnetDataList) {
-        if (magnetDataList == null || magnetDataList.isEmpty()) {
-            return;
-        }
+        if (magnetDataList == null || magnetDataList.isEmpty()) return;
+
+        if (windowStart == 0) windowStart = magnetDataList.get(0).timestamp;
 
         ArrayList<Entry> entriesX = new ArrayList<>();
         ArrayList<Entry> entriesY = new ArrayList<>();
         ArrayList<Entry> entriesZ = new ArrayList<>();
 
-        // Reference timestamp. All samples are plotted relative to this.
-        long firstTimestamp = magnetDataList.get(0).timestamp;
-
-        // Build entries for each axis based on elapsed time from the first sample.
         for (MagnetData data : magnetDataList) {
-            float elapsedTime = data.timestamp - firstTimestamp; // ms since first sample
-            entriesX.add(new Entry(elapsedTime, data.magnetX));
-            entriesY.add(new Entry(elapsedTime, data.magnetY));
-            entriesZ.add(new Entry(elapsedTime, data.magnetZ));
+            float t = data.timestamp - windowStart;
+            entriesX.add(new Entry(t, data.magnetX));
+            entriesY.add(new Entry(t, data.magnetY));
+            entriesZ.add(new Entry(t, data.magnetZ));
         }
 
-        // Use BaseChartActivity helper to actually feed data into the charts.
-        setData(lineChartMagnetX, entriesX, "X-Achse", Color.WHITE);
-        setData(lineChartMagnetY, entriesY, "Y-Achse", Color.WHITE);
-        setData(lineChartMagnetZ, entriesZ, "Z-Achse", Color.WHITE);
+        setData(lineChartMagnetX, entriesX, "X", Color.CYAN);
+        setData(lineChartMagnetY, entriesY, "Y", Color.GREEN);
+        setData(lineChartMagnetZ, entriesZ, "Z", Color.YELLOW);
+
+        pinViewport(lineChartMagnetX, lineChartMagnetY, lineChartMagnetZ);
+    }
+
+    private void pinViewport(LineChart... charts) {
+        for (LineChart chart : charts) {
+            if (chart.getData() == null) continue;
+            chart.setVisibleXRangeMaximum(120_000f);
+            chart.moveViewToX(chart.getData().getXMax());
+        }
+    }
+
+    private void checkVoiceFilterIntent() {
+        Intent intent = getIntent();
+        if (intent == null) return;
+        int minutes = intent.getIntExtra(VoiceCommandExecutor.EXTRA_FILTER_MINUTES, 0);
+        if (minutes > 0) {
+            applyTimeFilter(minutes);
+            intent.removeExtra(VoiceCommandExecutor.EXTRA_FILTER_MINUTES);
+        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         stopSlidingWindow();
+    }
+
+    @Override
+    public void applyTimeFilter(int minutes) {
+        if (minutes <= 0) {
+            clearFilter();
+            return;
+        }
+        stopSlidingWindow();
+        long now = System.currentTimeMillis();
+        dateFromCalendar.setTimeInMillis(now - ((long) minutes * 60 * 1000));
+        dateToCalendar.setTimeInMillis(now);
+        isTenMinuteFilterActive = true;
+        syncDateButtonTexts();
+        updateChartsWithDateFilter();
+        startSlidingWindow();
+    }
+
+    @Override
+    public void clearFilter() {
+        stopSlidingWindow();
+        dateFromCalendar = Calendar.getInstance();
+        dateToCalendar   = Calendar.getInstance();
+        windowStart = 0;
+        syncDateButtonTexts();
+        updateChartsWithDateFilter();
+    }
+
+    @Override
+    public boolean isFilterActive() {
+        return isTenMinuteFilterActive;
     }
 }
