@@ -1,11 +1,10 @@
-package com.fhdw.biot.speech.iot.database.entities;
+package database.entities;
 
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 @Entity(tableName = "ereignisType")
 public class EreignisType {
-
     @PrimaryKey(autoGenerate = true)
     public int ereignisID;
 

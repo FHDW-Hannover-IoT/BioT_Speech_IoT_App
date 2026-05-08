@@ -1,15 +1,11 @@
 package com.fhdw.biot.speech.iot.graph;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.view.MotionEvent;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageButton;
@@ -19,8 +15,6 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.LiveData;
-import com.github.mikephil.charting.listener.ChartTouchListener;
-import com.github.mikephil.charting.listener.OnChartGestureListener;
 import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.events.EreignisActivity;
 import com.fhdw.biot.speech.iot.main.MainActivity;
@@ -28,17 +22,15 @@ import com.fhdw.biot.speech.iot.sensor.AccelActivity;
 import com.fhdw.biot.speech.iot.sensor.GyroActivity;
 import com.fhdw.biot.speech.iot.sensor.MagnetActivity;
 import com.fhdw.biot.speech.iot.settings.SettingsActivity;
-import com.fhdw.biot.speech.iot.util.DateTimePickerHandler;
-import com.fhdw.biot.speech.iot.voice.VoiceCommandExecutor;
+import com.fhdw.biot.speech.iot.util.DatePickerHandler;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
-import com.fhdw.biot.speech.iot.config.BiotApplication;
-import com.fhdw.biot.speech.iot.database.entities.AccelData;
-import com.fhdw.biot.speech.iot.database.entities.GyroData;
-import com.fhdw.biot.speech.iot.database.entities.MagnetData;
-import com.fhdw.biot.speech.iot.repository.SensorRepository;
+import database.DB;
+import database.entities.AccelData;
+import database.entities.GyroData;
+import database.entities.MagnetData;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -72,19 +64,18 @@ public class MainGraphActivity extends BaseChartActivity {
     private Calendar dateFromCalendar;
     private Calendar dateToCalendar;
 
-    private SensorRepository sensorRepository;
     private LiveData<List<AccelData>> currentAccelLiveData;
     private LiveData<List<GyroData>> currentGyroLiveData;
     private LiveData<List<MagnetData>> currentMagLiveData;
 
     // -----------------------------------------------
     // DATASETS FOR ALL AXES AND TOTAL MAGNITUDE
-    // Each axis is a list of segments so gaps in sensor data appear as
-    // disconnected lines rather than bridged interpolations (TC15).
+    // These objects hold the chart data before deciding
+    // which datasets will be shown depending on checkboxes.
     // -----------------------------------------------
-    private List<LineDataSet> lineDataAccelx, lineDataAccely, lineDataAccelz, lineDataAccelTotal;
-    private List<LineDataSet> lineDataGyrox, lineDataGyroy, lineDataGyroz, lineDataGyroTotal;
-    private List<LineDataSet> lineDataMagx, lineDataMagy, lineDataMagz, lineDataMagTotal;
+    private LineDataSet lineDataAccelx, lineDataAccely, lineDataAccelz, lineDataAccelTotal;
+    private LineDataSet lineDataGyrox, lineDataGyroy, lineDataGyroz, lineDataGyroTotal;
+    private LineDataSet lineDataMagx, lineDataMagy, lineDataMagz, lineDataMagTotal;
 
     // -----------------------------------------------
     // CHECKBOXES controlling which lines are visible
@@ -104,14 +95,12 @@ public class MainGraphActivity extends BaseChartActivity {
     private Runnable slidingWindowRunnable;
     private boolean isTenMinuteFilterActive = false;
     private boolean isStartPointFixed = false;
-    private boolean isUserInteracting = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main_graph);
-        sensorRepository = ((BiotApplication) getApplication()).getContainer().sensorRepository();
 
         // ------------------------------------------------------------
         // SAFE INSETS (dynamic padding for status/navigation bars)
@@ -192,10 +181,6 @@ public class MainGraphActivity extends BaseChartActivity {
         setupChart(lineChartGyro, "Gyroskop", 0);
         setupChart(lineChartMag, "Magnetfeld", 0);
 
-        attachGestureTracking(lineChartAccel);
-        attachGestureTracking(lineChartGyro);
-        attachGestureTracking(lineChartMag);
-
         // Reset buttons restore the zoom and clear date fields
         findViewById(R.id.resetAccel)
                 .setOnClickListener(
@@ -220,23 +205,31 @@ public class MainGraphActivity extends BaseChartActivity {
         dateFromCalendar = Calendar.getInstance();
         dateToCalendar = Calendar.getInstance();
 
-        // Always wire both buttons immediately so they work even when the DB is empty.
-        setupFromDatePickers();
+        LiveData<Long> oldestTimestampLiveData =
+                DB.getDatabase(getApplicationContext()).sensorDao().getOldestAccelTimestamp();
+
+        oldestTimestampLiveData.observe(
+                this,
+                new androidx.lifecycle.Observer<Long>() {
+                    @Override
+                    public void onChanged(Long oldest) {
+                        if (oldest != null && oldest > 0) {
+                            if (!isTenMinuteFilterActive) {
+                                dateFromCalendar.setTimeInMillis(oldest);
+                            }
+                            setupFromDatePickers();
+
+                            oldestTimestampLiveData.removeObserver(this);
+                        }
+                    }
+                });
+
         setupToDatePickers();
-
-        // Update the from-date to the oldest DB record once data is available.
-        sensorRepository.getOldestAccelTimestamp().observe(this, oldest -> {
-            if (oldest != null && oldest > 0 && !isTenMinuteFilterActive) {
-                dateFromCalendar.setTimeInMillis(oldest);
-                updateChartsWithDateFilter();
-            }
-        });
-
         toggleTenMinutesFilter();
     }
 
     private void setupFromDatePickers() {
-        DateTimePickerHandler.createForButton(
+        DatePickerHandler.createForButton(
                 xVonButton,
                 cal -> {
                     stopSlidingWindow();
@@ -247,7 +240,7 @@ public class MainGraphActivity extends BaseChartActivity {
     }
 
     private void setupToDatePickers() {
-        DateTimePickerHandler.createForButton(
+        DatePickerHandler.createForButton(
                 xBisButton,
                 cal -> {
                     stopSlidingWindow();
@@ -285,7 +278,10 @@ public class MainGraphActivity extends BaseChartActivity {
         // ============================
         // ACCEL DATA
         // ============================
-        currentAccelLiveData = sensorRepository.getAccelBetween(fromTime, toTime);
+        currentAccelLiveData =
+                DB.getDatabase(getApplicationContext())
+                        .sensorDao()
+                        .getAccelDataBetween(fromTime, toTime);
         currentAccelLiveData.observe(
                 this,
                 data -> {
@@ -301,7 +297,10 @@ public class MainGraphActivity extends BaseChartActivity {
         // ============================
         // GYRO DATA
         // ============================
-        currentGyroLiveData = sensorRepository.getGyroBetween(fromTime, toTime);
+        currentGyroLiveData =
+                DB.getDatabase(getApplicationContext())
+                        .sensorDao()
+                        .getGyroDataBetween(fromTime, toTime);
         currentGyroLiveData.observe(
                 this,
                 data -> {
@@ -316,7 +315,10 @@ public class MainGraphActivity extends BaseChartActivity {
         // ============================
         // MAGNET DATA
         // ============================
-        currentMagLiveData = sensorRepository.getMagnetBetween(fromTime, toTime);
+        currentMagLiveData =
+                DB.getDatabase(getApplicationContext())
+                        .sensorDao()
+                        .getMagnetDataBetween(fromTime, toTime);
         currentMagLiveData.observe(
                 this,
                 data -> {
@@ -360,10 +362,8 @@ public class MainGraphActivity extends BaseChartActivity {
             MagXCheck, MagYCheck, MagZCheck, MagSumCheck
         };
 
-        for (CheckBox box : all) {
-            box.setChecked(true);
+        for (CheckBox box : all)
             box.setOnCheckedChangeListener((button, isChecked) -> updateAccelChart());
-        }
     }
 
     /**
@@ -395,43 +395,22 @@ public class MainGraphActivity extends BaseChartActivity {
                     public void run() {
                         if (!isTenMinuteFilterActive) return;
 
-                        if (!isUserInteracting) {
-                            long now = System.currentTimeMillis();
+                        long now = System.currentTimeMillis();
 
-                            if (!isStartPointFixed) {
-                                long tenMinutesAgo = now - (10 * 60 * 1000);
-                                dateFromCalendar.setTimeInMillis(tenMinutesAgo);
-                            }
-
-                            dateToCalendar.setTimeInMillis(now);
-
-                            syncDateButtonTexts();
-                            updateChartsWithDateFilter();
+                        if (!isStartPointFixed) {
+                            long tenMinutesAgo = now - (10 * 60 * 1000);
+                            dateFromCalendar.setTimeInMillis(tenMinutesAgo);
                         }
+
+                        dateToCalendar.setTimeInMillis(now);
+
+                        syncDateButtonTexts();
+                        updateChartsWithDateFilter();
 
                         slidingWindowHandler.postDelayed(this, 5000);
                     }
                 };
         slidingWindowHandler.post(slidingWindowRunnable);
-    }
-
-    private void attachGestureTracking(LineChart chart) {
-        chart.setOnChartGestureListener(new OnChartGestureListener() {
-            @Override
-            public void onChartGestureStart(MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {
-                isUserInteracting = true;
-            }
-            @Override
-            public void onChartGestureEnd(MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {
-                isUserInteracting = false;
-            }
-            @Override public void onChartLongPressed(MotionEvent me) {}
-            @Override public void onChartDoubleTapped(MotionEvent me) {}
-            @Override public void onChartSingleTapped(MotionEvent me) {}
-            @Override public void onChartFling(MotionEvent me1, MotionEvent me2, float velocityX, float velocityY) {}
-            @Override public void onChartScale(MotionEvent me, float scaleX, float scaleY) {}
-            @Override public void onChartTranslate(MotionEvent me, float dX, float dY) {}
-        });
     }
 
     private void stopSlidingWindow() {
@@ -450,8 +429,14 @@ public class MainGraphActivity extends BaseChartActivity {
         xBisButton.setText(makeDateTimeString(dateToCalendar));
     }
 
+    /** Formats a Calendar into "dd.MM.yyyy" (no time) – used for the quick-filter labels. */
     private String makeDateTimeString(Calendar calendar) {
-        return DateTimePickerHandler.format(calendar);
+        return String.format(
+                Locale.GERMAN,
+                "%02d.%02d.%04d",
+                calendar.get(Calendar.DAY_OF_MONTH),
+                calendar.get(Calendar.MONTH) + 1,
+                calendar.get(Calendar.YEAR));
     }
 
     // =====================================================================
@@ -459,7 +444,9 @@ public class MainGraphActivity extends BaseChartActivity {
     // =====================================================================
 
     private void observeAccelData() {
-        sensorRepository.getAllAccelData()
+        DB.getDatabase(getApplicationContext())
+                .sensorDao()
+                .getAllAccelData()
                 .observe(
                         this,
                         list -> {
@@ -473,7 +460,9 @@ public class MainGraphActivity extends BaseChartActivity {
     }
 
     private void observeGyroData() {
-        sensorRepository.getAllGyroData()
+        DB.getDatabase(getApplicationContext())
+                .sensorDao()
+                .getAllGyroData()
                 .observe(
                         this,
                         list -> {
@@ -487,7 +476,9 @@ public class MainGraphActivity extends BaseChartActivity {
     }
 
     private void observeMagnetData() {
-        sensorRepository.getAllMagnetData()
+        DB.getDatabase(getApplicationContext())
+                .sensorDao()
+                .getAllMagnetData()
                 .observe(
                         this,
                         list -> {
@@ -540,12 +531,18 @@ public class MainGraphActivity extends BaseChartActivity {
                                                     + d.accelZ * d.accelZ)));
         }
 
-        lineDataAccelx     = GraphUtils.buildSegmented(xs,     "X-Achse", Color.CYAN);
-        lineDataAccely     = GraphUtils.buildSegmented(ys,     "Y-Achse", Color.WHITE);
-        lineDataAccelz     = GraphUtils.buildSegmented(zs,     "Z-Achse", Color.GREEN);
-        lineDataAccelTotal = GraphUtils.buildSegmented(totals, "Summe",   Color.RED);
-
-        applyAbsoluteXAxis(lineChartAccel, first);
+        lineDataAccelx = new LineDataSet(xs, "X-Achse");
+        lineDataAccelx.setColor(Color.CYAN);
+        lineDataAccelx.setDrawCircles(false);
+        lineDataAccely = new LineDataSet(ys, "Y-Achse");
+        lineDataAccely.setColor(Color.WHITE);
+        lineDataAccely.setDrawCircles(false);
+        lineDataAccelz = new LineDataSet(zs, "Z-Achse");
+        lineDataAccelz.setColor(Color.GREEN);
+        lineDataAccelz.setDrawCircles(false);
+        lineDataAccelTotal = new LineDataSet(totals, "Summe");
+        lineDataAccelTotal.setColor(Color.RED);
+        lineDataAccelTotal.setDrawCircles(false);
     }
 
     private void initializeGyroDataSets(List<GyroData> list) {
@@ -583,12 +580,18 @@ public class MainGraphActivity extends BaseChartActivity {
                                                     + d.gyroZ * d.gyroZ)));
         }
 
-        lineDataGyrox     = GraphUtils.buildSegmented(xs,     "X-Achse", Color.CYAN);
-        lineDataGyroy     = GraphUtils.buildSegmented(ys,     "Y-Achse", Color.WHITE);
-        lineDataGyroz     = GraphUtils.buildSegmented(zs,     "Z-Achse", Color.GREEN);
-        lineDataGyroTotal = GraphUtils.buildSegmented(totals, "Summe",   Color.RED);
-
-        applyAbsoluteXAxis(lineChartGyro, first);
+        lineDataGyrox = new LineDataSet(xs, "X-Achse");
+        lineDataGyrox.setColor(Color.CYAN);
+        lineDataGyrox.setDrawCircles(false);
+        lineDataGyroy = new LineDataSet(ys, "Y-Achse");
+        lineDataGyroy.setColor(Color.WHITE);
+        lineDataGyroy.setDrawCircles(false);
+        lineDataGyroz = new LineDataSet(zs, "Z-Achse");
+        lineDataGyroz.setColor(Color.GREEN);
+        lineDataGyroz.setDrawCircles(false);
+        lineDataGyroTotal = new LineDataSet(totals, "Summe");
+        lineDataGyroTotal.setColor(Color.RED);
+        lineDataGyroTotal.setDrawCircles(false);
     }
 
     private void initializeMagDataSets(List<MagnetData> list) {
@@ -626,12 +629,18 @@ public class MainGraphActivity extends BaseChartActivity {
                                                     + d.magnetZ * d.magnetZ)));
         }
 
-        lineDataMagx     = GraphUtils.buildSegmented(xs,     "X-Achse", Color.CYAN);
-        lineDataMagy     = GraphUtils.buildSegmented(ys,     "Y-Achse", Color.WHITE);
-        lineDataMagz     = GraphUtils.buildSegmented(zs,     "Z-Achse", Color.GREEN);
-        lineDataMagTotal = GraphUtils.buildSegmented(totals, "Summe",   Color.RED);
-
-        applyAbsoluteXAxis(lineChartMag, first);
+        lineDataMagx = new LineDataSet(xs, "X-Achse");
+        lineDataMagx.setColor(Color.CYAN);
+        lineDataMagx.setDrawCircles(false);
+        lineDataMagy = new LineDataSet(ys, "Y-Achse");
+        lineDataMagy.setColor(Color.WHITE);
+        lineDataMagy.setDrawCircles(false);
+        lineDataMagz = new LineDataSet(zs, "Z-Achse");
+        lineDataMagz.setColor(Color.GREEN);
+        lineDataMagz.setDrawCircles(false);
+        lineDataMagTotal = new LineDataSet(totals, "Summe");
+        lineDataMagTotal.setColor(Color.RED);
+        lineDataMagTotal.setDrawCircles(false);
     }
 
     // =====================================================================
@@ -651,10 +660,10 @@ public class MainGraphActivity extends BaseChartActivity {
         // ------------------------ ACCEL CHART ------------------------
         if (lineDataAccelx != null) {
             LineData accel = new LineData();
-            if (AccelXCheck.isChecked())   lineDataAccelx.forEach(accel::addDataSet);
-            if (AccelYCheck.isChecked())   lineDataAccely.forEach(accel::addDataSet);
-            if (AccelZCheck.isChecked())   lineDataAccelz.forEach(accel::addDataSet);
-            if (AccelSumCheck.isChecked()) lineDataAccelTotal.forEach(accel::addDataSet);
+            if (AccelXCheck.isChecked()) accel.addDataSet(lineDataAccelx);
+            if (AccelYCheck.isChecked()) accel.addDataSet(lineDataAccely);
+            if (AccelZCheck.isChecked()) accel.addDataSet(lineDataAccelz);
+            if (AccelSumCheck.isChecked()) accel.addDataSet(lineDataAccelTotal);
 
             if (accel.getDataSetCount() > 0) {
                 lineChartAccel.setData(accel);
@@ -667,10 +676,10 @@ public class MainGraphActivity extends BaseChartActivity {
         // ------------------------ GYRO CHART ------------------------
         if (lineDataGyrox != null) {
             LineData gyro = new LineData();
-            if (GyroXCheck.isChecked())   lineDataGyrox.forEach(gyro::addDataSet);
-            if (GyroYCheck.isChecked())   lineDataGyroy.forEach(gyro::addDataSet);
-            if (GyroZCheck.isChecked())   lineDataGyroz.forEach(gyro::addDataSet);
-            if (GyroSumCheck.isChecked()) lineDataGyroTotal.forEach(gyro::addDataSet);
+            if (GyroXCheck.isChecked()) gyro.addDataSet(lineDataGyrox);
+            if (GyroYCheck.isChecked()) gyro.addDataSet(lineDataGyroy);
+            if (GyroZCheck.isChecked()) gyro.addDataSet(lineDataGyroz);
+            if (GyroSumCheck.isChecked()) gyro.addDataSet(lineDataGyroTotal);
 
             if (gyro.getDataSetCount() > 0) {
                 lineChartGyro.setData(gyro);
@@ -683,10 +692,10 @@ public class MainGraphActivity extends BaseChartActivity {
         // ------------------------ MAGNET CHART ------------------------
         if (lineDataMagx != null) {
             LineData mag = new LineData();
-            if (MagXCheck.isChecked())   lineDataMagx.forEach(mag::addDataSet);
-            if (MagYCheck.isChecked())   lineDataMagy.forEach(mag::addDataSet);
-            if (MagZCheck.isChecked())   lineDataMagz.forEach(mag::addDataSet);
-            if (MagSumCheck.isChecked()) lineDataMagTotal.forEach(mag::addDataSet);
+            if (MagXCheck.isChecked()) mag.addDataSet(lineDataMagx);
+            if (MagYCheck.isChecked()) mag.addDataSet(lineDataMagy);
+            if (MagZCheck.isChecked()) mag.addDataSet(lineDataMagz);
+            if (MagSumCheck.isChecked()) mag.addDataSet(lineDataMagTotal);
 
             if (mag.getDataSetCount() > 0) {
                 lineChartMag.setData(mag);
@@ -695,46 +704,6 @@ public class MainGraphActivity extends BaseChartActivity {
                 lineChartMag.clear();
             }
         }
-    }
-
-    // =====================================================================
-    // VOICE FILTER BROADCAST RECEIVER
-    // Handles FILTER_ACTION sent by VoiceCommandExecutor / LlmQueryHandler.
-    // =====================================================================
-
-    private final BroadcastReceiver filterReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            int minutes = intent.getIntExtra(VoiceCommandExecutor.EXTRA_FILTER_MINUTES, -1);
-            if (minutes < 0) return;
-            stopSlidingWindow();
-            long now = System.currentTimeMillis();
-            if (minutes == 0) {
-                dateFromCalendar.setTimeInMillis(0);
-                dateToCalendar.setTimeInMillis(now);
-            } else {
-                dateFromCalendar.setTimeInMillis(now - (long) minutes * 60_000);
-                dateToCalendar.setTimeInMillis(now);
-            }
-            syncDateButtonTexts();
-            updateChartsWithDateFilter();
-        }
-    };
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        ContextCompat.registerReceiver(this, filterReceiver,
-                new IntentFilter("com.fhdw.biot.speech.iot.FILTER_ACTION"),
-                ContextCompat.RECEIVER_NOT_EXPORTED);
-        // Re-apply chart data so any Settings changes (DP toggle/epsilon) take effect immediately.
-        updateChartsWithDateFilter();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        unregisterReceiver(filterReceiver);
     }
 
     @Override

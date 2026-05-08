@@ -135,58 +135,22 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_margin="8dp"/>
+            android:layout_margin="16dp"/>
+
 
         <com.github.mikephil.charting.charts.LineChart
             android:id="@+id/lineChartGyroY"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_margin="8dp" />
+            android:layout_margin="16dp" />
 
         <com.github.mikephil.charting.charts.LineChart
             android:id="@+id/lineChartGyroZ"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_margin="8dp" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="4dp">
-
-            <CheckBox
-                android:id="@+id/cbChartX"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="X axis"
-                android:textColor="@color/text"
-                android:checked="true"/>
-
-            <CheckBox
-                android:id="@+id/cbChartY"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Y axis"
-                android:textColor="@color/text"
-                android:checked="true"/>
-
-            <CheckBox
-                android:id="@+id/cbChartZ"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Z axis"
-                android:textColor="@color/text"
-                android:checked="true"/>
-
-        </LinearLayout>
+            android:layout_margin="16dp" />
     </LinearLayout>
 
     <LinearLayout

@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     id("org.jetbrains.kotlin.android") version "1.9.22"
     id("com.google.devtools.ksp") version "1.9.22-1.0.17"
+
 }
 
 android {
@@ -16,20 +17,6 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-
-        buildConfigField "String", "MQTT_PHONE_BROKER_URL",    '"tcp://172.21.152.4:1883"'
-        buildConfigField "String", "MQTT_EMULATOR_BROKER_URL", '"tcp://10.0.2.2:1883"'
-        buildConfigField "String", "LLM_HOST_PHONE",           '"172.20.10.6"'
-        buildConfigField "String", "LLM_HOST_EMULATOR",        '"127.0.0.1"'
-        buildConfigField "int",    "LLM_PORT",                 "8001"
-        buildConfigField "int",    "LLM_CONNECT_TIMEOUT_MS",   "5000"
-        buildConfigField "int",    "LLM_READ_TIMEOUT_MS",      "30000"
-        buildConfigField "int",    "SIMULATOR_FALLBACK_DELAY_MS", "5000"
-        buildConfigField "int",    "SIMULATOR_INTERVAL_MS",    "500"
-    }
-
-    buildFeatures {
-        buildConfig true
     }
 
     buildTypes {

@@ -1,11 +1,10 @@
 package com.fhdw.biot.speech.iot.graph;
 
 import android.graphics.Color;
-import com.fhdw.biot.speech.iot.config.BiotBaseActivity;
+import androidx.appcompat.app.AppCompatActivity;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Description;
 import com.github.mikephil.charting.components.XAxis;
-import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
@@ -19,7 +18,7 @@ import java.util.ArrayList;
  * <p>By placing the shared functionality here: → we avoid duplicated code → all sensor charts
  * maintain a consistent visual style → adding new sensors becomes trivial
  */
-public abstract class BaseChartActivity extends BiotBaseActivity {
+public abstract class BaseChartActivity extends AppCompatActivity {
 
     /**
      * Configure the chart BEFORE inserting data.
@@ -42,22 +41,13 @@ public abstract class BaseChartActivity extends BiotBaseActivity {
         // Chart background
         chart.setBackgroundColor(Color.rgb(0, 0, 0));
 
-        // User interaction: drag + pinch-to-zoom on both axes
-        chart.setTouchEnabled(true);
-        chart.setDragEnabled(true);
-        chart.setScaleEnabled(true);
-        chart.setPinchZoom(false);          // false = scale X/Y independently
-        chart.setDoubleTapToZoomEnabled(true);
-        chart.setAutoScaleMinMaxEnabled(true);
-        chart.getLegend().setTextColor(Color.WHITE);
-
         // X-axis styling
         XAxis xAxis = chart.getXAxis();
         xAxis.setTextColor(Color.WHITE);
 
-        // If we know the first timestamp → apply absolute time formatter
+        // If we know the first timestamp → convert X values into seconds
         if (startTime > 0) {
-            applyAbsoluteXAxis(chart, startTime);
+            xAxis.setValueFormatter(new SecondsValueFormatter(startTime));
         }
 
         // Y-axis styling
@@ -65,17 +55,6 @@ public abstract class BaseChartActivity extends BiotBaseActivity {
 
         // Trigger chart redraw
         chart.invalidate();
-    }
-
-    /**
-     * Apply absolute HH:mm:ss X-axis labels with 5-minute granularity.
-     * X-values must be millisecond offsets from {@code startTime}.
-     */
-    protected void applyAbsoluteXAxis(LineChart chart, long startTime) {
-        XAxis xAxis = chart.getXAxis();
-        xAxis.setValueFormatter(new SecondsValueFormatter(startTime));
-        xAxis.setGranularity(5 * 60 * 1000f);
-        xAxis.setGranularityEnabled(true);
     }
 
     /**
