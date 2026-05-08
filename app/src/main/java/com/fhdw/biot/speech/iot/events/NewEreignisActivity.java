@@ -6,19 +6,22 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageButton;
 import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.fhdw.biot.speech.iot.R;
+import com.fhdw.biot.speech.iot.config.BiotApplication;
+import com.fhdw.biot.speech.iot.config.BiotBaseActivity;
+import com.fhdw.biot.speech.iot.database.entities.Sensor;
 import com.fhdw.biot.speech.iot.main.MainActivity;
-import database.DB;
-import database.entities.Sensor;
+import com.fhdw.biot.speech.iot.repository.SensorRepository;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * NewEreignisActivity -------------------- Screen where the user can define *event rules*
@@ -36,24 +39,25 @@ import java.util.concurrent.atomic.AtomicReference;
  * <p>Note: Currently, only the UI list is implemented. The persistence logic ("Datenbanklogik
  * hinzufügen") is still a TODO.
  */
-public class NewEreignisActivity extends AppCompatActivity {
+public class NewEreignisActivity extends BiotBaseActivity {
 
-    // RecyclerView that displays the list of editable rules
+    private static final String TAG = "NewEreignisActivity";
+    private static final String PREFS_EVENTS = "EventRules";
+    private static final String KEY_RULES = "rules";
+
     private RecyclerView recyclerView;
-
-    // Adapter to bind EditableSensorEvent objects to row views
     private EditableEventAdapter adapter;
-
-    // In-memory list of event-rule configurations
     private List<EditableSensorEvent> editableEventList;
-
-    public List<Sensor> sensors = loadAvailableSensors();
+    public List<Sensor> sensors = new ArrayList<>();
+    private SensorRepository sensorRepository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_new_ereignis);
+        sensorRepository = ((BiotApplication) getApplication()).getContainer().sensorRepository();
+        loadAvailableSensors();
 
         // Apply system window insets so content doesn't overlap status/navigation bars.
         ViewCompat.setOnApplyWindowInsetsListener(
@@ -82,53 +86,84 @@ public class NewEreignisActivity extends AppCompatActivity {
                 });
 
         // --- RecyclerView setup ----------------------------------------------
-        // Backing list for the adapter; starts empty.
         editableEventList = new ArrayList<>();
 
         recyclerView = findViewById(R.id.my_table_recyclerview);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        // Adapter binds each EditableSensorEvent to event_configuration_item.xml
         adapter = new EditableEventAdapter(editableEventList);
         recyclerView.setAdapter(adapter);
 
-        // TODO: Datenbanklogik hinzufügen
-        //  - load existing rules from DB
-        //  - populate editableEventList
-        //  - adapter.notifyDataSetChanged()
+        loadSavedRules();
 
         // --- Add new rule row (+) -------------------------------------------
         ImageButton addEreignis = findViewById(R.id.add_ereignis);
         addEreignis.setOnClickListener(
                 view -> {
-                    // Ask the adapter to append a new blank EditableSensorEvent
-                    long newId = adapter.addEmptyEvent();
-
-                    // Scroll RecyclerView to the last item so user sees the new row.
+                    adapter.addEmptyEvent();
                     recyclerView.scrollToPosition(editableEventList.size() - 1);
                 });
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        saveRules();
+    }
+
     @SuppressLint("NotifyDataSetChanged")
-    private List<Sensor> loadAvailableSensors() {
-        AtomicReference<List<Sensor>> allEventsList = new AtomicReference<>();
-        DB.databaseWriteExecutor.execute(
-                () -> {
-                    allEventsList.set(
-                            DB.getDatabase(getApplicationContext())
-                                    .sensorDao()
-                                    .getAllKnownSensors());
+    private void loadSavedRules() {
+        String json = getSharedPreferences(PREFS_EVENTS, MODE_PRIVATE).getString(KEY_RULES, "[]");
+        try {
+            JSONArray arr = new JSONArray(json);
+            editableEventList.clear();
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject obj = arr.getJSONObject(i);
+                EditableSensorEvent e = new EditableSensorEvent(++adapter.nextId);
+                e.sensorType = obj.optString("sensorType", "ACCEL");
+                e.eventType = obj.optString("eventType", "");
+                e.thresholdValue = (float) obj.optDouble("threshold", 0.0);
+                editableEventList.add(e);
+            }
+            adapter.notifyDataSetChanged();
+        } catch (JSONException ex) {
+            Log.w(TAG, "loadSavedRules parse error: " + ex.getMessage());
+        }
+    }
 
-                    runOnUiThread(
-                            () -> {
-                                if (allEventsList.get() == null) {
-                                    Log.e("ERROR", "Event list returned null!");
-                                    return;
-                                }
+    private void saveRules() {
+        JSONArray arr = new JSONArray();
+        for (EditableSensorEvent e : editableEventList) {
+            try {
+                JSONObject obj = new JSONObject();
+                obj.put("sensorType", e.sensorType);
+                obj.put("eventType", e.eventType);
+                obj.put("threshold", e.thresholdValue);
+                arr.put(obj);
+            } catch (JSONException ignored) {
+            }
+        }
+        getSharedPreferences(PREFS_EVENTS, MODE_PRIVATE)
+                .edit()
+                .putString(KEY_RULES, arr.toString())
+                .apply();
+        Log.i(TAG, "Saved " + editableEventList.size() + " event rules");
+    }
 
-                                adapter.notifyDataSetChanged();
-                            });
-                });
-        return allEventsList.get();
+    @SuppressLint("NotifyDataSetChanged")
+    private void loadAvailableSensors() {
+        new Thread(
+                        () -> {
+                            List<Sensor> knownSensors = sensorRepository.getAllKnownSensors();
+                            runOnUiThread(
+                                    () -> {
+                                        if (knownSensors != null) {
+                                            sensors.clear();
+                                            sensors.addAll(knownSensors);
+                                        }
+                                        if (adapter != null) adapter.notifyDataSetChanged();
+                                    });
+                        })
+                .start();
     }
 }
