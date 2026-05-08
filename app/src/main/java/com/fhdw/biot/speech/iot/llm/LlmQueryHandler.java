@@ -73,18 +73,31 @@ public class LlmQueryHandler implements ILlmQueryHandler {
             postFallback();
             return;
         }
-        Log.i(TAG, "handleQuery: " + transcript);
+        Log.i(TAG, "→ LLM query  url=" + chatEndpointUrl
+                + "  text=\"" + transcript + "\"");
         llmLoading.postValue(true);
 
         http.execute(() -> {
+            long t0 = System.currentTimeMillis();
             try {
                 String reply = postChat(transcript);
-                Log.i(TAG, "Reply: " + (reply == null ? "null"
-                        : reply.substring(0, Math.min(200, reply.length()))));
+                long ms = System.currentTimeMillis() - t0;
+                Log.i(TAG, "← LLM reply  ms=" + ms
+                        + "  body=" + (reply == null ? "null"
+                        : reply.substring(0, Math.min(300, reply.length()))));
                 LlmAction action = LlmAction.parse(reply);
+                Log.i(TAG, "   action=" + action.type
+                        + "  tts=\"" + (action.tts == null ? "" :
+                          action.tts.substring(0, Math.min(80, action.tts.length()))) + "\""
+                        + (action.screen  != null ? "  screen="  + action.screen  : "")
+                        + (action.topic   != null ? "  topic="   + action.topic   : "")
+                        + (action.minutes != 0    ? "  minutes=" + action.minutes : ""));
                 liveAction.postValue(action);
             } catch (Exception e) {
-                Log.e(TAG, "LLM call failed: " + e.getMessage(), e);
+                long ms = System.currentTimeMillis() - t0;
+                Log.e(TAG, "✗ LLM call failed  ms=" + ms
+                        + "  url=" + chatEndpointUrl
+                        + "  err=" + e.getMessage(), e);
                 postFallback();
             } finally {
                 llmLoading.postValue(false);
@@ -116,6 +129,7 @@ public class LlmQueryHandler implements ILlmQueryHandler {
             }
 
             int status = conn.getResponseCode();
+            Log.d(TAG, "   HTTP " + status + " from " + chatEndpointUrl);
             InputStream stream = (status >= 200 && status < 300)
                     ? conn.getInputStream() : conn.getErrorStream();
 

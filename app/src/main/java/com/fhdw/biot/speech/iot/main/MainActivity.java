@@ -602,13 +602,15 @@ public class MainActivity extends BiotBaseActivity {
             voiceInputManager = new VoiceInputManager(this, new VoiceInputManager.VoiceResultListener() {
                 @Override
                 public void onResult(String topResult, List<String> hypotheses) {
-                    Log.i(TAG, "Voice result: \"" + topResult + "\"");
+                    Log.i(TAG, "STT result: \"" + topResult + "\"  hypotheses=" + hypotheses.size());
                     VoiceCommand cmd = VoiceCommandResolver.resolveFromList(hypotheses);
-                    Log.i(TAG, "Resolved command: " + cmd);
+                    Log.i(TAG, "Voice cmd: " + cmd
+                            + (cmd == VoiceCommand.UNKNOWN ? "  → forwarding to LLM" : "  → local"));
 
                     boolean handledLocally = VoiceCommandExecutor.execute(
                             MainActivity.this, cmd, mqttHandler, llmHandler, topResult);
 
+                    Log.i(TAG, "Voice dispatch: handledLocally=" + handledLocally);
                     if (handledLocally && ttsManager != null) {
                         String confirmation = toConfirmation(cmd);
                         if (!confirmation.isEmpty()) ttsManager.speak(confirmation);

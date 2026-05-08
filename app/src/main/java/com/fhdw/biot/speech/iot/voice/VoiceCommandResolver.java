@@ -49,19 +49,38 @@ public final class VoiceCommandResolver {
 
     /**
      * Resolve from a list of hypotheses (e.g. Android SpeechRecognizer returns
-     * several alternatives).  Each hypothesis is tried in order; the first match
-     * wins.
+     * several alternatives).
+     *
+     * All hypotheses are scanned; the match with the lowest rule-index wins.
+     * Rules are ordered most-specific first (QUERY_* before NAV_*), so this
+     * ensures "what is the magnetic value" (→ QUERY_MAGNET_STATUS, rule 30)
+     * beats a shorter hypothesis like "magnetic value" (→ NAV_MAGNET, rule 34)
+     * even when the shorter form arrives as hypothesis[0].
      *
      * @param hypotheses Ordered list of transcript hypotheses.
-     * @return The first matched command, or {@link VoiceCommand#UNKNOWN}.
+     * @return The best-matched command, or {@link VoiceCommand#UNKNOWN}.
      */
     public static VoiceCommand resolveFromList(List<String> hypotheses) {
         if (hypotheses == null) return VoiceCommand.UNKNOWN;
+
+        List<VoiceCommandDictionary.Rule> rules = VoiceCommandDictionary.getRules();
+        int bestRuleIndex = Integer.MAX_VALUE;
+        VoiceCommand best = VoiceCommand.UNKNOWN;
+
         for (String h : hypotheses) {
-            VoiceCommand cmd = resolve(h);
-            if (cmd != VoiceCommand.UNKNOWN) return cmd;
+            if (h == null || h.trim().isEmpty()) continue;
+            String normalised = normalise(h);
+            for (int i = 0; i < rules.size(); i++) {
+                if (i >= bestRuleIndex) break; // can't beat current best
+                if (matches(normalised, rules.get(i))) {
+                    bestRuleIndex = i;
+                    best = rules.get(i).command;
+                    break; // this hypothesis matched at rule i — try next hypothesis
+                }
+            }
         }
-        return VoiceCommand.UNKNOWN;
+
+        return best;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
