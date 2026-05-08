@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -95,6 +96,8 @@ public class MainActivity extends BiotBaseActivity {
     // ─────────────────────────────────────────────────────────────────────────
     // Lifecycle
     // ─────────────────────────────────────────────────────────────────────────
+
+    private View cardMqttError;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

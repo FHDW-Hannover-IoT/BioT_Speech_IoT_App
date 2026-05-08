@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageButton;
+import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -74,6 +75,7 @@ public class NewEreignisActivity extends BiotBaseActivity {
         ImageButton buttonHome = findViewById(R.id.home_button);
         buttonHome.setOnClickListener(
                 view -> {
+                    saveEventsToDatabase();
                     Intent intent = new Intent(NewEreignisActivity.this, MainActivity.class);
                     startActivity(intent);
                 });
@@ -82,6 +84,7 @@ public class NewEreignisActivity extends BiotBaseActivity {
         ImageButton buttonEreignis = findViewById(R.id.notification_button);
         buttonEreignis.setOnClickListener(
                 view -> {
+                    saveEventsToDatabase();
                     Intent intent = new Intent(NewEreignisActivity.this, EreignisActivity.class);
                     startActivity(intent);
                 });

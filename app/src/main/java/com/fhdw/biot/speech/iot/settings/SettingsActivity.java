@@ -1,8 +1,10 @@
 package com.fhdw.biot.speech.iot.settings;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -72,5 +74,18 @@ public class SettingsActivity extends BiotBaseActivity {
             @Override public void onStartTrackingTouch(SeekBar seekBar) {}
             @Override public void onStopTrackingTouch(SeekBar seekBar)  {}
         });
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        SharedPreferences sharedPref = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+
+        editor.putBoolean("PUSH_ACTIVE", switchPushNotifications.isChecked());
+        editor.putString("MQTT_BROKER", etMqttBrokerUrl.getText().toString());
+
+        editor.apply();
     }
 }

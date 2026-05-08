@@ -19,8 +19,8 @@ import java.util.List;
  * EditableEventAdapter --------------------- This adapter displays an EDITABLE list of event
  * configuration items.
  *
- * <p>Each row allows the user to define: • Sensor type (Accel / Gyro / Magnet via Spinner) • Event
- * type (custom rule name) • Threshold (numeric trigger level)
+ * <p>Each row allows the user to define: • Sensor type (Accel / Gyro / Magnet via Spinner) • Axis
+ * (x / y / z /sum) • Event type (custom rule name) • Threshold (numeric trigger level)
  *
  * <p>Used in NewEreignisActivity to build custom rules for generating EreignisData.
  *
@@ -134,6 +134,7 @@ public class EditableEventAdapter
 
         eventList.remove(position);
         notifyItemRemoved(position);
+        notifyItemRangeChanged(position, eventList.size());
     }
 
     /** ViewHolder for editable event configuration rows. */
@@ -153,6 +154,28 @@ public class EditableEventAdapter
             spinnerSensorType = itemView.findViewById(R.id.spinner_sensor_type);
             eventType = itemView.findViewById(R.id.spinner_event_type);
             treshholdValue = itemView.findViewById(R.id.et_threshold_value);
+
+            checkX = itemView.findViewById(R.id.MagxCheck);
+            checkY = itemView.findViewById(R.id.MagyCheck);
+            checkZ = itemView.findViewById(R.id.MagzCheck);
+            checkSum = itemView.findViewById(R.id.MagSumCheck);
+            spinnerDirection = itemView.findViewById(R.id.spinner_direction);
+
+            String[] sensors = {"Accel", "Gyro", "Magnet"};
+            ArrayAdapter<String> sensorAdapter =
+                    new ArrayAdapter<>(
+                            itemView.getContext(), R.layout.custom_spinner_item, sensors);
+
+            sensorAdapter.setDropDownViewResource(R.layout.custom_spinner_item);
+            spinnerSensorType.setAdapter(sensorAdapter);
+
+            String[] directions = {"<=", ">="};
+            ArrayAdapter<String> directionAdapter =
+                    new ArrayAdapter<>(
+                            itemView.getContext(), R.layout.custom_spinner_item, directions);
+
+            directionAdapter.setDropDownViewResource(R.layout.custom_spinner_item);
+            spinnerDirection.setAdapter(directionAdapter);
         }
     }
 }
