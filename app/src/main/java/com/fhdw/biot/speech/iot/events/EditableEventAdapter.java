@@ -1,12 +1,8 @@
 package com.fhdw.biot.speech.iot.events;
 
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Spinner;
@@ -30,10 +26,8 @@ import java.util.List;
 public class EditableEventAdapter
         extends RecyclerView.Adapter<EditableEventAdapter.EventViewHolder> {
 
-    private static final String[] SENSOR_TYPES = {"ACCEL", "GYRO", "MAGNET"};
-
     private final List<EditableSensorEvent> eventList;
-    long nextId = 0;
+    private long nextId = 0; // Generates unique IDs for new rows
 
     public EditableEventAdapter(List<EditableSensorEvent> eventList) {
         this.eventList = eventList;
@@ -52,64 +46,16 @@ public class EditableEventAdapter
 
     @Override
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
+
         EditableSensorEvent currentEvent = eventList.get(position);
 
-        // Populate sensor type spinner
-        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(
-                holder.itemView.getContext(),
-                android.R.layout.simple_spinner_item,
-                SENSOR_TYPES);
-        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        holder.spinnerSensorType.setAdapter(spinnerAdapter);
+        // TODO: populate Spinner and input fields from DB or preset lists
 
-        // Set current selection without triggering listener
-        holder.spinnerSensorType.setOnItemSelectedListener(null);
-        for (int i = 0; i < SENSOR_TYPES.length; i++) {
-            if (SENSOR_TYPES[i].equals(currentEvent.sensorType)) {
-                holder.spinnerSensorType.setSelection(i);
-                break;
-            }
-        }
-        holder.spinnerSensorType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-                currentEvent.sensorType = SENSOR_TYPES[pos];
-            }
-            @Override public void onNothingSelected(AdapterView<?> parent) {}
-        });
+        // Delete row handler
+        holder.btnDelete.setOnClickListener(v -> deleteEvent(position));
 
-        // Pre-fill text fields and wire TextWatchers so user input flows back to the model.
-        // Remove the old watcher before setText to avoid spurious callbacks during rebind.
-        holder.eventType.removeTextChangedListener(holder.eventTypeWatcher);
-        holder.eventType.setText(currentEvent.eventType);
-        holder.eventTypeWatcher = simpleWatcher(text -> currentEvent.eventType = text);
-        holder.eventType.addTextChangedListener(holder.eventTypeWatcher);
-
-        holder.treshholdValue.removeTextChangedListener(holder.thresholdWatcher);
-        holder.treshholdValue.setText(
-                currentEvent.thresholdValue == 0 ? "" : String.valueOf(currentEvent.thresholdValue));
-        holder.thresholdWatcher = simpleWatcher(text -> {
-            try { currentEvent.thresholdValue = Float.parseFloat(text); }
-            catch (NumberFormatException ignored) { currentEvent.thresholdValue = 0; }
-        });
-        holder.treshholdValue.addTextChangedListener(holder.thresholdWatcher);
-
-        // Delete button
-        holder.btnDelete.setOnClickListener(v -> {
-            int pos = holder.getAdapterPosition();
-            if (pos != RecyclerView.NO_ID) deleteEvent(pos);
-        });
+        // TODO: Add listeners for text changes, spinner selection, etc.
     }
-
-    private static TextWatcher simpleWatcher(SimpleTextCallback cb) {
-        return new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
-            @Override public void onTextChanged(CharSequence s, int st, int b, int c) {}
-            @Override public void afterTextChanged(Editable s) { cb.onChanged(s.toString()); }
-        };
-    }
-
-    interface SimpleTextCallback { void onChanged(String text); }
 
     @Override
     public int getItemCount() {
@@ -144,11 +90,9 @@ public class EditableEventAdapter
         public EditText eventType;
         public EditText treshholdValue;
 
-        TextWatcher eventTypeWatcher;
-        TextWatcher thresholdWatcher;
-
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
+
             btnDelete = itemView.findViewById(R.id.btn_delete_event);
             spinnerSensorType = itemView.findViewById(R.id.spinner_sensor_type);
             eventType = itemView.findViewById(R.id.spinner_event_type);

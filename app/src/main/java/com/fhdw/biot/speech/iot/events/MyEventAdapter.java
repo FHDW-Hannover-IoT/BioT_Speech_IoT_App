@@ -7,7 +7,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.fhdw.biot.speech.iot.R;
-import com.fhdw.biot.speech.iot.database.entities.EreignisData;
+import database.entities.EreignisData;
 import java.util.Date;
 import java.util.List;
 
@@ -63,8 +63,8 @@ public class MyEventAdapter extends RecyclerView.Adapter<MyEventAdapter.EventVie
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
         EreignisData currentEvent = eventList.get(position);
 
-        // Type → MQTT topic
-        holder.tvSensorType.setText(mqttTopicFor(currentEvent.sensorType));
+        // Type → ACCEL, GYRO, MAGNET
+        holder.tvSensorType.setText(currentEvent.sensorType);
 
         // Convert UNIX timestamp to readable date
         holder.tvTimestamp.setText(String.valueOf(new Date(currentEvent.timestamp)));
@@ -72,19 +72,8 @@ public class MyEventAdapter extends RecyclerView.Adapter<MyEventAdapter.EventVie
         // Sensor value causing the event
         holder.tvValue.setText(String.valueOf(currentEvent.value));
 
-        // Ereignistyp → name defined in event rule, fallback to axis direction
-        String name = currentEvent.ereignisName;
-        holder.tvAxis.setText((name != null && !name.isEmpty()) ? name : "In " + currentEvent.axis + "-Richtung");
-    }
-
-    private static String mqttTopicFor(String sensorType) {
-        if (sensorType == null) return "—";
-        switch (sensorType) {
-            case "ACCEL":  return "Sensor/Bewegung";
-            case "GYRO":   return "Sensor/Gyro";
-            case "MAGNET": return "Sensor/Magnet";
-            default:       return sensorType;
-        }
+        // Axis of the threshold detection
+        holder.tvAxis.setText("In " + currentEvent.axis + "-Richtung");
     }
 
     @Override
