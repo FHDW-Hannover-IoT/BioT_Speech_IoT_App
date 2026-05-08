@@ -6,48 +6,48 @@ plugins {
 }
 
 android {
-    namespace 'com.fhdw.biot.speech.iot'
-    compileSdkVersion 35
+    namespace = 'com.fhdw.biot.speech.iot'
+    compileSdkVersion = 35
 
     defaultConfig {
-        applicationId "com.fhdw.biot.speech.iot"
-        minSdk 29
-        targetSdk 35
-        versionCode 1
-        versionName "1.0"
+        applicationId = "com.fhdw.biot.speech.iot"
+        minSdk = 29
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0"
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled = false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_11
-        targetCompatibility JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
     lint {
         // Fail the Gradle task if *any* error-level issues are found
-        abortOnError true
+        abortOnError = true
 
         // Optional: treat warnings as errors (uncomment when you’re ready)
         // warningsAsErrors true
 
         // Produce multiple report formats for CI artifacts
-        htmlReport true
-        xmlReport true
-        sarifReport true
-        textReport true
+        htmlReport = true
+        xmlReport = true
+        sarifReport = true
+        textReport = true
 
         // Show explanations in the text report (nice in CI logs)
-        explainIssues true
+        explainIssues = true
 
         // Analyze dependencies too (useful in multi-module setups)
-        checkDependencies true
+        checkDependencies = true
     }
 }
 

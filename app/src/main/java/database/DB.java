@@ -13,7 +13,6 @@ import database.dao.SensorDao;
 import database.dao.ValueSensorDAO;
 import database.entities.AccelData;
 import database.entities.EreignisData;
-import database.entities.EreignisType;
 import database.entities.GyroData;
 import database.entities.MagnetData;
 import database.entities.Sensor;
@@ -28,10 +27,9 @@ import java.util.concurrent.Executors;
             MagnetData.class,
             EreignisData.class,
             ValueSensor.class,
-            Sensor.class,
-            EreignisType.class
+            Sensor.class
         },
-        version = 4, // keep the version that matches your existing DB_Impl
+        version = 3, // keep the version that matches your existing DB_Impl
         exportSchema = false)
 public abstract class DB extends RoomDatabase {
 

@@ -161,14 +161,8 @@ public class EreignisActivity extends AppCompatActivity {
                     int cmp = 0;
 
                     switch (sortKey) {
-                        case "SENSOR":
-                            cmp = e1.getSensorType().compareTo(e2.getSensorType());
-                            break;
-
                         case "TYPE":
-                            if (e1.getEventType() != null && e2.getEventType() != null) {
-                                cmp = e1.getEventType().compareTo(e2.getEventType());
-                            }
+                            cmp = e1.getSensorType().compareTo(e2.getSensorType());
                             break;
 
                         case "VALUE":

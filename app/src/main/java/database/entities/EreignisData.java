@@ -12,8 +12,7 @@ public class EreignisData {
     public long timestamp;
     public String sensorType;
     public float value;
-    public String axis;
-    public String ereignisName;
+    public char axis;
 
     public String getSensorType() {
         return sensorType;
@@ -27,11 +26,7 @@ public class EreignisData {
         return value;
     }
 
-    public String getAxis() {
+    public char getAxis() {
         return axis;
-    }
-
-    public String getEventType() {
-        return ereignisName;
     }
 }
