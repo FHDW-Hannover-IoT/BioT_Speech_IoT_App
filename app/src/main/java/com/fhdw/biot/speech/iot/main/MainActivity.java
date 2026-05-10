@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -21,7 +22,6 @@ import com.fhdw.biot.speech.iot.config.AppContainer;
 import com.fhdw.biot.speech.iot.config.BiotApplication;
 import com.fhdw.biot.speech.iot.config.BiotBaseActivity;
 import com.fhdw.biot.speech.iot.database.entities.AccelData;
-import com.fhdw.biot.speech.iot.database.entities.EreignisData;
 import com.fhdw.biot.speech.iot.database.entities.GyroData;
 import com.fhdw.biot.speech.iot.database.entities.MagnetData;
 import com.fhdw.biot.speech.iot.database.entities.ValueSensor;
@@ -41,8 +41,6 @@ import com.fhdw.biot.speech.iot.voice.VoiceCommandExecutor;
 import com.fhdw.biot.speech.iot.voice.VoiceCommandResolver;
 import com.fhdw.biot.speech.iot.voice.VoiceInputManager;
 import java.util.List;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 /**
  * MainActivity ─────────────────────────────────────────────────────────────────────────────
@@ -85,6 +83,14 @@ public class MainActivity extends BiotBaseActivity {
     private Button btnAutark, btnSupervision, btnEvent, btnIdentification;
     private ImageButton btnVoice;
 
+    // ── Regel-Engine & Cooldown ──────────────────────────────────────────────
+    private List<com.fhdw.biot.speech.iot.database.entities.EreignisType> activeRules;
+    private java.util.Map<Integer, Long> lastTriggeredMap = new java.util.HashMap<>();
+    private static final long COOLDOWN_MS = 2000;
+
+    // ── MQTT Fehler-UI ───────────────────────────────────────────────────────
+    private View cardMqttError;
+
     // ─────────────────────────────────────────────────────────────────────────
     // Lifecycle
     // ─────────────────────────────────────────────────────────────────────────
@@ -99,6 +105,13 @@ public class MainActivity extends BiotBaseActivity {
         // ── Get application-scoped container (no new instance on rotation) ──
         container = ((BiotApplication) getApplication()).getContainer();
         sensorRepository = container.sensorRepository();
+
+        // Lädt die Regeln im Hintergrund in den Arbeitsspeicher
+        new Thread(
+                        () -> {
+                            activeRules = sensorRepository.getAllEreignisTypes();
+                        })
+                .start();
 
         // ── Activity-scoped: MQTT + TTS (safe to call after rotation guard) ─
         try {
@@ -117,6 +130,7 @@ public class MainActivity extends BiotBaseActivity {
         bindModeButtons();
         bindOperatingModeButtons();
         bindVoiceButton();
+        bindMqttErrorCard();
 
         // ── Observers ────────────────────────────────────────────────────────
         observeLlmAction();
@@ -189,6 +203,11 @@ public class MainActivity extends BiotBaseActivity {
                 .observe(
                         this,
                         connected -> {
+                            boolean isConnected = Boolean.TRUE.equals(connected);
+
+                            if (cardMqttError != null) {
+                                cardMqttError.setVisibility(isConnected ? View.GONE : View.VISIBLE);
+                            }
                             Log.i(
                                     TAG,
                                     "MQTT status: "
@@ -390,6 +409,10 @@ public class MainActivity extends BiotBaseActivity {
         btnVoice.setOnClickListener(v -> onVoiceButtonClicked());
     }
 
+    private void bindMqttErrorCard() {
+        cardMqttError = findViewById(R.id.card_mqtt_error);
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // MQTT
     // ─────────────────────────────────────────────────────────────────────────
@@ -497,6 +520,12 @@ public class MainActivity extends BiotBaseActivity {
     }
 
     private void connectMqtt() {
+        if (mqttHandler != null && mqttHandler.isConnected()) {
+            Log.i(TAG, "MQTT already connected");
+            if (cardMqttError != null) cardMqttError.setVisibility(View.GONE);
+            setupMqttSubscription();
+            return;
+        }
         mqttHandler.connect(
                 new MqttHandler.ConnectionListener() {
                     @Override
@@ -509,22 +538,7 @@ public class MainActivity extends BiotBaseActivity {
                                                         getString(R.string.toast_mqtt_connected),
                                                         Toast.LENGTH_SHORT)
                                                 .show());
-                        mqttHandler.subscribe("Sensor/Bewegung");
-                        mqttHandler.subscribe("Sensor/Gyro");
-                        mqttHandler.subscribe("Sensor/Magnet");
-                        mqttHandler.subscribe("Sensor/Sim/Bewegung");
-                        mqttHandler.subscribe("Sensor/Sim/Gyro");
-                        mqttHandler.subscribe("Sensor/Sim/Magnet");
-                        mqttHandler.subscribe("Control/Mode");
-                        mqttHandler.subscribe("Control/OperatingMode");
-                        scheduleSimulatorFallback();
-
-                        // Pull last 10 min from the LLM server DB into Room.
-                        long now = System.currentTimeMillis();
-                        long tenMinAgo = now - (10L * 60 * 1000);
-                        container.mcpDataSync().fetchAccel(tenMinAgo, now);
-                        container.mcpDataSync().fetchGyro(tenMinAgo, now);
-                        container.mcpDataSync().fetchMagnet(tenMinAgo, now);
+                        setupMqttSubscription();
                     }
 
                     @Override
@@ -543,6 +557,25 @@ public class MainActivity extends BiotBaseActivity {
                                 });
                     }
                 });
+    }
+
+    private void setupMqttSubscription() {
+        mqttHandler.subscribe("Sensor/Bewegung");
+        mqttHandler.subscribe("Sensor/Gyro");
+        mqttHandler.subscribe("Sensor/Magnet");
+        mqttHandler.subscribe("Sensor/Sim/Bewegung");
+        mqttHandler.subscribe("Sensor/Sim/Gyro");
+        mqttHandler.subscribe("Sensor/Sim/Magnet");
+        mqttHandler.subscribe("Control/Mode");
+        mqttHandler.subscribe("Control/OperatingMode");
+        scheduleSimulatorFallback();
+
+        // Pull last 10 min from the LLM server DB into Room.
+        long now = System.currentTimeMillis();
+        long tenMinAgo = now - (10L * 60 * 1000);
+        container.mcpDataSync().fetchAccel(tenMinAgo, now);
+        container.mcpDataSync().fetchGyro(tenMinAgo, now);
+        container.mcpDataSync().fetchMagnet(tenMinAgo, now);
     }
 
     private void scheduleSimulatorFallback() {
@@ -614,7 +647,7 @@ public class MainActivity extends BiotBaseActivity {
 
             sensorRepository.insertAccel(accelData);
             sensorRepository.insertValueSensor(vs);
-            checkThresholds("ACCEL", x, y, z);
+            checkRulesAndTriggerEvents("Accel", x, y, z);
         } catch (NumberFormatException e) {
             Log.e(TAG, "Movement parse error: " + e.getMessage(), e);
         }
@@ -650,7 +683,7 @@ public class MainActivity extends BiotBaseActivity {
 
             sensorRepository.insertGyro(gyroData);
             sensorRepository.insertValueSensor(vs);
-            checkThresholds("GYRO", x, y, z);
+            checkRulesAndTriggerEvents("Gyro", x, y, z);
         } catch (NumberFormatException e) {
             Log.e(TAG, "Gyro parse error: " + e.getMessage(), e);
         }
@@ -680,45 +713,9 @@ public class MainActivity extends BiotBaseActivity {
             magnetData.magnetZ = z;
 
             sensorRepository.insertMagnet(magnetData);
-            checkThresholds("MAGNET", x, y, z);
+            checkRulesAndTriggerEvents("Magnet", x, y, z);
         } catch (NumberFormatException e) {
             Log.e(TAG, "Magnet parse error: " + e.getMessage(), e);
-        }
-    }
-
-    private void checkThresholds(String sensorType, float x, float y, float z) {
-        String json = getSharedPreferences("EventRules", MODE_PRIVATE).getString("rules", "[]");
-        try {
-            JSONArray rules = new JSONArray(json);
-            float[] values = {x, y, z};
-            char[] axes = {'X', 'Y', 'Z'};
-            for (int i = 0; i < rules.length(); i++) {
-                JSONObject rule = rules.getJSONObject(i);
-                if (!sensorType.equals(rule.optString("sensorType"))) continue;
-                float threshold = (float) rule.optDouble("threshold", 0);
-                if (threshold <= 0) continue;
-                for (int j = 0; j < 3; j++) {
-                    if (Math.abs(values[j]) > threshold) {
-                        EreignisData event = new EreignisData();
-                        event.timestamp = System.currentTimeMillis();
-                        event.sensorType = sensorType;
-                        event.value = values[j];
-                        event.axis = axes[j];
-                        event.ereignisName = rule.optString("eventType", "");
-                        sensorRepository.insertEreignis(event);
-                        Log.i(
-                                TAG,
-                                "Event triggered: "
-                                        + sensorType
-                                        + " axis="
-                                        + axes[j]
-                                        + " val="
-                                        + values[j]);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            Log.w(TAG, "checkThresholds error: " + e.getMessage());
         }
     }
 
@@ -933,5 +930,84 @@ public class MainActivity extends BiotBaseActivity {
                         ? R.string.label_betriebsmodus_format
                         : R.string.label_modus_format;
         label.setText(getString(fmtRes, modeName));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Regel-Engine & Events (Room DB)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private void checkRulesAndTriggerEvents(String sensorType, float x, float y, float z) {
+        if (activeRules == null || activeRules.isEmpty()) return;
+
+        long now = System.currentTimeMillis();
+        float sum = (float) Math.sqrt(x * x + y * y + z * z);
+
+        for (com.fhdw.biot.speech.iot.database.entities.EreignisType rule : activeRules) {
+
+            if (rule.sensorType != null && rule.sensorType.equalsIgnoreCase(sensorType)) {
+
+                Long lastTrigger = lastTriggeredMap.get(rule.ereignisID);
+                if (lastTrigger != null && (now - lastTrigger) < COOLDOWN_MS) {
+                    continue;
+                }
+
+                boolean triggered = false;
+
+                if (rule.axisX
+                        && checkThreshold(x, rule.ereignisThreshold, rule.thresholdDirection)) {
+                    triggerEvent(now, sensorType, x, rule.ereignisName, "X");
+                    triggered = true;
+                } else if (rule.axisY
+                        && checkThreshold(y, rule.ereignisThreshold, rule.thresholdDirection)) {
+                    triggerEvent(now, sensorType, y, rule.ereignisName, "Y");
+                    triggered = true;
+                } else if (rule.axisZ
+                        && checkThreshold(z, rule.ereignisThreshold, rule.thresholdDirection)) {
+                    triggerEvent(now, sensorType, z, rule.ereignisName, "Z");
+                    triggered = true;
+                } else if (rule.axisSum
+                        && checkThreshold(sum, rule.ereignisThreshold, rule.thresholdDirection)) {
+                    triggerEvent(now, sensorType, sum, rule.ereignisName, "Summe");
+                    triggered = true;
+                }
+
+                if (triggered) {
+                    lastTriggeredMap.put(rule.ereignisID, now);
+                }
+            }
+        }
+    }
+
+    private boolean checkThreshold(float sensorValue, float threshold, String direction) {
+        float absValue = Math.abs(sensorValue);
+        if (direction == null) direction = ">=";
+        if (direction.equals(">=")) return absValue >= threshold;
+        else if (direction.equals("<=")) return absValue <= threshold;
+        return false;
+    }
+
+    private void triggerEvent(
+            long timestamp, String sensorType, float triggerValue, String eventName, String axis) {
+        Log.w(TAG, "!!! Ereignis ausgelöst !!! " + eventName + " auf Sensor " + sensorType);
+
+        android.content.SharedPreferences sharedPref =
+                getSharedPreferences("AppPreferences", android.content.Context.MODE_PRIVATE);
+        boolean isPushActive = sharedPref.getBoolean("PUSH_ACTIVE", true);
+
+        com.fhdw.biot.speech.iot.events.SensorEreignis ereignis =
+                new com.fhdw.biot.speech.iot.events.SensorEreignis(
+                        timestamp,
+                        sensorType,
+                        triggerValue,
+                        eventName != null ? eventName : "Unbekanntes Ereignis",
+                        this,
+                        axis,
+                        isPushActive);
+
+        new Thread(
+                        () -> {
+                            sensorRepository.insertEreignis(ereignis.getEreignisData());
+                        })
+                .start();
     }
 }

@@ -65,4 +65,16 @@ public interface SensorDao {
 
     @Query("SELECT * FROM knownSensors Order By sensorID ASC")
     List<Sensor> getAllKnownSensors();
+
+    @Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
+    void insertEreignisType(database.entities.EreignisType ereignisType);
+
+    @Query("SELECT * FROM EreignisType")
+    List<database.entities.EreignisType> getAllEreignisTypes();
+
+    @Query("DELETE FROM EreignisType")
+    void deleteAllEreignisTypes();
+
+    @Query("DELETE FROM EreignisType WHERE ereignisID = :id")
+    void deleteEreignisTypeById(int id);
 }

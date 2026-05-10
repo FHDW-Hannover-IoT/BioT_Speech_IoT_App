@@ -95,7 +95,7 @@ public class AppContainer {
         }
         if (mqttHandler != null) return;
 
-        String brokerUrl = AppConfig.mqttBrokerUrl();
+        String brokerUrl = getBrokerUrl(activity);
         String clientId = "Nutzer_" + UUID.randomUUID().toString().substring(0, 8);
         try {
             mqttHandler = new MqttHandler(brokerUrl, clientId);
@@ -107,6 +107,34 @@ public class AppContainer {
 
         ttsManager = new TtsManager(activity);
         Log.i(TAG, "Activity scope initialised.");
+    }
+
+    private String getBrokerUrl(android.content.Context context) {
+        android.content.SharedPreferences sharedPref =
+                context.getSharedPreferences(
+                        "AppPreferences", android.content.Context.MODE_PRIVATE);
+
+        String savedBrokerUrl = sharedPref.getString("MQTT_BROKER", "tcp://192.168.178.80:1883");
+
+        String f =
+                (android.os.Build.FINGERPRINT == null ? "" : android.os.Build.FINGERPRINT)
+                        .toLowerCase(java.util.Locale.US);
+        String m =
+                (android.os.Build.MODEL == null ? "" : android.os.Build.MODEL)
+                        .toLowerCase(java.util.Locale.US);
+        String p =
+                (android.os.Build.PRODUCT == null ? "" : android.os.Build.PRODUCT)
+                        .toLowerCase(java.util.Locale.US);
+
+        boolean isEmulator =
+                f.startsWith("generic")
+                        || f.contains("vbox")
+                        || f.contains("test-keys")
+                        || m.contains("google_sdk")
+                        || m.contains("emulator")
+                        || m.contains("android sdk built for x86")
+                        || p.contains("sdk_gphone");
+        return isEmulator ? "tcp://10.0.2.2:1883" : savedBrokerUrl;
     }
 
     public void releaseActivityScope() {

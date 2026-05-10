@@ -6,6 +6,7 @@ import androidx.room.Insert;
 import androidx.room.Query;
 import com.fhdw.biot.speech.iot.database.entities.AccelData;
 import com.fhdw.biot.speech.iot.database.entities.EreignisData;
+import com.fhdw.biot.speech.iot.database.entities.EreignisType;
 import com.fhdw.biot.speech.iot.database.entities.GyroData;
 import com.fhdw.biot.speech.iot.database.entities.MagnetData;
 import com.fhdw.biot.speech.iot.database.entities.Sensor;
@@ -64,4 +65,13 @@ public interface SensorDao {
 
     @Query("SELECT * FROM knownSensors ORDER BY sensorID ASC")
     List<Sensor> getAllKnownSensors();
+
+    @Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
+    void insertEreignisType(EreignisType ereignisType);
+
+    @Query("SELECT * FROM ereignisType")
+    List<EreignisType> getAllEreignisTypes();
+
+    @Query("DELETE FROM ereignisType")
+    void deleteAllEreignisTypes();
 }

@@ -6,6 +6,7 @@ import com.fhdw.biot.speech.iot.database.dao.SensorDao;
 import com.fhdw.biot.speech.iot.database.dao.ValueSensorDAO;
 import com.fhdw.biot.speech.iot.database.entities.AccelData;
 import com.fhdw.biot.speech.iot.database.entities.EreignisData;
+import com.fhdw.biot.speech.iot.database.entities.EreignisType;
 import com.fhdw.biot.speech.iot.database.entities.GyroData;
 import com.fhdw.biot.speech.iot.database.entities.MagnetData;
 import com.fhdw.biot.speech.iot.database.entities.Sensor;
@@ -67,6 +68,14 @@ public class SensorRepository {
         ctx.insertMagnetBatch(batch);
     }
 
+    public void insertEreignisType(EreignisType type) {
+        dao.insertEreignisType(type);
+    }
+
+    public void deleteAllEreignisTypes() {
+        dao.deleteAllEreignisTypes();
+    }
+
     // ── Live reads ────────────────────────────────────────────────────────────
 
     public LiveData<List<AccelData>> getAllAccelData() {
@@ -115,5 +124,9 @@ public class SensorRepository {
 
     public List<ValueSensor> getAllValueSensors() {
         return valueSensorDao.getAllvalue();
+    }
+
+    public List<EreignisType> getAllEreignisTypes() {
+        return dao.getAllEreignisTypes();
     }
 }

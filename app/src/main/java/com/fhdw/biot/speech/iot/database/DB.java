@@ -8,6 +8,7 @@ import com.fhdw.biot.speech.iot.database.dao.SensorDao;
 import com.fhdw.biot.speech.iot.database.dao.ValueSensorDAO;
 import com.fhdw.biot.speech.iot.database.entities.AccelData;
 import com.fhdw.biot.speech.iot.database.entities.EreignisData;
+import com.fhdw.biot.speech.iot.database.entities.EreignisType;
 import com.fhdw.biot.speech.iot.database.entities.GyroData;
 import com.fhdw.biot.speech.iot.database.entities.MagnetData;
 import com.fhdw.biot.speech.iot.database.entities.Sensor;
@@ -25,9 +26,10 @@ import com.fhdw.biot.speech.iot.database.entities.ValueSensor;
             MagnetData.class,
             EreignisData.class,
             ValueSensor.class,
-            Sensor.class
+            Sensor.class,
+            EreignisType.class
         },
-        version = 2,
+        version = 3,
         exportSchema = false)
 public abstract class DB extends RoomDatabase {
 
