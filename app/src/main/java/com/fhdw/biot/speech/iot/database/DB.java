@@ -31,7 +31,7 @@ import com.fhdw.biot.speech.iot.database.entities.ValueSensor;
             Sensor.class,
             EreignisType.class
         },
-    version = 4,
+    version = 5,
         exportSchema = false)
 public abstract class DB extends RoomDatabase {
 
@@ -106,7 +106,7 @@ public abstract class DB extends RoomDatabase {
         values.put("axisZ", axisZ ? 1 : 0);
         values.put("axisSum", axisSum ? 1 : 0);
         values.put("ereignisThreshold", threshold);
-        values.put("tresholdDirection", direction);
+        values.put("thresholdDirection", direction);
         db.insert("ereignisType", SQLiteDatabase.CONFLICT_ABORT, values);
     }
 }
