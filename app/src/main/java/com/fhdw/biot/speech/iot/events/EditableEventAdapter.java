@@ -76,9 +76,7 @@ public class EditableEventAdapter
                     public void onNothingSelected(AdapterView<?> parent) {}
                 });
 
-
         holder.spinnerDirection.setOnItemSelectedListener(null);
-
 
         if (currentEvent.thresholdDirection != null) {
             if (currentEvent.thresholdDirection.equals(">=")) {
@@ -88,18 +86,16 @@ public class EditableEventAdapter
             }
         }
 
-
         holder.spinnerDirection.setOnItemSelectedListener(
-            new AdapterView.OnItemSelectedListener() {
-                @Override
-                public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-                    currentEvent.thresholdDirection = parent.getItemAtPosition(pos).toString();
-                }
+                new AdapterView.OnItemSelectedListener() {
+                    @Override
+                    public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+                        currentEvent.thresholdDirection = parent.getItemAtPosition(pos).toString();
+                    }
 
-                @Override
-                public void onNothingSelected(AdapterView<?> parent) {}
-            });
-
+                    @Override
+                    public void onNothingSelected(AdapterView<?> parent) {}
+                });
 
         holder.checkX.setOnCheckedChangeListener(null);
         holder.checkX.setChecked(currentEvent.isAxisX());

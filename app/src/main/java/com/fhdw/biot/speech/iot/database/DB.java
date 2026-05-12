@@ -18,9 +18,7 @@ import com.fhdw.biot.speech.iot.database.entities.MagnetData;
 import com.fhdw.biot.speech.iot.database.entities.Sensor;
 import com.fhdw.biot.speech.iot.database.entities.ValueSensor;
 
-/**
- * Room database stored on disk with a one-time seed of default event rules.
- */
+/** Room database stored on disk with a one-time seed of default event rules. */
 @Database(
         entities = {
             AccelData.class,
@@ -31,7 +29,7 @@ import com.fhdw.biot.speech.iot.database.entities.ValueSensor;
             Sensor.class,
             EreignisType.class
         },
-    version = 5,
+        version = 5,
         exportSchema = false)
 public abstract class DB extends RoomDatabase {
 
@@ -47,8 +45,7 @@ public abstract class DB extends RoomDatabase {
             synchronized (DB.class) {
                 if (INSTANCE == null) {
                     INSTANCE =
-                            Room.databaseBuilder(
-                                            context.getApplicationContext(), DB.class, DB_NAME)
+                            Room.databaseBuilder(context.getApplicationContext(), DB.class, DB_NAME)
                                     .fallbackToDestructiveMigration()
                                     .addCallback(
                                             new RoomDatabase.Callback() {
@@ -72,15 +69,18 @@ public abstract class DB extends RoomDatabase {
             insertEreignisType(db, "Shock", "ACCEL", true, true, true, false, 20.0f, ">=");
             insertEreignisType(db, "Zero-G Peak", "ACCEL", false, false, false, true, 1.5f, "<=");
             insertEreignisType(db, "Severe Impact", "ACCEL", true, true, true, false, 40.0f, ">=");
-            insertEreignisType(db, "Vibration Spike", "ACCEL", true, true, true, false, 12.0f, ">=");
+            insertEreignisType(
+                    db, "Vibration Spike", "ACCEL", true, true, true, false, 12.0f, ">=");
             insertEreignisType(db, "Tilt Limit", "ACCEL", true, true, false, false, 6.5f, ">=");
 
             insertEreignisType(db, "Rotation Peak", "GYRO", true, true, true, false, 4.5f, ">=");
             insertEreignisType(db, "Motion Start", "GYRO", true, true, true, false, 0.5f, ">=");
 
-            insertEreignisType(db, "Magnetic Contact", "MAGNET", true, true, true, false, 150.0f, ">=");
+            insertEreignisType(
+                    db, "Magnetic Contact", "MAGNET", true, true, true, false, 150.0f, ">=");
             insertEreignisType(db, "Field Minimum", "MAGNET", true, true, true, false, 15.0f, "<=");
-            insertEreignisType(db, "Field Anomaly", "MAGNET", false, false, false, true, 250.0f, ">=");
+            insertEreignisType(
+                    db, "Field Anomaly", "MAGNET", false, false, false, true, 250.0f, ">=");
 
             db.setTransactionSuccessful();
         } finally {
