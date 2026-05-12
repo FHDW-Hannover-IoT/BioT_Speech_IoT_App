@@ -14,14 +14,12 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.config.BiotApplication;
 import com.fhdw.biot.speech.iot.config.BiotBaseActivity;
+import com.fhdw.biot.speech.iot.database.entities.EreignisType;
 import com.fhdw.biot.speech.iot.database.entities.Sensor;
 import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.fhdw.biot.speech.iot.repository.SensorRepository;
 import java.util.ArrayList;
 import java.util.List;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 /**
  * NewEreignisActivity -------------------- Screen where the user can define *event rules*
@@ -42,8 +40,6 @@ import org.json.JSONObject;
 public class NewEreignisActivity extends BiotBaseActivity {
 
     private static final String TAG = "NewEreignisActivity";
-    private static final String PREFS_EVENTS = "EventRules";
-    private static final String KEY_RULES = "rules";
 
     private RecyclerView recyclerView;
     private EditableEventAdapter adapter;
@@ -94,7 +90,7 @@ public class NewEreignisActivity extends BiotBaseActivity {
         adapter = new EditableEventAdapter(editableEventList);
         recyclerView.setAdapter(adapter);
 
-        loadSavedRules();
+        loadExistingEvents();
 
         // --- Add new rule row (+) -------------------------------------------
         ImageButton addEreignis = findViewById(R.id.add_ereignis);
@@ -108,46 +104,78 @@ public class NewEreignisActivity extends BiotBaseActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        saveRules();
+        saveEventsToDatabase();
     }
 
+    /** Lädt bereits gespeicherte Regeln aus der Room-Datenbank und zeigt sie in der Liste an. */
     @SuppressLint("NotifyDataSetChanged")
-    private void loadSavedRules() {
-        String json = getSharedPreferences(PREFS_EVENTS, MODE_PRIVATE).getString(KEY_RULES, "[]");
-        try {
-            JSONArray arr = new JSONArray(json);
-            editableEventList.clear();
-            for (int i = 0; i < arr.length(); i++) {
-                JSONObject obj = arr.getJSONObject(i);
-                EditableSensorEvent e = new EditableSensorEvent(++adapter.nextId);
-                e.sensorType = obj.optString("sensorType", "ACCEL");
-                e.eventType = obj.optString("eventType", "");
-                e.thresholdValue = (float) obj.optDouble("threshold", 0.0);
-                editableEventList.add(e);
-            }
-            adapter.notifyDataSetChanged();
-        } catch (JSONException ex) {
-            Log.w(TAG, "loadSavedRules parse error: " + ex.getMessage());
-        }
+    private void loadExistingEvents() {
+        new Thread(
+                        () -> {
+                            List<EreignisType> savedRules = sensorRepository.getAllEreignisTypes();
+
+                            if (savedRules != null) {
+                                List<EditableSensorEvent> loadedList = new ArrayList<>();
+
+                                for (EreignisType dbRule : savedRules) {
+                                    EditableSensorEvent e =
+                                            new EditableSensorEvent(dbRule.ereignisID);
+
+                                    e.eventType = dbRule.ereignisName;
+                                    e.sensorType =
+                                            dbRule.sensorType != null ? dbRule.sensorType : "ACCEL";
+                                    e.thresholdValue = (float) dbRule.ereignisThreshold;
+                                    e.thresholdDirection =
+                                            dbRule.thresholdDirection != null
+                                                    ? dbRule.thresholdDirection
+                                                    : ">=";
+                                    e.axisX = dbRule.axisX;
+                                    e.axisY = dbRule.axisY;
+                                    e.axisZ = dbRule.axisZ;
+                                    e.axisSum = dbRule.axisSum;
+
+                                    loadedList.add(e);
+                                }
+
+                                runOnUiThread(
+                                        () -> {
+                                            editableEventList.clear();
+                                            editableEventList.addAll(loadedList);
+                                            adapter.notifyDataSetChanged();
+                                        });
+                            }
+                        })
+                .start();
     }
 
-    private void saveRules() {
-        JSONArray arr = new JSONArray();
-        for (EditableSensorEvent e : editableEventList) {
-            try {
-                JSONObject obj = new JSONObject();
-                obj.put("sensorType", e.sensorType);
-                obj.put("eventType", e.eventType);
-                obj.put("threshold", e.thresholdValue);
-                arr.put(obj);
-            } catch (JSONException ignored) {
-            }
-        }
-        getSharedPreferences(PREFS_EVENTS, MODE_PRIVATE)
-                .edit()
-                .putString(KEY_RULES, arr.toString())
-                .apply();
-        Log.i(TAG, "Saved " + editableEventList.size() + " event rules");
+    private void saveEventsToDatabase() {
+        List<EditableSensorEvent> listToSave = new ArrayList<>(editableEventList);
+
+        new Thread(
+                        () -> {
+                            sensorRepository.deleteAllEreignisTypes();
+
+                            for (EditableSensorEvent editableEvent : listToSave) {
+                                com.fhdw.biot.speech.iot.database.entities.EreignisType dbEvent =
+                                        new com.fhdw.biot.speech.iot.database.entities
+                                                .EreignisType();
+
+                                dbEvent.ereignisName = editableEvent.eventType;
+                                dbEvent.sensorType = editableEvent.sensorType;
+                                dbEvent.ereignisThreshold = (int) editableEvent.thresholdValue;
+                                dbEvent.thresholdDirection = editableEvent.thresholdDirection;
+
+                                dbEvent.axisX = editableEvent.axisX;
+                                dbEvent.axisY = editableEvent.axisY;
+                                dbEvent.axisZ = editableEvent.axisZ;
+                                dbEvent.axisSum = editableEvent.axisSum;
+
+                                sensorRepository.insertEreignisType(dbEvent);
+                            }
+
+                            Log.i(TAG, "Saved " + listToSave.size() + " event rules to Room DB");
+                        })
+                .start();
     }
 
     @SuppressLint("NotifyDataSetChanged")

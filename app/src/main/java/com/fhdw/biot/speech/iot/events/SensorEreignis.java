@@ -41,13 +41,13 @@ public class SensorEreignis {
     private float value;
 
     // Optional identifier; can be used to correlate rules or sources.
-    private String id;
+    private String eventName;
 
     // Android Context, required for notification + DB etc.
     private Context context;
 
     // Axis along which the event occurred (e.g., 'X', 'Y', 'Z')
-    private char axis;
+    private String axis;
 
     /**
      * Builds a new SensorEreignis and directly shows a notification.
@@ -55,26 +55,45 @@ public class SensorEreignis {
      * @param timestamp Time of event (usually System.currentTimeMillis()).
      * @param sensorType Logical sensor ID, e.g. "ACCEL", "GYRO", ...
      * @param value The sensor reading that triggered the event.
-     * @param id Arbitrary identifier for this event.
+     * @param eventName Arbitrary identifier for this event.
      * @param context Android Context used for notifications.
      * @param axis 'X', 'Y', or 'Z' depending on which axis exceeded threshold.
      */
     public SensorEreignis(
-            long timestamp, String sensorType, float value, String id, Context context, char axis) {
+            long timestamp,
+            String sensorType,
+            float value,
+            String eventName,
+            Context context,
+            String axis,
+            boolean isPushActive) {
 
         this.timestamp = timestamp;
         this.sensorType = sensorType;
         this.value = value;
-        this.id = id;
+        this.eventName = eventName;
         this.context = context;
         this.axis = axis;
 
         // Immediately show a notification to the user when the event is created.
         // NOTE: Currently title and text are generic ("SensorEvent", "text").
         //       You may want to adapt this to display sensorType/value/axis.
-        int reqCode = 1;
-        Intent intent = new Intent(this.context, MainActivity.class); // Go to Home when tapped
-        this.showNotification(this.context, "SensorEvent", "text", intent, reqCode);
+        if (isPushActive) {
+            int reqCode =
+                    (int)
+                            (System.currentTimeMillis()
+                                    % 10000); // Dynamische ID, damit sie sich nicht überschreiben
+            Intent intent = new Intent(this.context, MainActivity.class);
+
+            String title = "Warnung: " + eventName;
+            String message = sensorType + " hat auf Achse " + axis + " ausgelöst. Wert: " + value;
+
+            this.showNotification(this.context, title, message, intent, reqCode);
+        } else {
+            Log.d(
+                    "SensorEreignis",
+                    "Ereignis ausgelöst, aber Push-Benachrichtigungen sind deaktiviert.");
+        }
     }
 
     // --- Simple getters for further usage -----------------------------------
@@ -91,8 +110,8 @@ public class SensorEreignis {
         return value;
     }
 
-    public String getId() {
-        return id;
+    public String getEventName() {
+        return eventName;
     }
 
     /**
@@ -107,6 +126,7 @@ public class SensorEreignis {
         ereignisData.value = this.value;
         ereignisData.timestamp = this.timestamp;
         ereignisData.axis = this.axis;
+        ereignisData.eventName = this.eventName;
 
         Log.d("CREATE_EREIGNIS_DATA", "creating EreignisData for: " + this.sensorType);
 

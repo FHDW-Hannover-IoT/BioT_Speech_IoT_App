@@ -24,8 +24,8 @@ android {
         buildConfigField "int",    "LLM_PORT",                 "8001"
         buildConfigField "int",    "LLM_CONNECT_TIMEOUT_MS",   "5000"
         buildConfigField "int",    "LLM_READ_TIMEOUT_MS",      "30000"
-        buildConfigField "int",    "SIMULATOR_FALLBACK_DELAY_MS", "5000"
-        buildConfigField "int",    "SIMULATOR_INTERVAL_MS",    "500"
+        buildConfigField "long",    "SIMULATOR_FALLBACK_DELAY_MS", "5000L"
+        buildConfigField "long",    "SIMULATOR_INTERVAL_MS",    "500L"
     }
 
     buildFeatures {

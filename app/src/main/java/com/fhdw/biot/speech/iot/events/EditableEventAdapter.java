@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Spinner;
@@ -55,22 +56,15 @@ public class EditableEventAdapter
         EditableSensorEvent currentEvent = eventList.get(position);
 
         // Populate sensor type spinner
-        ArrayAdapter<String> spinnerAdapter =
-                new ArrayAdapter<>(
-                        holder.itemView.getContext(),
-                        android.R.layout.simple_spinner_item,
-                        SENSOR_TYPES);
-        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        holder.spinnerSensorType.setAdapter(spinnerAdapter);
-
-        // Set current selection without triggering listener
         holder.spinnerSensorType.setOnItemSelectedListener(null);
         for (int i = 0; i < SENSOR_TYPES.length; i++) {
-            if (SENSOR_TYPES[i].equals(currentEvent.sensorType)) {
+            if (SENSOR_TYPES[i].equalsIgnoreCase(currentEvent.sensorType)) {
                 holder.spinnerSensorType.setSelection(i);
                 break;
             }
         }
+
+        // Set current selection without triggering listener
         holder.spinnerSensorType.setOnItemSelectedListener(
                 new AdapterView.OnItemSelectedListener() {
                     @Override
@@ -82,8 +76,40 @@ public class EditableEventAdapter
                     public void onNothingSelected(AdapterView<?> parent) {}
                 });
 
-        // Pre-fill text fields and wire TextWatchers so user input flows back to the model.
-        // Remove the old watcher before setText to avoid spurious callbacks during rebind.
+        holder.spinnerDirection.setOnItemSelectedListener(null);
+        ArrayAdapter<String> dirAdapter =
+                (ArrayAdapter<String>) holder.spinnerDirection.getAdapter();
+        holder.spinnerDirection.setOnItemSelectedListener(
+                new AdapterView.OnItemSelectedListener() {
+                    @Override
+                    public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
+                        currentEvent.thresholdDirection = parent.getItemAtPosition(pos).toString();
+                    }
+
+                    @Override
+                    public void onNothingSelected(AdapterView<?> parent) {}
+                });
+
+        holder.checkX.setOnCheckedChangeListener(null);
+        holder.checkX.setChecked(currentEvent.isAxisX());
+        holder.checkX.setOnCheckedChangeListener(
+                (btn, isChecked) -> currentEvent.setAxisX(isChecked));
+
+        holder.checkY.setOnCheckedChangeListener(null);
+        holder.checkY.setChecked(currentEvent.isAxisY());
+        holder.checkY.setOnCheckedChangeListener(
+                (btn, isChecked) -> currentEvent.setAxisY(isChecked));
+
+        holder.checkZ.setOnCheckedChangeListener(null);
+        holder.checkZ.setChecked(currentEvent.isAxisZ());
+        holder.checkZ.setOnCheckedChangeListener(
+                (btn, isChecked) -> currentEvent.setAxisZ(isChecked));
+
+        holder.checkSum.setOnCheckedChangeListener(null);
+        holder.checkSum.setChecked(currentEvent.isAxisSum());
+        holder.checkSum.setOnCheckedChangeListener(
+                (btn, isChecked) -> currentEvent.setAxisSum(isChecked));
+
         holder.eventType.removeTextChangedListener(holder.eventTypeWatcher);
         holder.eventType.setText(currentEvent.eventType);
         holder.eventTypeWatcher = simpleWatcher(text -> currentEvent.eventType = text);
@@ -105,11 +131,10 @@ public class EditableEventAdapter
                         });
         holder.treshholdValue.addTextChangedListener(holder.thresholdWatcher);
 
-        // Delete button
         holder.btnDelete.setOnClickListener(
                 v -> {
-                    int pos = holder.getAdapterPosition();
-                    if (pos != RecyclerView.NO_ID) deleteEvent(pos);
+                    int pos = holder.getBindingAdapterPosition();
+                    if (pos != RecyclerView.NO_POSITION) deleteEvent(pos);
                 });
     }
 
@@ -151,10 +176,9 @@ public class EditableEventAdapter
     public void deleteEvent(int position) {
         if (position < 0 || position >= eventList.size()) return;
 
-        // TODO: Remove from DB if persistent
-
         eventList.remove(position);
         notifyItemRemoved(position);
+        notifyItemRangeChanged(position, eventList.size());
     }
 
     /** ViewHolder for editable event configuration rows. */
@@ -165,6 +189,9 @@ public class EditableEventAdapter
         public EditText eventType;
         public EditText treshholdValue;
 
+        public CheckBox checkX, checkY, checkZ, checkSum;
+        public Spinner spinnerDirection;
+
         TextWatcher eventTypeWatcher;
         TextWatcher thresholdWatcher;
 
@@ -174,6 +201,25 @@ public class EditableEventAdapter
             spinnerSensorType = itemView.findViewById(R.id.spinner_sensor_type);
             eventType = itemView.findViewById(R.id.spinner_event_type);
             treshholdValue = itemView.findViewById(R.id.et_threshold_value);
+
+            checkX = itemView.findViewById(R.id.MagxCheck);
+            checkY = itemView.findViewById(R.id.MagyCheck);
+            checkZ = itemView.findViewById(R.id.MagzCheck);
+            checkSum = itemView.findViewById(R.id.MagSumCheck);
+            spinnerDirection = itemView.findViewById(R.id.spinner_direction);
+
+            ArrayAdapter<String> sensorAdapter =
+                    new ArrayAdapter<>(
+                            itemView.getContext(), R.layout.custom_spinner_item, SENSOR_TYPES);
+            sensorAdapter.setDropDownViewResource(R.layout.custom_spinner_item);
+            spinnerSensorType.setAdapter(sensorAdapter);
+
+            String[] directions = {"<=", ">="};
+            ArrayAdapter<String> directionAdapter =
+                    new ArrayAdapter<>(
+                            itemView.getContext(), R.layout.custom_spinner_item, directions);
+            directionAdapter.setDropDownViewResource(R.layout.custom_spinner_item);
+            spinnerDirection.setAdapter(directionAdapter);
         }
     }
 }
