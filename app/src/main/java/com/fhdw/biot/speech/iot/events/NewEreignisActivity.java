@@ -124,7 +124,7 @@ public class NewEreignisActivity extends BiotBaseActivity {
                                     e.eventType = dbRule.ereignisName;
                                     e.sensorType =
                                             dbRule.sensorType != null ? dbRule.sensorType : "ACCEL";
-                                    e.thresholdValue = (float) dbRule.ereignisThreshold;
+                                    e.thresholdValue = dbRule.ereignisThreshold;
                                     e.thresholdDirection =
                                             dbRule.thresholdDirection != null
                                                     ? dbRule.thresholdDirection
@@ -162,7 +162,7 @@ public class NewEreignisActivity extends BiotBaseActivity {
 
                                 dbEvent.ereignisName = editableEvent.eventType;
                                 dbEvent.sensorType = editableEvent.sensorType;
-                                dbEvent.ereignisThreshold = (int) editableEvent.thresholdValue;
+                                dbEvent.ereignisThreshold = editableEvent.thresholdValue;
                                 dbEvent.thresholdDirection = editableEvent.thresholdDirection;
 
                                 dbEvent.axisX = editableEvent.axisX;

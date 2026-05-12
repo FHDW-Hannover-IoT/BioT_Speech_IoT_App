@@ -77,8 +77,15 @@ public class EditableEventAdapter
                 });
 
         holder.spinnerDirection.setOnItemSelectedListener(null);
-        ArrayAdapter<String> dirAdapter =
-                (ArrayAdapter<String>) holder.spinnerDirection.getAdapter();
+
+        if (currentEvent.thresholdDirection != null) {
+            if (currentEvent.thresholdDirection.equals(">=")) {
+                holder.spinnerDirection.setSelection(1); // Index 1 ist ">="
+            } else {
+                holder.spinnerDirection.setSelection(0); // Index 0 ist "<="
+            }
+        }
+
         holder.spinnerDirection.setOnItemSelectedListener(
                 new AdapterView.OnItemSelectedListener() {
                     @Override
@@ -115,8 +122,8 @@ public class EditableEventAdapter
         holder.eventTypeWatcher = simpleWatcher(text -> currentEvent.eventType = text);
         holder.eventType.addTextChangedListener(holder.eventTypeWatcher);
 
-        holder.treshholdValue.removeTextChangedListener(holder.thresholdWatcher);
-        holder.treshholdValue.setText(
+        holder.threshholdValue.removeTextChangedListener(holder.thresholdWatcher);
+        holder.threshholdValue.setText(
                 currentEvent.thresholdValue == 0
                         ? ""
                         : String.valueOf(currentEvent.thresholdValue));
@@ -129,7 +136,7 @@ public class EditableEventAdapter
                                 currentEvent.thresholdValue = 0;
                             }
                         });
-        holder.treshholdValue.addTextChangedListener(holder.thresholdWatcher);
+        holder.threshholdValue.addTextChangedListener(holder.thresholdWatcher);
 
         holder.btnDelete.setOnClickListener(
                 v -> {
@@ -187,7 +194,7 @@ public class EditableEventAdapter
         public ImageButton btnDelete;
         public Spinner spinnerSensorType;
         public EditText eventType;
-        public EditText treshholdValue;
+        public EditText threshholdValue;
 
         public CheckBox checkX, checkY, checkZ, checkSum;
         public Spinner spinnerDirection;
@@ -200,7 +207,7 @@ public class EditableEventAdapter
             btnDelete = itemView.findViewById(R.id.btn_delete_event);
             spinnerSensorType = itemView.findViewById(R.id.spinner_sensor_type);
             eventType = itemView.findViewById(R.id.spinner_event_type);
-            treshholdValue = itemView.findViewById(R.id.et_threshold_value);
+            threshholdValue = itemView.findViewById(R.id.et_threshold_value);
 
             checkX = itemView.findViewById(R.id.MagxCheck);
             checkY = itemView.findViewById(R.id.MagyCheck);
