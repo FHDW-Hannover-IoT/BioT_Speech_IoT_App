@@ -15,7 +15,7 @@ public class EreignisType {
     public boolean axisY;
     public boolean axisZ;
     public boolean axisSum;
-    public int ereignisThreshold;
+    public float ereignisThreshold;
 
     @ColumnInfo(name = "tresholdDirection")
     public String thresholdDirection;
