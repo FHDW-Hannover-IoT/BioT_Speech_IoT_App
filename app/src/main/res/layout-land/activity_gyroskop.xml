@@ -18,7 +18,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/baseline_home_24"
-            android:contentDescription="Zur Startseite"
+            android:contentDescription="@string/cd_home"
             android:background="@color/header"
             android:layout_marginTop="16dp"
             android:layout_marginStart="16dp"
@@ -34,7 +34,7 @@
             android:gravity="center_vertical|center_horizontal"
             android:layout_weight="28"
             android:padding="17dp"
-            android:text="Gyroskop"
+            android:text="@string/sensor_gyro_title"
             android:textColor="@color/text"
             android:textSize="28sp"
             android:textStyle="bold" />
@@ -72,7 +72,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Von: "
+                    android:text="@string/label_from"
                     android:textColor="@color/text"/>
 
                 <Button
@@ -91,7 +91,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Bis: "
+                    android:text="@string/label_to"
                     android:textColor="@color/text"
                     android:layout_marginStart="10dp"/>
 
@@ -121,7 +121,7 @@
                 <Button
                     android:layout_width="50dp"
                     android:layout_height="30dp"
-                    android:text="10 Min"
+                    android:text="@string/btn_ten_min"
                     android:textSize="10sp"
                     android:textColor="@color/background"
                     android:backgroundTint="@color/header"
@@ -167,7 +167,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Acc"
+                    android:text="@string/btn_nav_acc"
                     android:textColor="@color/text"
                     android:layout_margin="10dp"
                     android:gravity="center"
@@ -200,7 +200,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Mag"
+                    android:text="@string/btn_nav_mag"
                     android:textColor="@color/text"
                     android:layout_margin="10dp"
                     android:gravity="center"

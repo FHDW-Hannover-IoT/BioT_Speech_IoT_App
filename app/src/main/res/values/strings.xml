@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">BiotSpeechIoT</string>
 
@@ -13,38 +14,79 @@
     <string name="magnet_z">Z: %1$.2f</string>
 
     <!-- Main screen -->
-    <string name="main_header">Sensordaten</string>
-    <string name="sensor_accel_title">Beschleunigungssensor</string>
-    <string name="sensor_gyro_title">Gyroskop</string>
-    <string name="sensor_magnet_title">Magnetfeldsensor</string>
-    <string name="btn_graph">Zur Graphenansicht</string>
+    <string name="main_header">Sensor Data</string>
+    <string name="sensor_accel_title">Acceleration Sensor</string>
+    <string name="sensor_gyro_title">Gyroscope</string>
+    <string name="sensor_magnet_title">Magnetic Field Sensor</string>
+    <string name="btn_graph">Graph View</string>
     <string name="btn_accel">Accel</string>
-    <string name="btn_gyro">Gyroskop</string>
-    <string name="btn_magnet">Magnetfeld</string>
-    <string name="modus_default">Modus: Stream</string>
-    <string name="betriebsmodus_default">Betriebsmodus: Supervision</string>
-    <string name="label_modus_format">Modus: %s</string>
-    <string name="label_betriebsmodus_format">Betriebsmodus: %s</string>
+    <string name="btn_gyro">Gyroscope</string>
+    <string name="btn_magnet">Magnet</string>
+    <string name="modus_default">Mode: Stream</string>
+    <string name="betriebsmodus_default">Operating Mode: Supervision</string>
+    <string name="label_modus_format">Mode: %s</string>
+    <string name="label_betriebsmodus_format">Operating Mode: %s</string>
 
     <!-- Toast messages -->
-    <string name="toast_mqtt_connected">MQTT verbunden</string>
-    <string name="toast_mqtt_error">MQTT Fehler: %s</string>
-    <string name="toast_no_hardware">Kein Hardware gefunden – Simulator gestartet</string>
-    <string name="toast_mqtt_not_connected">MQTT nicht verbunden</string>
-    <string name="toast_mic_denied">Mikrofon-Zugriff verweigert. Sprachbefehle nicht verfügbar.</string>
+    <string name="toast_mqtt_connected">MQTT connected</string>
+    <string name="toast_mqtt_error">MQTT Error: %s</string>
+    <string name="toast_no_hardware">No hardware found &#8211; Simulator started</string>
+    <string name="toast_mqtt_not_connected">MQTT not connected</string>
+    <string name="toast_mic_denied">Microphone access denied. Voice commands unavailable.</string>
 
     <!-- Settings screen -->
-    <string name="settings_title">Einstellungen</string>
-    <string name="settings_language_title">Sprache</string>
-    <string name="settings_lang_de">Deutsch</string>
-    <string name="settings_lang_en">English</string>
-    <string name="settings_lang_zh">中文 (普通话)</string>
-    <string name="settings_dp_title">Datenreduktion (Douglas-Peucker)</string>
-    <string name="settings_dp_desc">Reduziert die Anzahl der Punkte, um die Performance zu steigern, ohne die Form des Graphen zu verändern.</string>
-    <string name="settings_dp_enable">Algorithmus aktivieren</string>
-    <string name="settings_dp_hint">Hinweis: Ein höherer Wert glättet den Graphen stärker.</string>
-    <string name="settings_dp_epsilon_label">Epsilon (Schwellenwert): %s</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_dp_title">Data Reduction (Douglas-Peucker)</string>
+    <string name="settings_dp_desc">Reduces the number of data points to improve performance without changing the shape of the graph.</string>
+    <string name="settings_dp_enable">Enable algorithm</string>
+    <string name="settings_dp_hint">Note: A higher value smooths the graph more.</string>
+    <string name="settings_dp_epsilon_label">Epsilon (threshold): %s</string>
+    <string name="settings_network_title">Network &amp; Server</string>
+    <string name="settings_server_data_enable">Allow server data retrieval</string>
+    <string name="settings_server_data_desc">Allows the app to communicate with the server.</string>
+    <string name="settings_broker_url_label">Broker URL / IP Address</string>
+    <string name="settings_broker_url_desc">The address of your local or cloud-based MQTT broker (including port).</string>
+    <string name="settings_notifications_title">Notifications</string>
+    <string name="settings_push_enable">Enable push notifications</string>
+    <string name="settings_push_desc">Sends a system notification when one of your configured rules is triggered.</string>
 
-    <!-- Events -->
-    <string name="ereignisse_title">Ereignisse</string>
+    <!-- Graph / filter bar -->
+    <string name="label_from">From: </string>
+    <string name="label_to">To: </string>
+    <string name="btn_ten_min">10 Min</string>
+    <string name="btn_value_view">Value View</string>
+    <string name="axis_x">x-axis</string>
+    <string name="axis_y">y-axis</string>
+    <string name="axis_z">z-axis</string>
+    <string name="axis_sum">Sum</string>
+
+    <!-- Sensor activity footer nav labels -->
+    <string name="btn_nav_acc">Acc</string>
+    <string name="btn_nav_gyro">Gyro</string>
+    <string name="btn_nav_mag">Mag</string>
+
+    <!-- Events screen -->
+    <string name="ereignisse_title">Events</string>
+    <string name="btn_table_view">Table View</string>
+    <string name="btn_graph_view_tab">Graph View</string>
+    <string name="event_overview_title">Event Overview</string>
+    <string name="label_sensor_colon">Sensor:</string>
+    <string name="label_axes_colon">Axes:</string>
+    <string name="label_event_name">Event Name:</string>
+    <string name="label_threshold">Threshold:</string>
+    <string name="col_type">TYPE</string>
+    <string name="col_event_type">EVENT TYPE</string>
+    <string name="col_value">VALUE</string>
+    <string name="col_time">TIME</string>
+    <string name="hint_enter_type">Enter type</string>
+    <string name="hint_enter_value">Enter value</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_home">Go to home</string>
+    <string name="cd_server_info">Server connection info</string>
+    <string name="cd_delete_event">Delete event</string>
+    <string name="cd_voice_command">Voice command</string>
+
+    <!-- MQTT error banner -->
+    <string name="mqtt_connection_error">Could not connect to MQTT broker!</string>
 </resources>

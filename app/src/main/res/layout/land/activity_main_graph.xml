@@ -21,7 +21,7 @@
             android:background="@color/header"
             android:gravity="center_vertical|center_horizontal"
             android:paddingStart="40dp"
-            android:text="Sensordaten"
+            android:text="@string/main_header"
             android:textColor="@color/text"
             android:textSize="28sp"
             android:textStyle="bold" />
@@ -55,7 +55,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Von: "
+                android:text="@string/label_from"
                 android:textColor="@color/text"/>
 
             <Button
@@ -74,7 +74,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Bis: "
+                android:text="@string/label_to"
                 android:textColor="@color/text"
                 android:layout_marginStart="10dp"/>
 
@@ -117,28 +117,28 @@
             <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="x-Achse"
+                android:text="@string/axis_x"
                 android:textColor="@color/text"
                 android:id="@+id/AccelxCheck"/>
 
             <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="y-Achse"
+                android:text="@string/axis_y"
                 android:textColor="@color/text"
                 android:id="@+id/AccelyCheck"/>
 
             <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="z-Achse"
+                android:text="@string/axis_z"
                 android:textColor="@color/text"
                 android:id="@+id/AccelzCheck"/>
 
             <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Summe"
+                android:text="@string/axis_sum"
                 android:textColor="@color/text"
                 android:id="@+id/AccelSumCheck"/>
 
@@ -152,7 +152,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Von: "
+                android:text="@string/label_from"
                 android:textColor="@color/text"/>
 
             <Button
@@ -171,7 +171,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Bis: "
+                android:text="@string/label_to"
                 android:textColor="@color/text"
                 android:layout_marginStart="10dp"/>
 
@@ -214,28 +214,28 @@
             <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="x-Achse"
+                android:text="@string/axis_x"
                 android:textColor="@color/text"
                 android:id="@+id/GyroxCheck"/>
 
             <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="y-Achse"
+                android:text="@string/axis_y"
                 android:textColor="@color/text"
                 android:id="@+id/GyroyCheck"/>
 
             <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="z-Achse"
+                android:text="@string/axis_z"
                 android:textColor="@color/text"
                 android:id="@+id/GyrozCheck"/>
 
             <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Summe"
+                android:text="@string/axis_sum"
                 android:textColor="@color/text"
                 android:id="@+id/GyroSumCheck"/>
 
@@ -249,7 +249,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Von: "
+                android:text="@string/label_from"
                 android:textColor="@color/text"/>
 
             <Button
@@ -268,7 +268,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Bis: "
+                android:text="@string/label_to"
                 android:textColor="@color/text"
                 android:layout_marginStart="10dp"/>
 
@@ -311,28 +311,28 @@
             <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="x-Achse"
+                android:text="@string/axis_x"
                 android:textColor="@color/text"
                 android:id="@+id/MagxCheck"/>
 
             <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="y-Achse"
+                android:text="@string/axis_y"
                 android:textColor="@color/text"
                 android:id="@+id/MagyCheck"/>
 
             <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="z-Achse"
+                android:text="@string/axis_z"
                 android:textColor="@color/text"
                 android:id="@+id/MagzCheck"/>
 
             <CheckBox
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Summe"
+                android:text="@string/axis_sum"
                 android:textColor="@color/text"
                 android:id="@+id/MagSumCheck"/>
 
@@ -342,7 +342,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="Zur Werteansicht"
+            android:text="@string/btn_value_view"
             android:layout_marginTop="10dp"
             android:backgroundTint="@color/button"
             android:textColor="@color/background"
@@ -363,7 +363,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Beschleunigung"
+            android:text="@string/btn_accel"
             android:textColor="@color/background"
             android:layout_margin="4dp"
             android:backgroundTint="@color/button"
@@ -374,7 +374,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Gyroskop"
+            android:text="@string/sensor_gyro_title"
             android:textColor="@color/background"
             android:layout_margin="4dp"
             android:backgroundTint="@color/button"
@@ -385,7 +385,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Magnetfeld"
+            android:text="@string/sensor_magnet_title"
             android:textColor="@color/background"
             android:layout_margin="4dp"
             android:backgroundTint="@color/button"

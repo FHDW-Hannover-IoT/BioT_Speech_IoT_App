@@ -95,7 +95,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Es konnte konnte keine Verbindung zu MQTT aufgebaut werden!"
+                    android:text="@string/mqtt_connection_error"
                     android:textColor="@color/text"
                     android:textSize="20sp"
                     android:gravity="center"/>
@@ -109,8 +109,17 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:orientation="vertical">
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -266,6 +275,8 @@
             android:textColor="@color/background"
             android:id="@+id/graphenansicht"/>
 
+            </LinearLayout>
+        </ScrollView>
     </LinearLayout>
 
     <!-- Divider -->
@@ -471,7 +482,7 @@
             android:layout_margin="4dp"
             android:src="@android:drawable/ic_btn_speak_now"
             android:background="@color/button"
-            android:contentDescription="Sprachbefehl"
+            android:contentDescription="@string/cd_voice_command"
             android:padding="12dp" />
 
     </LinearLayout>
