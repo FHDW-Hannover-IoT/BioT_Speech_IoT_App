@@ -33,7 +33,6 @@ import com.fhdw.biot.speech.iot.sensor.AccelActivity;
 import com.fhdw.biot.speech.iot.sensor.GyroActivity;
 import com.fhdw.biot.speech.iot.sensor.MagnetActivity;
 import com.fhdw.biot.speech.iot.settings.SettingsActivity;
-import com.fhdw.biot.speech.iot.simulation.SensorDataSimulator;
 import com.fhdw.biot.speech.iot.voice.ILlmQueryHandler;
 import com.fhdw.biot.speech.iot.voice.TtsManager;
 import com.fhdw.biot.speech.iot.voice.VoiceCommand;
@@ -68,10 +67,6 @@ public class MainActivity extends BiotBaseActivity {
     private TtsManager ttsManager;
     private ILlmQueryHandler llmHandler;
     private VoiceInputManager voiceInputManager;
-
-    // ── Simulation ───────────────────────────────────────────────────────────
-    private SensorDataSimulator simulator;
-    private boolean liveDataReceived = false;
 
     // ── UI ───────────────────────────────────────────────────────────────────
     private TextView accelXValue, accelYValue, accelZValue;
@@ -138,7 +133,6 @@ public class MainActivity extends BiotBaseActivity {
         observeMqttStatus();
 
         // ── MQTT ─────────────────────────────────────────────────────────────
-        wireMqttCallbacks();
         connectMqtt();
 
         // ── Voice ─────────────────────────────────────────────────────────────
@@ -162,7 +156,6 @@ public class MainActivity extends BiotBaseActivity {
     @Override
     protected void onDestroy() {
         if (voiceInputManager != null) voiceInputManager.destroy();
-        if (simulator != null) simulator.stop();
         container.releaseActivityScope();
         super.onDestroy();
     }
@@ -431,35 +424,6 @@ public class MainActivity extends BiotBaseActivity {
     // MQTT
     // ─────────────────────────────────────────────────────────────────────────
 
-    private void wireMqttCallbacks() {
-        mqttHandler.setMessageListener(
-                (topic, message) -> {
-                    Log.i(TAG, "MQTT → " + topic + " = " + message);
-                    runOnUiThread(
-                            () -> {
-                                try {
-                                    // Only real hardware publishes to Sensor/*; simulator uses
-                                    // Sensor/Sim/*.
-                                    if (!liveDataReceived
-                                            && topic.startsWith("Sensor/")
-                                            && !topic.startsWith("Sensor/Sim/")) {
-                                        liveDataReceived = true;
-                                        if (simulator != null) {
-                                            simulator.stop();
-                                            simulator = null;
-                                            Log.i(
-                                                    TAG,
-                                                    "Live hardware data received — simulator stopped");
-                                        }
-                                    }
-                                    dispatchMqttMessage(topic, message);
-                                } catch (Exception ex) {
-                                    Log.e(TAG, "MQTT handler error: " + ex.getMessage(), ex);
-                                }
-                            });
-                });
-    }
-
     private void dispatchMqttMessage(String topic, String message) {
         switch (topic) {
             case "Sensor/Bewegung":
@@ -582,7 +546,6 @@ public class MainActivity extends BiotBaseActivity {
         mqttHandler.subscribe("Sensor/Sim/Magnet");
         mqttHandler.subscribe("Control/Mode");
         mqttHandler.subscribe("Control/OperatingMode");
-        scheduleSimulatorFallback();
 
         // Pull last 10 min from the LLM server DB into Room.
         long now = System.currentTimeMillis();
@@ -590,32 +553,6 @@ public class MainActivity extends BiotBaseActivity {
         container.mcpDataSync().fetchAccel(tenMinAgo, now);
         container.mcpDataSync().fetchGyro(tenMinAgo, now);
         container.mcpDataSync().fetchMagnet(tenMinAgo, now);
-    }
-
-    private void scheduleSimulatorFallback() {
-        new android.os.Handler(android.os.Looper.getMainLooper())
-                .postDelayed(
-                        () -> {
-                            if (!liveDataReceived) {
-                                Log.i(
-                                        TAG,
-                                        "No live MQTT data after fallback delay — starting simulator");
-                                Toast.makeText(
-                                                this,
-                                                getString(R.string.toast_no_hardware),
-                                                Toast.LENGTH_LONG)
-                                        .show();
-                                startSimulator();
-                            }
-                        },
-                        BuildConfig.SIMULATOR_FALLBACK_DELAY_MS);
-    }
-
-    private void startSimulator() {
-        if (simulator != null) return;
-        simulator = new SensorDataSimulator(mqttHandler, BuildConfig.SIMULATOR_INTERVAL_MS);
-        simulator.start();
-        Log.i(TAG, "SensorDataSimulator started");
     }
 
     private void mqttPublishOrToast(String topic, String payload) {
