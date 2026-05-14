@@ -19,7 +19,7 @@ import paho.mqtt.client as mqtt
 # ─────────────────────────────────────────────────────────────────────────────
 BROKER_HOST      = "192.168.178.27"
 BROKER_PORT      = 1883
-PUBLISH_INTERVAL = 0.5   # seconds between publish cycles
+PUBLISH_INTERVAL = 0.01   # seconds between publish cycles
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SENSOR CONFIGURATION
