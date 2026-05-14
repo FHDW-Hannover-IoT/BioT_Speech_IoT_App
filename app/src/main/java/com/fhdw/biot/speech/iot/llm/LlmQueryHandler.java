@@ -20,7 +20,7 @@ import org.json.JSONObject;
  * results as LiveData.
  *
  * <p>No Activity reference is held here. All side-effects (TTS, navigation, MQTT publish, filter
- * broadcast) are dispatched by the observing Activity when it reacts to {@link #LIVE_ACTION}.
+ * broadcast) are dispatched by the observing Activity when it reacts to {@link LlmAction}.
  *
  * <p>Observer pattern: 1. {@link #handleQuery(String)} submits an HTTP task and returns
  * immediately. 2. Background thread calls the LLM endpoint, parses {@link LlmAction}. 3. {@code
@@ -35,7 +35,7 @@ public class LlmQueryHandler implements ILlmQueryHandler {
     private static final String TAG = "LlmQueryHandler";
 
     private static final String FALLBACK_TTS =
-            "Sorry, I didn't catch that. Could you repeat your question?";
+            "Sorry, I didn't catch that. Please repeat your question or say help for all available commands?";
 
     private final MutableLiveData<LlmAction> liveAction;
     private final MutableLiveData<Boolean> llmLoading;
