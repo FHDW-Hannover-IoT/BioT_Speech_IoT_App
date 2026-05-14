@@ -35,7 +35,7 @@ public class LlmQueryHandler implements ILlmQueryHandler {
     private static final String TAG = "LlmQueryHandler";
 
     private static final String FALLBACK_TTS =
-            "Sorry, I didn't catch that. Could you repeat your question?";
+            "Sorry, I didn't catch that. Please repeat your question or say help for all available commands?";
 
     private final MutableLiveData<LlmAction> liveAction;
     private final MutableLiveData<Boolean> llmLoading;
