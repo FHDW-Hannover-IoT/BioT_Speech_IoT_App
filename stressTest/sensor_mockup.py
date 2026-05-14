@@ -1,6 +1,7 @@
 """
 sensor_mockup.py — BioT Sensor Mockup (configurable)
 Publishes fake sensor readings to the Mosquitto broker.
+Writes a log file in the same format as biot.log for comparison.
 
 Supported modes per axis:
   "sine"       — pure sine wave, amplitude & frequency configurable
@@ -8,11 +9,33 @@ Supported modes per axis:
   "sine+gauss" — sine wave with gaussian noise on top
 """
 
+import logging
 import math
 import random
 import threading
 import time
 import paho.mqtt.client as mqtt
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LOGGING SETUP  — writes mockup.log in the same pipe-separated format as biot.log
+# ─────────────────────────────────────────────────────────────────────────────
+LOG_FILE = "mockup.log"
+
+class PipeSeparatedFormatter(logging.Formatter):
+    """Formats log records as:  YYYY-MM-DD HH:MM:SS | LEVEL | logger | message"""
+    def format(self, record):
+        ts   = self.formatTime(record, "%Y-%m-%d %H:%M:%S")
+        lvl  = record.levelname.ljust(8)
+        name = record.name
+        return f"{ts} | {lvl} | {name} | {record.getMessage()}"
+
+_handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
+_handler.setFormatter(PipeSeparatedFormatter())
+
+logging.basicConfig(level=logging.DEBUG, handlers=[_handler,
+                                                    logging.StreamHandler()])
+
+pub_log = logging.getLogger("mockup.publisher")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # BROKER
@@ -48,7 +71,7 @@ PUBLISH_INTERVAL = 0.01   # seconds between publish cycles
 #
 #   For all modes:
 #     "min" / "max" : optional hard clamp applied after generation
-#     "round"       : decimal places to round to (default 4)
+#     "round"       : decimal places to round to (default 4) 
 # ─────────────────────────────────────────────────────────────────────────────
 SENSORS = [
     {
@@ -81,7 +104,7 @@ SENSORS = [
             {"name": "mz", "mode": "gauss", "center":  40.0, "std": 1.0},
         ],
     },
-    # ── Example: add more sensors below ──────────────────────────────────────
+        # ── Example: add more sensors below ──────────────────────────────────────
     # {
     #     "topic": "Sensor/Temperature",
     #     "qos": 0,
@@ -90,7 +113,7 @@ SENSORS = [
     #          "amplitude": 2.0, "freq": 0.05, "std": 0.2,
     #          "min": 15.0, "max": 35.0},
     #     ],
-    # },
+    # }, 
 ]
 
 
@@ -107,19 +130,16 @@ def generate_value(axis: dict, t: float, multiplier: float = 1.0) -> float:
 
     if mode == "sine":
         value = center + amplitude * math.sin(2 * math.pi * freq * t)
-
     elif mode == "gauss":
         value = random.gauss(center, std)
-
     elif mode == "sine+gauss":
         sine_part  = amplitude * math.sin(2 * math.pi * freq * t)
         noise_part = random.gauss(0.0, std)
         value      = center + sine_part + noise_part
-
     else:
         raise ValueError(f"Unknown mode '{mode}' for axis '{axis.get('name')}'")
 
-    # Optional hard clamp
+    # Optional hard clamp 
     if "min" in axis:
         value = max(value, axis["min"])
     if "max" in axis:
@@ -130,7 +150,7 @@ def generate_value(axis: dict, t: float, multiplier: float = 1.0) -> float:
 
 # ─────────────────────────────────────────────────────────────────────────────
 # EVENT SYSTEM
-# active_events: sensor_index → unix timestamp when the burst ends
+# active_events: sensor_index → unix timestamp when the burst ends 
 # ─────────────────────────────────────────────────────────────────────────────
 active_events: dict[int, float] = {}
 
@@ -166,6 +186,7 @@ client.loop_start()
 
 print(f"Sensor mockup running → {BROKER_HOST}:{BROKER_PORT}")
 print(f"Publishing {len(SENSORS)} sensor(s) every {PUBLISH_INTERVAL}s — Ctrl+C to stop\n")
+print(f"Writing log to: {LOG_FILE}\n")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MAIN LOOP
@@ -187,7 +208,11 @@ try:
 
             values  = [generate_value(axis, t, multiplier) for axis in sensor["axes"]]
             payload = ",".join(str(v) for v in values)
+
             client.publish(sensor["topic"], payload, qos=sensor.get("qos", 1))
+
+            # ── Log in the same format that biot.log uses for received messages ──
+            pub_log.debug("MQTT publish: %s = '%s'", sensor["topic"], payload)
 
             names = [axis["name"] for axis in sensor["axes"]]
             pairs = "  ".join(f"{n}={v}" for n, v in zip(names, values))
