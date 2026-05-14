@@ -146,6 +146,20 @@ public class MainActivity extends BiotBaseActivity {
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        if (voiceInputManager != null && voiceInputManager.isListening()) {
+            voiceInputManager.stopListening();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // VoiceInputManager restarts on explicit user tap — no auto-restart needed here.
+    }
+
+    @Override
     protected void onDestroy() {
         if (voiceInputManager != null) voiceInputManager.destroy();
         if (simulator != null) simulator.stop();

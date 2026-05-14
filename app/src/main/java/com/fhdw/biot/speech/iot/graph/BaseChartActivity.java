@@ -78,6 +78,17 @@ public abstract class BaseChartActivity extends BiotBaseActivity {
     }
 
     /**
+     * Pin the visible X-axis range so the chart always shows the full selected time window,
+     * even when data only covers part of it. Values are millisecond offsets from the chart's
+     * startTime anchor (same coordinate space as the data entries).
+     */
+    protected void pinXAxisRange(LineChart chart, float minMs, float maxMs) {
+        XAxis xAxis = chart.getXAxis();
+        xAxis.setAxisMinimum(minMs);
+        xAxis.setAxisMaximum(maxMs);
+    }
+
+    /**
      * Insert a dataset into the chart.
      *
      * @param entries List of (x,y) pairs representing time vs sensor value.

@@ -15,9 +15,9 @@
 
     <!-- Main screen -->
     <string name="main_header">Sensor Data</string>
-    <string name="sensor_accel_title">Acceleration Sensor</string>
+    <string name="sensor_accel_title">Acceleration</string>
     <string name="sensor_gyro_title">Gyroscope</string>
-    <string name="sensor_magnet_title">Magnetic Field Sensor</string>
+    <string name="sensor_magnet_title">Magnetic Field</string>
     <string name="btn_graph">Graph View</string>
     <string name="btn_accel">Accel</string>
     <string name="btn_gyro">Gyroscope</string>

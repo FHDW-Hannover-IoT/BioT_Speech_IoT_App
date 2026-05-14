@@ -1,7 +1,6 @@
 package com.fhdw.biot.speech.iot.settings;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.EditText;
@@ -13,7 +12,6 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.config.BiotBaseActivity;
-import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
 public class SettingsActivity extends BiotBaseActivity {
@@ -48,10 +46,10 @@ public class SettingsActivity extends BiotBaseActivity {
                     return insets;
                 });
 
-        // Home button
+        // Home button — finish() returns to the existing back-stack entry (MainActivity or
+        // MainGraphActivity) without creating a new instance, preventing duplicate MQTT init.
         ImageButton buttonHome = findViewById(R.id.home_button);
-        buttonHome.setOnClickListener(
-                view -> startActivity(new Intent(SettingsActivity.this, MainActivity.class)));
+        buttonHome.setOnClickListener(view -> finish());
 
         ImageButton btnInfoServer = findViewById(R.id.btn_info_server_data);
         btnInfoServer.setOnClickListener(

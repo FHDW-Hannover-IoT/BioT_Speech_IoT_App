@@ -292,11 +292,13 @@ public class MainGraphActivity extends BaseChartActivity {
         currentAccelLiveData.observe(
                 this,
                 data -> {
-                    if (data != null && !data.isEmpty()) initializeAccelDataSets(data);
-                    else {
+                    if (data != null && !data.isEmpty()) {
+                        initializeAccelDataSets(data, fromTime, toTime);
+                    } else {
                         lineDataAccelx =
                                 lineDataAccely = lineDataAccelz = lineDataAccelTotal = null;
-                        setupChart(lineChartAccel, "Beschleunigung", 0);
+                        setupChart(lineChartAccel, "Beschleunigung", fromTime);
+                        pinXAxisRange(lineChartAccel, 0, toTime - fromTime);
                     }
                     updateAccelChart();
                 });
@@ -308,10 +310,12 @@ public class MainGraphActivity extends BaseChartActivity {
         currentGyroLiveData.observe(
                 this,
                 data -> {
-                    if (data != null && !data.isEmpty()) initializeGyroDataSets(data);
-                    else {
+                    if (data != null && !data.isEmpty()) {
+                        initializeGyroDataSets(data, fromTime, toTime);
+                    } else {
                         lineDataGyrox = lineDataGyroy = lineDataGyroz = lineDataGyroTotal = null;
-                        setupChart(lineChartGyro, "Gyroskop", 0);
+                        setupChart(lineChartGyro, "Gyroskop", fromTime);
+                        pinXAxisRange(lineChartGyro, 0, toTime - fromTime);
                     }
                     updateAccelChart();
                 });
@@ -323,10 +327,12 @@ public class MainGraphActivity extends BaseChartActivity {
         currentMagLiveData.observe(
                 this,
                 data -> {
-                    if (data != null && !data.isEmpty()) initializeMagDataSets(data);
-                    else {
+                    if (data != null && !data.isEmpty()) {
+                        initializeMagDataSets(data, fromTime, toTime);
+                    } else {
                         lineDataMagx = lineDataMagy = lineDataMagz = lineDataMagTotal = null;
-                        setupChart(lineChartMag, "Magnetfeld", 0);
+                        setupChart(lineChartMag, "Magnetfeld", fromTime);
+                        pinXAxisRange(lineChartMag, 0, toTime - fromTime);
                     }
                     updateAccelChart();
                 });
@@ -475,60 +481,11 @@ public class MainGraphActivity extends BaseChartActivity {
     }
 
     // =====================================================================
-    // LIVE DATA OBSERVERS — REAL-TIME DATABASE UPDATES
-    // =====================================================================
-
-    private void observeAccelData() {
-        sensorRepository
-                .getAllAccelData()
-                .observe(
-                        this,
-                        list -> {
-                            if (list != null && !list.isEmpty()) {
-                                long first = list.get(0).timestamp;
-                                setupChart(lineChartAccel, "Beschleunigung", first);
-                                initializeAccelDataSets(list);
-                                updateAccelChart();
-                            }
-                        });
-    }
-
-    private void observeGyroData() {
-        sensorRepository
-                .getAllGyroData()
-                .observe(
-                        this,
-                        list -> {
-                            if (list != null && !list.isEmpty()) {
-                                long first = list.get(0).timestamp;
-                                setupChart(lineChartGyro, "Gyroskop", first);
-                                initializeGyroDataSets(list);
-                                updateAccelChart();
-                            }
-                        });
-    }
-
-    private void observeMagnetData() {
-        sensorRepository
-                .getAllMagnetData()
-                .observe(
-                        this,
-                        list -> {
-                            if (list != null && !list.isEmpty()) {
-                                long first = list.get(0).timestamp;
-                                setupChart(lineChartMag, "Magnetfeld", first);
-                                initializeMagDataSets(list);
-                                updateAccelChart();
-                            }
-                        });
-    }
-
-    // =====================================================================
     // DATASET CONSTRUCTION FOR EACH SENSOR
     // Converts DB rows → LineDataSet objects for charts
     // =====================================================================
 
-    private void initializeAccelDataSets(List<AccelData> list) {
+    private void initializeAccelDataSets(List<AccelData> list, long fromTime, long toTime) {
         // Check if Douglas-Peucker is enabled in Settings
         SharedPreferences prefs = getSharedPreferences("GraphSettings", MODE_PRIVATE);
         boolean dpEnabled = prefs.getBoolean("dp_enabled", false);
@@ -569,9 +526,10 @@ public class MainGraphActivity extends BaseChartActivity {
         lineDataAccelTotal = GraphUtils.buildSegmented(totals, "Summe", Color.RED);
 
         applyAbsoluteXAxis(lineChartAccel, first);
+        pinXAxisRange(lineChartAccel, fromTime - first, toTime - first);
     }
 
-    private void initializeGyroDataSets(List<GyroData> list) {
+    private void initializeGyroDataSets(List<GyroData> list, long fromTime, long toTime) {
         // Check if Douglas-Peucker is enabled in Settings
         SharedPreferences prefs = getSharedPreferences("GraphSettings", MODE_PRIVATE);
         boolean dpEnabled = prefs.getBoolean("dp_enabled", false);
@@ -612,9 +570,10 @@ public class MainGraphActivity extends BaseChartActivity {
         lineDataGyroTotal = GraphUtils.buildSegmented(totals, "Summe", Color.RED);
 
         applyAbsoluteXAxis(lineChartGyro, first);
+        pinXAxisRange(lineChartGyro, fromTime - first, toTime - first);
     }
 
-    private void initializeMagDataSets(List<MagnetData> list) {
+    private void initializeMagDataSets(List<MagnetData> list, long fromTime, long toTime) {
         // Check if Douglas-Peucker is enabled in Settings
         SharedPreferences prefs = getSharedPreferences("GraphSettings", MODE_PRIVATE);
         boolean dpEnabled = prefs.getBoolean("dp_enabled", false);
@@ -655,6 +614,7 @@ public class MainGraphActivity extends BaseChartActivity {
         lineDataMagTotal = GraphUtils.buildSegmented(totals, "Summe", Color.RED);
 
         applyAbsoluteXAxis(lineChartMag, first);
+        pinXAxisRange(lineChartMag, fromTime - first, toTime - first);
     }
 
     // =====================================================================
