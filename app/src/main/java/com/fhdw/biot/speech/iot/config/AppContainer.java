@@ -57,6 +57,7 @@ public class AppContainer {
         dbContext = new DbContext(db);
         sensorRepository = new SensorRepository(dbContext);
         mcpDataSync = new McpDataSyncService(sensorRepository, AppConfig.mcpBaseUrl());
+        mcpDataSync.fetchLast24h();
         llmQueryHandler = new LlmQueryHandler(liveAction, llmLoading, AppConfig.llmChatEndpoint());
 
         Log.i(TAG, "Application scope initialised.");

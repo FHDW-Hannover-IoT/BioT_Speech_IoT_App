@@ -44,7 +44,8 @@ public class McpDataSyncService {
     private static final String PATH_GYRO = "/data/gyro";
     private static final String PATH_MAGNET = "/data/magnet";
 
-    private static final int TIMEOUT_MS = 10_000;
+    private static final int CONNECT_TIMEOUT_MS = 10_000;
+    private static final int READ_TIMEOUT_MS = 60_000;
 
     private final SensorRepository repository;
     private final String baseUrl;
@@ -137,6 +138,15 @@ public class McpDataSyncService {
                 });
     }
 
+    /** Fetch the last 24 hours of data for all three sensors in one call. */
+    public void fetchLast24h() {
+        long toMs = System.currentTimeMillis();
+        long fromMs = toMs - 24L * 60 * 60 * 1000;
+        fetchAccel(fromMs, toMs);
+        fetchGyro(fromMs, toMs);
+        fetchMagnet(fromMs, toMs);
+    }
+
     // ── HTTP helpers ──────────────────────────────────────────────────────────
 
     private List<AccelData> httpGetAccel(long fromMs, long toMs) throws Exception {
@@ -193,8 +203,8 @@ public class McpDataSyncService {
         try {
             conn.setRequestMethod("GET");
             conn.setRequestProperty("Accept", "application/json");
-            conn.setConnectTimeout(TIMEOUT_MS);
-            conn.setReadTimeout(TIMEOUT_MS);
+            conn.setConnectTimeout(CONNECT_TIMEOUT_MS);
+            conn.setReadTimeout(READ_TIMEOUT_MS);
 
             int status = conn.getResponseCode();
             if (status < 200 || status >= 300) {
