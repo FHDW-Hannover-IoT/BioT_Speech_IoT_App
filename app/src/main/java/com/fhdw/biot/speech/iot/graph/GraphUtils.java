@@ -73,6 +73,15 @@ public final class GraphUtils {
         ds.setDrawCircles(false);
         ds.setValueTextSize(10f);
         ds.setValueTextColor(Color.DKGRAY);
+        applyHighlightStyle(ds);
         return ds;
+    }
+
+    static void applyHighlightStyle(LineDataSet ds) {
+        ds.setDrawVerticalHighlightIndicator(true);
+        ds.setDrawHorizontalHighlightIndicator(false);
+        ds.enableDashedHighlightLine(12f, 8f, 0f);
+        ds.setHighlightLineWidth(1f);
+        ds.setHighLightColor(Color.argb(100, 255, 255, 255));
     }
 }

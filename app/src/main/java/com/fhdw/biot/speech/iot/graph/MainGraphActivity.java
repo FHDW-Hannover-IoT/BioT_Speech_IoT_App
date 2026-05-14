@@ -191,9 +191,15 @@ public class MainGraphActivity extends BaseChartActivity {
         setupChart(lineChartGyro, "Gyroskop", 0);
         setupChart(lineChartMag, "Magnetfeld", 0);
 
-        attachGestureTracking(lineChartAccel);
-        attachGestureTracking(lineChartGyro);
-        attachGestureTracking(lineChartMag);
+        // Attach marker views — persist across data reloads since setupChart never clears them
+        lineChartAccel.setMarkerView(new SensorMarkerView(this, "m/s²"));
+        lineChartGyro.setMarkerView(new SensorMarkerView(this, "°/s"));
+        lineChartMag.setMarkerView(new SensorMarkerView(this, "µT"));
+        lineChartAccel.setHighlightPerTapEnabled(true);
+        lineChartGyro.setHighlightPerTapEnabled(true);
+        lineChartMag.setHighlightPerTapEnabled(true);
+
+        attachGestureTracking(lineChartAccel, lineChartGyro, lineChartMag);
 
         // Reset buttons restore the zoom and clear date fields
         findViewById(R.id.resetAccel)
@@ -424,40 +430,57 @@ public class MainGraphActivity extends BaseChartActivity {
         slidingWindowHandler.post(slidingWindowRunnable);
     }
 
-    private void attachGestureTracking(LineChart chart) {
-        chart.setOnChartGestureListener(
-                new OnChartGestureListener() {
-                    @Override
-                    public void onChartGestureStart(
-                            MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {
-                        isUserInteracting = true;
-                    }
+    private void attachGestureTracking(LineChart... charts) {
+        for (LineChart chart : charts) {
+            chart.setOnChartGestureListener(
+                    new OnChartGestureListener() {
+                        @Override
+                        public void onChartGestureStart(
+                                MotionEvent me,
+                                ChartTouchListener.ChartGesture lastPerformedGesture) {
+                            isUserInteracting = true;
+                        }
 
-                    @Override
-                    public void onChartGestureEnd(
-                            MotionEvent me, ChartTouchListener.ChartGesture lastPerformedGesture) {
-                        isUserInteracting = false;
-                    }
+                        @Override
+                        public void onChartGestureEnd(
+                                MotionEvent me,
+                                ChartTouchListener.ChartGesture lastPerformedGesture) {
+                            isUserInteracting = false;
+                            // Exit drag-tracking mode and dismiss all markers
+                            for (LineChart c : charts) {
+                                c.setHighlightPerDragEnabled(false);
+                                c.highlightValue(null);
+                            }
+                        }
 
-                    @Override
-                    public void onChartLongPressed(MotionEvent me) {}
+                        @Override
+                        public void onChartLongPressed(MotionEvent me) {
+                            // Activate drag-tracking mode on all charts simultaneously
+                            for (LineChart c : charts) {
+                                c.setHighlightPerDragEnabled(true);
+                            }
+                        }
 
-                    @Override
-                    public void onChartDoubleTapped(MotionEvent me) {}
+                        @Override
+                        public void onChartDoubleTapped(MotionEvent me) {}
 
-                    @Override
-                    public void onChartSingleTapped(MotionEvent me) {}
+                        @Override
+                        public void onChartSingleTapped(MotionEvent me) {}
 
-                    @Override
-                    public void onChartFling(
-                            MotionEvent me1, MotionEvent me2, float velocityX, float velocityY) {}
+                        @Override
+                        public void onChartFling(
+                                MotionEvent me1,
+                                MotionEvent me2,
+                                float velocityX,
+                                float velocityY) {}
 
-                    @Override
-                    public void onChartScale(MotionEvent me, float scaleX, float scaleY) {}
+                        @Override
+                        public void onChartScale(MotionEvent me, float scaleX, float scaleY) {}
 
-                    @Override
-                    public void onChartTranslate(MotionEvent me, float dX, float dY) {}
-                });
+                        @Override
+                        public void onChartTranslate(MotionEvent me, float dX, float dY) {}
+                    });
+        }
     }
 
     private void stopSlidingWindow() {

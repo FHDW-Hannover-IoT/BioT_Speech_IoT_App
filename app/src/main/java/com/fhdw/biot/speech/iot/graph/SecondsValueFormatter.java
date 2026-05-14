@@ -29,6 +29,10 @@ public class SecondsValueFormatter extends ValueFormatter {
         this.startTime = startTime;
     }
 
+    public long getStartTime() {
+        return startTime;
+    }
+
     private static final SimpleDateFormat TIME_FORMAT =
             new SimpleDateFormat("HH:mm:ss", Locale.ENGLISH);
 

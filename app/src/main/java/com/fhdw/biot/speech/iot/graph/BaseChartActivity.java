@@ -59,8 +59,18 @@ public abstract class BaseChartActivity extends BiotBaseActivity {
             applyAbsoluteXAxis(chart, startTime);
         }
 
-        // Y-axis styling
+        // Y-axis styling + faint horizontal grid lines
         chart.getAxisLeft().setTextColor(Color.WHITE);
+        chart.getAxisLeft().setDrawGridLines(true);
+        chart.getAxisLeft().setGridColor(Color.argb(40, 255, 255, 255));  // ~15% white
+        chart.getAxisLeft().setGridLineWidth(0.5f);
+        chart.getAxisRight().setEnabled(false);
+        chart.getXAxis().setDrawGridLines(false);
+
+        // Custom renderer: draws a filled circle at the touched data point
+        chart.setRenderer(
+                new HighlightCircleRenderer(
+                        chart, chart.getAnimator(), chart.getViewPortHandler()));
 
         // Trigger chart redraw
         chart.invalidate();
@@ -110,6 +120,7 @@ public abstract class BaseChartActivity extends BiotBaseActivity {
         lineDataSet.setDrawCircles(false); // smoother line, no points
         lineDataSet.setValueTextSize(10f);
         lineDataSet.setValueTextColor(Color.DKGRAY);
+        GraphUtils.applyHighlightStyle(lineDataSet);
 
         // Wrap into LineData and submit to chart
         LineData lineData = new LineData(lineDataSet);
