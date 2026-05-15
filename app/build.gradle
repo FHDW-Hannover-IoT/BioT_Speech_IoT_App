@@ -22,8 +22,10 @@ android {
         buildConfigField "String", "LLM_HOST_PHONE",           '"172.20.10.6"'
         buildConfigField "String", "LLM_HOST_EMULATOR",        '"127.0.0.1"'
         buildConfigField "int",    "LLM_PORT",                 "8001"
-        buildConfigField "int",    "LLM_CONNECT_TIMEOUT_MS",   "5000"
-        buildConfigField "int",    "LLM_READ_TIMEOUT_MS",      "30000"
+        buildConfigField "int",    "LLM_CONNECT_TIMEOUT_MS",   "15000"
+        buildConfigField "int",    "LLM_READ_TIMEOUT_MS",      "60000"
+        buildConfigField "int",    "LLM_FETCH_PAGE_SIZE",      "500"
+        buildConfigField "int",    "LLM_INITIAL_FETCH_HOURS",  "1"
         buildConfigField "long",    "SIMULATOR_FALLBACK_DELAY_MS", "5000L"
         buildConfigField "long",    "SIMULATOR_INTERVAL_MS",    "500L"
     }

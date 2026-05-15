@@ -265,6 +265,12 @@ public class MainActivity extends BiotBaseActivity {
     }
 
     private void broadcastFilter(int minutes) {
+        // If a non-zero range is requested, ensure Room has that data — fetches only the gap.
+        if (minutes > 0) {
+            long now    = System.currentTimeMillis();
+            long fromMs = now - (minutes * 60_000L);
+            container.mcpDataSync().fetchRange(fromMs, now);
+        }
         Intent broadcast = new Intent("com.fhdw.biot.speech.iot.FILTER_ACTION");
         broadcast.setPackage(getApplicationContext().getPackageName());
         broadcast.putExtra(VoiceCommandExecutor.EXTRA_FILTER_MINUTES, minutes);
@@ -540,12 +546,9 @@ public class MainActivity extends BiotBaseActivity {
         mqttHandler.subscribe("Control/Mode");
         mqttHandler.subscribe("Control/OperatingMode");
 
-        // Pull last 10 min from the LLM server DB into Room.
+        // Ensure the last 10 min are in Room (no-op if fetchInitial already covered it).
         long now = System.currentTimeMillis();
-        long tenMinAgo = now - (10L * 60 * 1000);
-        container.mcpDataSync().fetchAccel(tenMinAgo, now);
-        container.mcpDataSync().fetchGyro(tenMinAgo, now);
-        container.mcpDataSync().fetchMagnet(tenMinAgo, now);
+        container.mcpDataSync().fetchRange(now - (10L * 60 * 1000), now);
     }
 
     private void mqttPublishOrToast(String topic, String payload) {
