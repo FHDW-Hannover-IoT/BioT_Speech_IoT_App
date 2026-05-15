@@ -42,7 +42,7 @@ pub_log = logging.getLogger("mockup.publisher")
 # ─────────────────────────────────────────────────────────────────────────────
 BROKER_HOST      = "192.168.178.27"
 BROKER_PORT      = 1883
-PUBLISH_INTERVAL = 0.01   # seconds between publish cycles
+PUBLISH_INTERVAL = 0.02   # seconds between publish cycles
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SENSOR CONFIGURATION
@@ -76,7 +76,7 @@ PUBLISH_INTERVAL = 0.01   # seconds between publish cycles
 SENSORS = [
     {
         "topic": "Sensor/Bewegung",
-        "qos": 1,
+        "qos": 0,
         "event": {"duration": 1.5, "multiplier": 10.0},
         "axes": [
             {"name": "ax", "mode": "sine+gauss", "center": 0.0,  "amplitude": 0.02, "freq": 0.2, "std": 0.005},
@@ -86,7 +86,7 @@ SENSORS = [
     },
     {
         "topic": "Sensor/Gyro",
-        "qos": 1,
+        "qos": 0,
         "event": {"duration": 1.0, "multiplier": 8.0},
         "axes": [
             {"name": "gx", "mode": "gauss", "center": 0.0, "std": 0.5},
@@ -96,7 +96,7 @@ SENSORS = [
     },
     {
         "topic": "Sensor/Magnet",
-        "qos": 1,
+        "qos": 0,
         "event": {"duration": 2.0, "multiplier": 6.0},
         "axes": [
             {"name": "mx", "mode": "gauss", "center":  20.0, "std": 1.0},
