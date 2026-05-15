@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -50,6 +51,12 @@ public class SettingsActivity extends BiotBaseActivity {
         switchPushNotifications = findViewById(R.id.switch_push_notifications);
         etMqttBrokerUrl         = findViewById(R.id.et_mqtt_broker_url);
         btnSave                 = findViewById(R.id.btn_save_settings);
+        ScrollView scrollView   = findViewById(R.id.settings_scroll);
+
+        // Scroll the broker URL field above the keyboard when it gains focus.
+        etMqttBrokerUrl.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) scrollView.post(() -> scrollView.requestChildFocus(etMqttBrokerUrl, etMqttBrokerUrl));
+        });
 
         SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
 
