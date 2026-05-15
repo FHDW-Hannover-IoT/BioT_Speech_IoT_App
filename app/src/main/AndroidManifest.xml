@@ -32,8 +32,12 @@
         <activity android:name=".sensor.MagnetActivity" />
         <activity android:name=".events.EreignisActivity" />
         <activity android:name=".graph.MainGraphActivity" />
-        <activity android:name=".events.NewEreignisActivity" />
-        <activity android:name=".settings.SettingsActivity" />
+        <activity
+            android:name=".events.NewEreignisActivity"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".settings.SettingsActivity"
+            android:windowSoftInputMode="adjustResize" />
 
     </application>
 

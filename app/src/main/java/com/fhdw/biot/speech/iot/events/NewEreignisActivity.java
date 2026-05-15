@@ -86,14 +86,6 @@ public class NewEreignisActivity extends BiotBaseActivity {
 
         recyclerView = findViewById(R.id.my_table_recyclerview);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.setClipToPadding(false); // items can scroll into the bottom-padding area
-
-        // Pad the RecyclerView bottom by the keyboard height so focused rows scroll above it.
-        ViewCompat.setOnApplyWindowInsetsListener(recyclerView, (v, insets) -> {
-            int imeHeight = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
-            recyclerView.setPadding(0, 0, 0, imeHeight);
-            return insets;
-        });
 
         adapter = new EditableEventAdapter(editableEventList);
         recyclerView.setAdapter(adapter);
