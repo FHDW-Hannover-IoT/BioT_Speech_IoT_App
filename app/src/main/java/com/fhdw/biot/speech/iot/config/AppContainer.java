@@ -2,7 +2,6 @@ package com.fhdw.biot.speech.iot.config;
 
 import android.app.Activity;
 import android.content.Context;
-import com.fhdw.biot.speech.iot.BuildConfig;
 import android.util.Log;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -125,10 +124,7 @@ public class AppContainer {
                 context.getSharedPreferences(
                         "AppPreferences", android.content.Context.MODE_PRIVATE);
 
-        // null default: only use a stored value if the user explicitly saved a custom URL.
-        // Falls back to AppConfig (BuildConfig) when the key is absent.
-        String custom = sharedPref.getString("MQTT_BROKER", null);
-        String savedBrokerUrl = (custom != null) ? custom : AppConfig.mqttBrokerUrl();
+        String savedBrokerUrl = sharedPref.getString("MQTT_BROKER", AppConfig.mqttBrokerUrl());
 
         String f =
                 (android.os.Build.FINGERPRINT == null ? "" : android.os.Build.FINGERPRINT)
@@ -148,7 +144,7 @@ public class AppContainer {
                         || m.contains("emulator")
                         || m.contains("android sdk built for x86")
                         || p.contains("sdk_gphone");
-        return isEmulator ? BuildConfig.MQTT_EMULATOR_BROKER_URL : savedBrokerUrl;
+        return isEmulator ? "tcp://10.0.2.2:1883" : savedBrokerUrl;
     }
 
     public void releaseActivityScope() {

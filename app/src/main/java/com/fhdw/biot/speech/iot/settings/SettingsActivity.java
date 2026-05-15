@@ -33,13 +33,10 @@ public class SettingsActivity extends BiotBaseActivity {
         SharedPreferences sharedPref = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
 
         boolean isPushActive = sharedPref.getBoolean("PUSH_ACTIVE", true);
-        // Only populate the field if the user previously saved a custom value.
-        // When null, the field stays empty and the hint shows the active BuildConfig IP,
-        // making it clear what address is currently in use.
-        String customBroker = sharedPref.getString("MQTT_BROKER", null);
+        String brokerUrl = sharedPref.getString("MQTT_BROKER", AppConfig.mqttBrokerUrl());
 
         switchPushNotifications.setChecked(isPushActive);
-        if (customBroker != null) etMqttBrokerUrl.setText(customBroker);
+        etMqttBrokerUrl.setText(brokerUrl);
 
         ViewCompat.setOnApplyWindowInsetsListener(
                 findViewById(R.id.settings),
@@ -116,14 +113,7 @@ public class SettingsActivity extends BiotBaseActivity {
         SharedPreferences.Editor editor = sharedPref.edit();
 
         editor.putBoolean("PUSH_ACTIVE", switchPushNotifications.isChecked());
-
-        String entered = etMqttBrokerUrl.getText().toString().trim();
-        if (entered.isEmpty() || entered.equals(AppConfig.mqttBrokerUrl())) {
-            // User cleared the field or left the default — remove override so BuildConfig wins.
-            editor.remove("MQTT_BROKER");
-        } else {
-            editor.putString("MQTT_BROKER", entered);
-        }
+        editor.putString("MQTT_BROKER", etMqttBrokerUrl.getText().toString());
 
         editor.apply();
     }
