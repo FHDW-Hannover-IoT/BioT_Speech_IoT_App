@@ -260,4 +260,16 @@
         </LinearLayout>
     </ScrollView>
 
+    <Button
+        android:id="@+id/btn_save_settings"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/settings_save"
+        android:backgroundTint="@color/button"
+        android:textColor="@color/text"
+        android:textSize="16sp"
+        android:padding="14dp"
+        android:layout_margin="16dp"
+        android:visibility="gone" />
+
 </LinearLayout>

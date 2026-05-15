@@ -2,6 +2,7 @@ package com.fhdw.biot.speech.iot.config;
 
 import android.app.Activity;
 import android.content.Context;
+import com.fhdw.biot.speech.iot.BuildConfig;
 import android.util.Log;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -47,6 +48,7 @@ public class AppContainer {
     // ── Activity scope ────────────────────────────────────────────────────────
     private MqttHandler mqttHandler;
     private TtsManager ttsManager;
+    private String currentBrokerUrl;
 
     // ─────────────────────────────────────────────────────────────────────────
     // Application-scope init (called once from BiotApplication.onCreate)
@@ -109,6 +111,7 @@ public class AppContainer {
         String clientId = "Nutzer_" + UUID.randomUUID().toString().substring(0, 8);
         try {
             mqttHandler = new MqttHandler(brokerUrl, clientId);
+            currentBrokerUrl = brokerUrl;
             Log.i(TAG, "MqttHandler created (broker=" + brokerUrl + ")");
         } catch (Exception e) {
             Log.e(TAG, "Failed to create MqttHandler: " + e.getMessage(), e);
@@ -124,7 +127,10 @@ public class AppContainer {
                 context.getSharedPreferences(
                         "AppPreferences", android.content.Context.MODE_PRIVATE);
 
-        String savedBrokerUrl = sharedPref.getString("MQTT_BROKER", AppConfig.mqttBrokerUrl());
+        // null default: only use a stored value if the user explicitly saved a custom URL.
+        // Falls back to AppConfig (build.gradle) when the key is absent.
+        String custom = sharedPref.getString("MQTT_BROKER", null);
+        String savedBrokerUrl = (custom != null) ? custom : AppConfig.mqttBrokerUrl();
 
         String f =
                 (android.os.Build.FINGERPRINT == null ? "" : android.os.Build.FINGERPRINT)
@@ -144,7 +150,28 @@ public class AppContainer {
                         || m.contains("emulator")
                         || m.contains("android sdk built for x86")
                         || p.contains("sdk_gphone");
-        return isEmulator ? "tcp://10.0.2.2:1883" : savedBrokerUrl;
+        return isEmulator ? BuildConfig.MQTT_EMULATOR_BROKER_URL : savedBrokerUrl;
+    }
+
+    /**
+     * Checks whether the broker URL in SharedPreferences differs from the URL used to create the
+     * current {@link MqttHandler}. If it has changed, tears down the existing handler and
+     * reinitialises with the new URL so the next {@code connectMqtt()} call uses the right broker.
+     *
+     * @return true if a reconnect is needed (caller should call connectMqtt()), false if no change.
+     */
+    public boolean reconnectIfBrokerChanged(Activity activity) {
+        String desiredUrl = getBrokerUrl(activity);
+        if (desiredUrl.equals(currentBrokerUrl)) return false;
+
+        Log.i(TAG, "Broker URL changed: " + currentBrokerUrl + " → " + desiredUrl + ". Reconnecting.");
+        if (mqttHandler != null) {
+            mqttHandler.disconnect();
+            mqttHandler = null;
+        }
+        currentBrokerUrl = null;
+        initActivityScope(activity);
+        return true;
     }
 
     public void releaseActivityScope() {
@@ -156,6 +183,7 @@ public class AppContainer {
             mqttHandler.disconnect();
             mqttHandler = null;
         }
+        currentBrokerUrl = null;
         Log.i(TAG, "Activity scope released.");
     }
 

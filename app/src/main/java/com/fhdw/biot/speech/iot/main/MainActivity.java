@@ -138,7 +138,6 @@ public class MainActivity extends BiotBaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // VoiceInputManager restarts on explicit user tap — no auto-restart needed here.
     }
 
     @Override
