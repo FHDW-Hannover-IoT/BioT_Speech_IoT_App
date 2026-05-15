@@ -82,6 +82,18 @@ public class SettingsActivity extends BiotBaseActivity {
                     return insets;
                 });
 
+        // When the keyboard opens, pad the ScrollView bottom by the keyboard height so
+        // content can scroll above it. requestChildFocus then scrolls the focused field up.
+        ViewCompat.setOnApplyWindowInsetsListener(scrollView, (v, insets) -> {
+            int imeHeight = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
+            scrollView.setPadding(0, 0, 0, imeHeight);
+            if (imeHeight > 0) {
+                scrollView.post(() ->
+                        scrollView.requestChildFocus(etMqttBrokerUrl, etMqttBrokerUrl));
+            }
+            return insets;
+        });
+
         // Home button — navigates back without saving unsaved changes
         ImageButton buttonHome = findViewById(R.id.home_button);
         buttonHome.setOnClickListener(v -> finish());

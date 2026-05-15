@@ -120,9 +120,6 @@ public class EditableEventAdapter
         holder.eventType.setText(currentEvent.eventType);
         holder.eventTypeWatcher = simpleWatcher(text -> currentEvent.eventType = text);
         holder.eventType.addTextChangedListener(holder.eventTypeWatcher);
-        holder.eventType.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) scrollToHolder(holder);
-        });
 
         holder.thresholdValue.removeTextChangedListener(holder.thresholdWatcher);
         holder.thresholdValue.setText(
@@ -139,9 +136,6 @@ public class EditableEventAdapter
                             }
                         });
         holder.thresholdValue.addTextChangedListener(holder.thresholdWatcher);
-        holder.thresholdValue.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) scrollToHolder(holder);
-        });
 
         holder.btnDelete.setOnClickListener(
                 v -> {
@@ -169,14 +163,6 @@ public class EditableEventAdapter
         void onChanged(String text);
     }
 
-    /** Scrolls the parent RecyclerView to ensure the given holder's item is fully visible. */
-    private static void scrollToHolder(RecyclerView.ViewHolder holder) {
-        int pos = holder.getBindingAdapterPosition();
-        if (pos == RecyclerView.NO_POSITION) return;
-        if (holder.itemView.getParent() instanceof RecyclerView) {
-            ((RecyclerView) holder.itemView.getParent()).smoothScrollToPosition(pos);
-        }
-    }
 
     @Override
     public int getItemCount() {
