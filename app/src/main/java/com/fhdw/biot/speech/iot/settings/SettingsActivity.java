@@ -65,8 +65,9 @@ public class SettingsActivity extends BiotBaseActivity {
             // User previously saved a custom URL — pre-fill so they can edit it
             etMqttBrokerUrl.setText(originalBrokerUrl);
         }
-        // Hint always shows the build.gradle default so the user knows what's active
-        etMqttBrokerUrl.setHint(getString(R.string.settings_broker_url_hint_default, AppConfig.mqttBrokerUrl()));
+        // Hint shows the active default without tcp:// prefix since it's added automatically
+        String defaultUrl = AppConfig.mqttBrokerUrl().replaceFirst("^tcp://", "");
+        etMqttBrokerUrl.setHint(getString(R.string.settings_broker_url_hint_default, defaultUrl));
 
         ViewCompat.setOnApplyWindowInsetsListener(
                 findViewById(R.id.settings),
@@ -148,6 +149,12 @@ public class SettingsActivity extends BiotBaseActivity {
      */
     private void saveSettings() {
         String entered = etMqttBrokerUrl.getText().toString().trim();
+
+        // Auto-prepend tcp:// so users can type just "192.168.1.1:1883"
+        if (!entered.isEmpty() && !entered.startsWith("tcp://") && !entered.startsWith("ssl://")) {
+            entered = "tcp://" + entered;
+            etMqttBrokerUrl.setText(entered);
+        }
 
         // Empty field = remove custom override so build.gradle default takes over
         if (!entered.isEmpty() && !isValidBrokerUrl(entered)) {
