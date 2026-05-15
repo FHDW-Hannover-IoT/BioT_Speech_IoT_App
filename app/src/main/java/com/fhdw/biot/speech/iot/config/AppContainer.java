@@ -12,6 +12,7 @@ import com.fhdw.biot.speech.iot.llm.LlmQueryHandler;
 import com.fhdw.biot.speech.iot.mqtt.IMqttPublisher;
 import com.fhdw.biot.speech.iot.mqtt.MqttHandler;
 import com.fhdw.biot.speech.iot.repository.McpDataSyncService;
+import com.fhdw.biot.speech.iot.events.RuleEvaluator;
 import com.fhdw.biot.speech.iot.repository.SensorRepository;
 import com.fhdw.biot.speech.iot.voice.ILlmQueryHandler;
 import com.fhdw.biot.speech.iot.voice.TtsManager;
@@ -38,6 +39,7 @@ public class AppContainer {
     private SensorRepository sensorRepository;
     private McpDataSyncService mcpDataSync;
     private LlmQueryHandler llmQueryHandler;
+    private RuleEvaluator ruleEvaluator;
 
     private final MutableLiveData<LlmAction> liveAction = new MutableLiveData<>();
     private final MutableLiveData<Boolean> llmLoading = new MutableLiveData<>(false);
@@ -60,6 +62,9 @@ public class AppContainer {
         mcpDataSync.fetchLast24h();
         llmQueryHandler = new LlmQueryHandler(liveAction, llmLoading, AppConfig.llmChatEndpoint());
 
+        ruleEvaluator = new RuleEvaluator(sensorRepository, context, dbContext.executor());
+        ruleEvaluator.reloadRules();
+
         Log.i(TAG, "Application scope initialised.");
     }
 
@@ -71,6 +76,10 @@ public class AppContainer {
 
     public McpDataSyncService mcpDataSync() {
         return mcpDataSync;
+    }
+
+    public RuleEvaluator ruleEvaluator() {
+        return ruleEvaluator;
     }
 
     public ILlmQueryHandler llmQueryHandler() {
@@ -115,7 +124,7 @@ public class AppContainer {
                 context.getSharedPreferences(
                         "AppPreferences", android.content.Context.MODE_PRIVATE);
 
-        String savedBrokerUrl = sharedPref.getString("MQTT_BROKER", "tcp://192.168.178.80:1883");
+        String savedBrokerUrl = sharedPref.getString("MQTT_BROKER", AppConfig.mqttBrokerUrl());
 
         String f =
                 (android.os.Build.FINGERPRINT == null ? "" : android.os.Build.FINGERPRINT)

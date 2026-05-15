@@ -189,7 +189,7 @@
                     android:id="@+id/et_mqtt_broker_url"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="tcp://192.168.178.80:1883"
+                    android:hint="@string/settings_broker_url_hint"
                     android:textColor="@color/text"
                     android:textColorHint="#888888"
                     android:inputType="textUri"

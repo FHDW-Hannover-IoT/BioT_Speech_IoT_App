@@ -46,6 +46,7 @@
     <string name="settings_server_data_desc">Allows the app to communicate with the server.</string>
     <string name="settings_broker_url_label">Broker URL / IP Address</string>
     <string name="settings_broker_url_desc">The address of your local or cloud-based MQTT broker (including port).</string>
+    <string name="settings_broker_url_hint">tcp://&lt;broker-ip&gt;:1883</string>
     <string name="settings_notifications_title">Notifications</string>
     <string name="settings_push_enable">Enable push notifications</string>
     <string name="settings_push_desc">Sends a system notification when one of your configured rules is triggered.</string>
@@ -86,6 +87,16 @@
     <string name="cd_server_info">Server connection info</string>
     <string name="cd_delete_event">Delete event</string>
     <string name="cd_voice_command">Voice command</string>
+
+    <!-- Server info dialog (Settings screen) -->
+    <string name="settings_server_info_title">Server data retrieval</string>
+    <string name="settings_server_info_message">When enabled, the app downloads additional data from the server.\n\nNote: An active internet connection (Wi-Fi or mobile data) is required, which may incur data usage.</string>
+    <string name="settings_server_info_ok">Got it</string>
+
+    <!-- Event notifications -->
+    <string name="event_notification_title">Warning: %s</string>
+    <string name="event_notification_body">%1$s triggered on axis %2$s. Value: %3$.2f</string>
+    <string name="event_unknown_name">Unknown event</string>
 
     <!-- MQTT error banner -->
     <string name="mqtt_connection_error">Could not connect to MQTT broker!</string>

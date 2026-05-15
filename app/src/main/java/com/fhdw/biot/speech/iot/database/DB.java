@@ -1,8 +1,6 @@
 package com.fhdw.biot.speech.iot.database;
 
-import android.content.ContentValues;
 import android.content.Context;
-import android.database.sqlite.SQLiteDatabase;
 import androidx.annotation.NonNull;
 import androidx.room.Database;
 import androidx.room.Room;
@@ -18,7 +16,13 @@ import com.fhdw.biot.speech.iot.database.entities.MagnetData;
 import com.fhdw.biot.speech.iot.database.entities.Sensor;
 import com.fhdw.biot.speech.iot.database.entities.ValueSensor;
 
-/** Room database stored on disk with a one-time seed of default event rules. */
+/**
+ * Persistent Room database. Two-tier data model:
+ * - {@code EreignisType} — event rule definitions; survive across sessions (user-configured).
+ * - Sensor tables ({@code accel_data}, {@code gyro_data}, {@code magnet_data},
+ *   {@code ereignis_data}) — session-only; cleared on every app start so live-session
+ *   semantics are preserved while rules persist.
+ */
 @Database(
         entities = {
             AccelData.class,
@@ -53,7 +57,14 @@ public abstract class DB extends RoomDatabase {
                                                 public void onCreate(
                                                         @NonNull SupportSQLiteDatabase db) {
                                                     super.onCreate(db);
-                                                    seedDefaultEreignisTypes(db);
+                                                    EreignisTypeSeeder.seed(db);
+                                                }
+
+                                                @Override
+                                                public void onOpen(
+                                                        @NonNull SupportSQLiteDatabase db) {
+                                                    super.onOpen(db);
+                                                    clearSessionData(db);
                                                 }
                                             })
                                     .build();
@@ -63,50 +74,11 @@ public abstract class DB extends RoomDatabase {
         return INSTANCE;
     }
 
-    private static void seedDefaultEreignisTypes(@NonNull SupportSQLiteDatabase db) {
-        db.beginTransaction();
-        try {
-            insertEreignisType(db, "Shock", "ACCEL", true, true, true, false, 20.0f, ">=");
-            insertEreignisType(db, "Zero-G Peak", "ACCEL", false, false, false, true, 1.5f, "<=");
-            insertEreignisType(db, "Severe Impact", "ACCEL", true, true, true, false, 40.0f, ">=");
-            insertEreignisType(
-                    db, "Vibration Spike", "ACCEL", true, true, true, false, 12.0f, ">=");
-            insertEreignisType(db, "Tilt Limit", "ACCEL", true, true, false, false, 6.5f, ">=");
-
-            insertEreignisType(db, "Rotation Peak", "GYRO", true, true, true, false, 4.5f, ">=");
-            insertEreignisType(db, "Motion Start", "GYRO", true, true, true, false, 0.5f, ">=");
-
-            insertEreignisType(
-                    db, "Magnetic Contact", "MAGNET", true, true, true, false, 150.0f, ">=");
-            insertEreignisType(db, "Field Minimum", "MAGNET", true, true, true, false, 15.0f, "<=");
-            insertEreignisType(
-                    db, "Field Anomaly", "MAGNET", false, false, false, true, 250.0f, ">=");
-
-            db.setTransactionSuccessful();
-        } finally {
-            db.endTransaction();
-        }
-    }
-
-    private static void insertEreignisType(
-            SupportSQLiteDatabase db,
-            String name,
-            String sensorType,
-            boolean axisX,
-            boolean axisY,
-            boolean axisZ,
-            boolean axisSum,
-            float threshold,
-            String direction) {
-        ContentValues values = new ContentValues();
-        values.put("ereignisName", name);
-        values.put("sensorType", sensorType);
-        values.put("axisX", axisX ? 1 : 0);
-        values.put("axisY", axisY ? 1 : 0);
-        values.put("axisZ", axisZ ? 1 : 0);
-        values.put("axisSum", axisSum ? 1 : 0);
-        values.put("ereignisThreshold", threshold);
-        values.put("thresholdDirection", direction);
-        db.insert("ereignisType", SQLiteDatabase.CONFLICT_ABORT, values);
+    /** Deletes all session-scoped sensor rows so each app start begins with a clean slate. */
+    private static void clearSessionData(@NonNull SupportSQLiteDatabase db) {
+        db.execSQL("DELETE FROM accel_data");
+        db.execSQL("DELETE FROM gyro_data");
+        db.execSQL("DELETE FROM magnet_data");
+        db.execSQL("DELETE FROM ereignis_data");
     }
 }

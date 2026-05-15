@@ -43,6 +43,11 @@ public class DbContext {
                         });
     }
 
+    /** Returns the shared DB write executor for use by application-scope services. */
+    public ExecutorService executor() {
+        return executor;
+    }
+
     // ── Single-row writes ─────────────────────────────────────────────────────
 
     public void insertAccel(AccelData data) {

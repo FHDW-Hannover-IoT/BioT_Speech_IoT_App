@@ -11,6 +11,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.fhdw.biot.speech.iot.R;
+import com.fhdw.biot.speech.iot.config.AppConfig;
 import com.fhdw.biot.speech.iot.config.BiotBaseActivity;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
@@ -32,7 +33,7 @@ public class SettingsActivity extends BiotBaseActivity {
         SharedPreferences sharedPref = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
 
         boolean isPushActive = sharedPref.getBoolean("PUSH_ACTIVE", true);
-        String brokerUrl = sharedPref.getString("MQTT_BROKER", "tcp://192.168.178.80:1883");
+        String brokerUrl = sharedPref.getString("MQTT_BROKER", AppConfig.mqttBrokerUrl());
 
         switchPushNotifications.setChecked(isPushActive);
         etMqttBrokerUrl.setText(brokerUrl);
@@ -53,15 +54,12 @@ public class SettingsActivity extends BiotBaseActivity {
 
         ImageButton btnInfoServer = findViewById(R.id.btn_info_server_data);
         btnInfoServer.setOnClickListener(
-                v -> {
-                    new androidx.appcompat.app.AlertDialog.Builder(this)
-                            .setTitle("Server-Datenabruf")
-                            .setMessage(
-                                    "Wenn diese Option aktiviert ist, lädt die App zusätzliche Daten vom Server herunter. \n\nAchtung: Hierfür ist eine aktive Internetverbindung (WLAN oder mobile Daten) erforderlich, was zu Datenverbrauch führen kann.")
-                            .setPositiveButton("Verstanden", (dialog, which) -> dialog.dismiss())
-                            .setIcon(R.drawable.baseline_info_outline_24)
-                            .show();
-                });
+                v -> new androidx.appcompat.app.AlertDialog.Builder(this)
+                        .setTitle(R.string.settings_server_info_title)
+                        .setMessage(R.string.settings_server_info_message)
+                        .setPositiveButton(R.string.settings_server_info_ok, (d, w) -> d.dismiss())
+                        .setIcon(R.drawable.baseline_info_outline_24)
+                        .show());
 
         // ── Douglas-Peucker section ──────────────────────────────────────────
         SwitchMaterial swActive = findViewById(R.id.switch_dp_active);

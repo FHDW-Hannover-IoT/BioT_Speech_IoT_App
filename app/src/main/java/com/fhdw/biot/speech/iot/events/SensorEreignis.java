@@ -79,20 +79,16 @@ public class SensorEreignis {
         // NOTE: Currently title and text are generic ("SensorEvent", "text").
         //       You may want to adapt this to display sensorType/value/axis.
         if (isPushActive) {
-            int reqCode =
-                    (int)
-                            (System.currentTimeMillis()
-                                    % 10000); // Dynamische ID, damit sie sich nicht überschreiben
+            // Use current time modulo 10000 as a notification ID so rapid events don't collide.
+            int reqCode = (int) (System.currentTimeMillis() % 10000);
             Intent intent = new Intent(this.context, MainActivity.class);
 
-            String title = "Warnung: " + eventName;
-            String message = sensorType + " hat auf Achse " + axis + " ausgelöst. Wert: " + value;
+            String title   = context.getString(R.string.event_notification_title, eventName);
+            String message = context.getString(R.string.event_notification_body, sensorType, axis, value);
 
             this.showNotification(this.context, title, message, intent, reqCode);
         } else {
-            Log.d(
-                    "SensorEreignis",
-                    "Ereignis ausgelöst, aber Push-Benachrichtigungen sind deaktiviert.");
+            Log.d("SensorEreignis", "Event triggered but push notifications are disabled.");
         }
     }
 
