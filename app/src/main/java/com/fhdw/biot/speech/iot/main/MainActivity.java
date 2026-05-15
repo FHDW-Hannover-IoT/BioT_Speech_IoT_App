@@ -138,6 +138,10 @@ public class MainActivity extends BiotBaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (container != null && container.reconnectIfBrokerChanged(this)) {
+            mqttHandler = container.mqttHandler();
+            connectMqtt();
+        }
     }
 
     @Override

@@ -17,8 +17,6 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.config.AppConfig;
-import com.fhdw.biot.speech.iot.config.AppContainer;
-import com.fhdw.biot.speech.iot.config.BiotApplication;
 import com.fhdw.biot.speech.iot.config.BiotBaseActivity;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
@@ -174,10 +172,6 @@ public class SettingsActivity extends BiotBaseActivity {
             editor.putString("MQTT_BROKER", entered);
         }
         editor.apply();
-
-        // Reconnect immediately if the active broker URL changed
-        AppContainer container = ((BiotApplication) getApplication()).getContainer();
-        container.reconnectIfBrokerChanged(this);
 
         Toast.makeText(this, getString(R.string.settings_saved), Toast.LENGTH_SHORT).show();
         finish();

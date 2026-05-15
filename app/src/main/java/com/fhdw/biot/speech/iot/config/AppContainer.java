@@ -154,23 +154,33 @@ public class AppContainer {
     }
 
     /**
-     * Checks whether the broker URL in SharedPreferences differs from the URL used to create the
-     * current {@link MqttHandler}. If it has changed, tears down the existing handler and
-     * reinitialises with the new URL so the next {@code connectMqtt()} call uses the right broker.
+     * Checks whether the broker URL in SharedPreferences differs from the URL the current
+     * {@link MqttHandler} was created with. If changed, disconnects the old handler and creates
+     * a new one with the updated URL. TtsManager is intentionally untouched — it has no
+     * relation to the broker URL and does not need to be recreated on reconnect.
      *
-     * @return true if a reconnect is needed (caller should call connectMqtt()), false if no change.
+     * @return true if the handler was replaced (caller should update its local reference and
+     *         call connectMqtt()), false if the URL is unchanged.
      */
-    public boolean reconnectIfBrokerChanged(Activity activity) {
-        String desiredUrl = getBrokerUrl(activity);
+    public boolean reconnectIfBrokerChanged(Context context) {
+        String desiredUrl = getBrokerUrl(context);
         if (desiredUrl.equals(currentBrokerUrl)) return false;
 
-        Log.i(TAG, "Broker URL changed: " + currentBrokerUrl + " → " + desiredUrl + ". Reconnecting.");
+        Log.i(TAG, "Broker URL changed: " + currentBrokerUrl + " → " + desiredUrl);
         if (mqttHandler != null) {
             mqttHandler.disconnect();
             mqttHandler = null;
         }
-        currentBrokerUrl = null;
-        initActivityScope(activity);
+
+        String clientId = "Nutzer_" + UUID.randomUUID().toString().substring(0, 8);
+        try {
+            mqttHandler = new MqttHandler(desiredUrl, clientId);
+            currentBrokerUrl = desiredUrl;
+            Log.i(TAG, "MqttHandler recreated (broker=" + desiredUrl + ")");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to recreate MqttHandler: " + e.getMessage(), e);
+            return false;
+        }
         return true;
     }
 
