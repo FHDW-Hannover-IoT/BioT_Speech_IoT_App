@@ -386,8 +386,7 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
     private void pinViewport(LineChart... charts) {
         for (LineChart chart : charts) {
             if (chart.getData() == null) continue;
-            chart.setVisibleXRangeMaximum(120_000f);
-            chart.moveViewToX(chart.getData().getXMax());
+            chart.fitScreen();
         }
     }
 

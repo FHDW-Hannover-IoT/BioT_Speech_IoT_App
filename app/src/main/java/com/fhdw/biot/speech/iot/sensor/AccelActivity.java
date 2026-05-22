@@ -363,8 +363,7 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
     private void pinViewport(LineChart... charts) {
         for (LineChart chart : charts) {
             if (chart.getData() == null) continue;
-            chart.setVisibleXRangeMaximum(120_000f); // default: show last 2 min
-            chart.moveViewToX(chart.getData().getXMax());
+            chart.fitScreen();
         }
     }
 

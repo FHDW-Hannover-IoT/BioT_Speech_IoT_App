@@ -17,6 +17,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.config.AppConfig;
+import com.fhdw.biot.speech.iot.config.BiotApplication;
 import com.fhdw.biot.speech.iot.config.BiotBaseActivity;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
@@ -35,6 +36,7 @@ public class SettingsActivity extends BiotBaseActivity {
     private static final String PREF_NAME = "AppPreferences";
 
     private SwitchMaterial switchPushNotifications;
+    private SwitchMaterial switchServerData;
     private EditText etMqttBrokerUrl;
     private Button btnSave;
 
@@ -48,6 +50,7 @@ public class SettingsActivity extends BiotBaseActivity {
         setContentView(R.layout.activity_settings);
 
         switchPushNotifications = findViewById(R.id.switch_push_notifications);
+        switchServerData        = findViewById(R.id.switch_server_data);
         etMqttBrokerUrl         = findViewById(R.id.et_mqtt_broker_url);
         btnSave                 = findViewById(R.id.btn_save_settings);
 
@@ -58,6 +61,13 @@ public class SettingsActivity extends BiotBaseActivity {
         originalBrokerUrl  = prefs.getString("MQTT_BROKER", null);
 
         switchPushNotifications.setChecked(originalPushActive);
+        switchServerData.setChecked(prefs.getBoolean("SERVER_DATA_ENABLED", true));
+        switchServerData.setOnCheckedChangeListener((btn, enabled) -> {
+            prefs.edit().putBoolean("SERVER_DATA_ENABLED", enabled).apply();
+            if (enabled) {
+                ((BiotApplication) getApplication()).getContainer().mcpDataSync().fetchInitial();
+            }
+        });
 
         if (originalBrokerUrl != null) {
             // User previously saved a custom URL — pre-fill so they can edit it

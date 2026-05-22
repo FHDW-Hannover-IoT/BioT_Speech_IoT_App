@@ -61,7 +61,11 @@ public class AppContainer {
         dbContext = new DbContext(db);
         sensorRepository = new SensorRepository(dbContext);
         mcpDataSync = new McpDataSyncService(sensorRepository, AppConfig.mcpBaseUrl());
-        mcpDataSync.fetchInitial();
+        boolean serverDataEnabled = context.getSharedPreferences("AppPreferences", android.content.Context.MODE_PRIVATE)
+                .getBoolean("SERVER_DATA_ENABLED", true);
+        if (serverDataEnabled) {
+            mcpDataSync.fetchInitial();
+        }
         llmQueryHandler = new LlmQueryHandler(liveAction, llmLoading, AppConfig.llmChatEndpoint());
 
         ruleEvaluator = new RuleEvaluator(sensorRepository, context, dbContext.executor());
