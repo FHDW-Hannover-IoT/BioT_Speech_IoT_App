@@ -38,10 +38,12 @@ public class SettingsActivity extends BiotBaseActivity {
     private SwitchMaterial switchPushNotifications;
     private SwitchMaterial switchServerData;
     private EditText etMqttBrokerUrl;
+    private EditText etLlmHost;
     private Button btnSave;
 
     // Values as they were when the screen opened — used to detect unsaved changes
     private String originalBrokerUrl; // null means "no custom override — using build.gradle"
+    private String originalLlmHost;   // null means "no custom override — using build.gradle"
     private boolean originalPushActive;
 
     @Override
@@ -52,6 +54,7 @@ public class SettingsActivity extends BiotBaseActivity {
         switchPushNotifications = findViewById(R.id.switch_push_notifications);
         switchServerData        = findViewById(R.id.switch_server_data);
         etMqttBrokerUrl         = findViewById(R.id.et_mqtt_broker_url);
+        etLlmHost               = findViewById(R.id.et_llm_host);
         btnSave                 = findViewById(R.id.btn_save_settings);
 
         SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
@@ -59,6 +62,7 @@ public class SettingsActivity extends BiotBaseActivity {
         originalPushActive = prefs.getBoolean("PUSH_ACTIVE", true);
         // null = no custom override saved; field stays empty, hint shows the active default
         originalBrokerUrl  = prefs.getString("MQTT_BROKER", null);
+        originalLlmHost    = prefs.getString("LLM_HOST", null);
 
         switchPushNotifications.setChecked(originalPushActive);
         switchServerData.setChecked(prefs.getBoolean("SERVER_DATA_ENABLED", true));
@@ -70,12 +74,18 @@ public class SettingsActivity extends BiotBaseActivity {
         });
 
         if (originalBrokerUrl != null) {
-            // User previously saved a custom URL — pre-fill so they can edit it
             etMqttBrokerUrl.setText(originalBrokerUrl);
         }
-        // Hint shows the active default without tcp:// prefix since it's added automatically
         String defaultUrl = AppConfig.mqttBrokerUrl().replaceFirst("^tcp://", "");
         etMqttBrokerUrl.setHint(getString(R.string.settings_broker_url_hint_default, defaultUrl));
+
+        if (originalLlmHost != null) {
+            etLlmHost.setText(originalLlmHost);
+        }
+        String defaultLlmHost = AppConfig.isEmulator()
+                ? com.fhdw.biot.speech.iot.BuildConfig.LLM_HOST_EMULATOR
+                : com.fhdw.biot.speech.iot.BuildConfig.LLM_HOST_PHONE;
+        etLlmHost.setHint(getString(R.string.settings_llm_host_hint_default, defaultLlmHost));
 
         ViewCompat.setOnApplyWindowInsetsListener(
                 findViewById(R.id.settings),
@@ -99,6 +109,11 @@ public class SettingsActivity extends BiotBaseActivity {
                         .show());
 
         etMqttBrokerUrl.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+            @Override public void onTextChanged(CharSequence s, int st, int b, int c) {}
+            @Override public void afterTextChanged(Editable s) { updateSaveVisibility(); }
+        });
+        etLlmHost.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
             @Override public void onTextChanged(CharSequence s, int st, int b, int c) {}
             @Override public void afterTextChanged(Editable s) { updateSaveVisibility(); }
@@ -144,11 +159,12 @@ public class SettingsActivity extends BiotBaseActivity {
 
     /** Shows the Save button only when at least one field differs from its loaded value. */
     private void updateSaveVisibility() {
-        String entered = etMqttBrokerUrl.getText().toString().trim();
-        // A change means: the entered text differs from what was loaded (treating null as "")
-        boolean brokerChanged = !entered.equals(originalBrokerUrl == null ? "" : originalBrokerUrl);
+        String enteredBroker = etMqttBrokerUrl.getText().toString().trim();
+        String enteredLlm    = etLlmHost.getText().toString().trim();
+        boolean brokerChanged = !enteredBroker.equals(originalBrokerUrl == null ? "" : originalBrokerUrl);
+        boolean llmChanged    = !enteredLlm.equals(originalLlmHost == null ? "" : originalLlmHost);
         boolean pushChanged   = switchPushNotifications.isChecked() != originalPushActive;
-        btnSave.setVisibility((brokerChanged || pushChanged) ? View.VISIBLE : View.GONE);
+        btnSave.setVisibility((brokerChanged || llmChanged || pushChanged) ? View.VISIBLE : View.GONE);
     }
 
     /**
@@ -156,16 +172,16 @@ public class SettingsActivity extends BiotBaseActivity {
      * changed, shows a success toast, and closes the screen.
      */
     private void saveSettings() {
-        String entered = etMqttBrokerUrl.getText().toString().trim();
+        String enteredBroker = etMqttBrokerUrl.getText().toString().trim();
+        String enteredLlm    = etLlmHost.getText().toString().trim();
 
         // Auto-prepend tcp:// so users can type just "192.168.1.1:1883"
-        if (!entered.isEmpty() && !entered.startsWith("tcp://") && !entered.startsWith("ssl://")) {
-            entered = "tcp://" + entered;
-            etMqttBrokerUrl.setText(entered);
+        if (!enteredBroker.isEmpty() && !enteredBroker.startsWith("tcp://") && !enteredBroker.startsWith("ssl://")) {
+            enteredBroker = "tcp://" + enteredBroker;
+            etMqttBrokerUrl.setText(enteredBroker);
         }
 
-        // Empty field = remove custom override so build.gradle default takes over
-        if (!entered.isEmpty() && !isValidBrokerUrl(entered)) {
+        if (!enteredBroker.isEmpty() && !isValidBrokerUrl(enteredBroker)) {
             Toast.makeText(this, getString(R.string.settings_broker_url_invalid), Toast.LENGTH_LONG)
                     .show();
             etMqttBrokerUrl.requestFocus();
@@ -176,12 +192,19 @@ public class SettingsActivity extends BiotBaseActivity {
                 getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE).edit();
 
         editor.putBoolean("PUSH_ACTIVE", switchPushNotifications.isChecked());
-        if (entered.isEmpty()) {
-            editor.remove("MQTT_BROKER"); // revert to build.gradle default
+        if (enteredBroker.isEmpty()) {
+            editor.remove("MQTT_BROKER");
         } else {
-            editor.putString("MQTT_BROKER", entered);
+            editor.putString("MQTT_BROKER", enteredBroker);
+        }
+        if (enteredLlm.isEmpty()) {
+            editor.remove("LLM_HOST");
+        } else {
+            editor.putString("LLM_HOST", enteredLlm);
         }
         editor.apply();
+
+        ((BiotApplication) getApplication()).getContainer().refreshMcpHost(this);
 
         Toast.makeText(this, getString(R.string.settings_saved), Toast.LENGTH_SHORT).show();
         finish();

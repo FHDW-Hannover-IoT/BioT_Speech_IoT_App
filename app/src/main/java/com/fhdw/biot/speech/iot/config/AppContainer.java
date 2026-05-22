@@ -60,13 +60,14 @@ public class AppContainer {
         db = DB.getDatabase(context.getApplicationContext());
         dbContext = new DbContext(db);
         sensorRepository = new SensorRepository(dbContext);
-        mcpDataSync = new McpDataSyncService(sensorRepository, AppConfig.mcpBaseUrl());
-        boolean serverDataEnabled = context.getSharedPreferences("AppPreferences", android.content.Context.MODE_PRIVATE)
-                .getBoolean("SERVER_DATA_ENABLED", true);
+        android.content.SharedPreferences prefs =
+                context.getSharedPreferences("AppPreferences", android.content.Context.MODE_PRIVATE);
+        mcpDataSync = new McpDataSyncService(sensorRepository, AppConfig.mcpBaseUrl(prefs));
+        boolean serverDataEnabled = prefs.getBoolean("SERVER_DATA_ENABLED", true);
         if (serverDataEnabled) {
             mcpDataSync.fetchInitial();
         }
-        llmQueryHandler = new LlmQueryHandler(liveAction, llmLoading, AppConfig.llmChatEndpoint());
+        llmQueryHandler = new LlmQueryHandler(liveAction, llmLoading, AppConfig.llmChatEndpoint(prefs));
 
         ruleEvaluator = new RuleEvaluator(sensorRepository, context, dbContext.executor());
         ruleEvaluator.reloadRules();
@@ -186,6 +187,13 @@ public class AppContainer {
             return false;
         }
         return true;
+    }
+
+    public void refreshMcpHost(Context context) {
+        android.content.SharedPreferences prefs =
+                context.getSharedPreferences("AppPreferences", android.content.Context.MODE_PRIVATE);
+        mcpDataSync.setBaseUrl(AppConfig.mcpBaseUrl(prefs));
+        Log.i(TAG, "MCP base URL updated to: " + AppConfig.mcpBaseUrl(prefs));
     }
 
     public void releaseActivityScope() {

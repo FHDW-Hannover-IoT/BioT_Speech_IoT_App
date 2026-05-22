@@ -1,5 +1,6 @@
 package com.fhdw.biot.speech.iot.config;
 
+import android.content.SharedPreferences;
 import com.fhdw.biot.speech.iot.BuildConfig;
 import java.util.Locale;
 
@@ -14,12 +15,23 @@ public final class AppConfig {
     }
 
     public static String mcpBaseUrl() {
-        String host = isEmulator() ? BuildConfig.LLM_HOST_EMULATOR : BuildConfig.LLM_HOST_PHONE;
+        return mcpBaseUrl(null);
+    }
+
+    public static String mcpBaseUrl(SharedPreferences prefs) {
+        String override = prefs != null ? prefs.getString("LLM_HOST", null) : null;
+        String host = (override != null && !override.isEmpty())
+                ? override
+                : (isEmulator() ? BuildConfig.LLM_HOST_EMULATOR : BuildConfig.LLM_HOST_PHONE);
         return "http://" + host + ":" + BuildConfig.LLM_PORT;
     }
 
     public static String llmChatEndpoint() {
         return mcpBaseUrl() + "/chat";
+    }
+
+    public static String llmChatEndpoint(SharedPreferences prefs) {
+        return mcpBaseUrl(prefs) + "/chat";
     }
 
     public static boolean isEmulator() {

@@ -47,7 +47,7 @@ public class McpDataSyncService {
     private static final String PATH_MAGNET = "/data/magnet";
 
     private final SensorRepository repository;
-    private final String baseUrl;
+    private volatile String baseUrl;
     private final ExecutorService executor;
 
     // ── Oldest fetched timestamp per sensor ───────────────────────────────────
@@ -79,6 +79,10 @@ public class McpDataSyncService {
             t.setDaemon(true);
             return t;
         });
+    }
+
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
