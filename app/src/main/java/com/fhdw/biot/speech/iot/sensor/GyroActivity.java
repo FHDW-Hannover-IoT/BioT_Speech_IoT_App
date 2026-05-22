@@ -21,6 +21,8 @@ import com.fhdw.biot.speech.iot.config.BiotApplication;
 import com.fhdw.biot.speech.iot.database.entities.GyroData;
 import com.fhdw.biot.speech.iot.events.EreignisActivity;
 import com.fhdw.biot.speech.iot.graph.BaseChartActivity;
+import com.fhdw.biot.speech.iot.graph.DouglasPeukerAlg;
+import com.fhdw.biot.speech.iot.graph.EpsilonCalculator;
 import com.fhdw.biot.speech.iot.graph.IFilterableChart;
 import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.fhdw.biot.speech.iot.repository.SensorRepository;
@@ -365,11 +367,15 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
 
         if (windowStart == 0) windowStart = gyroDataList.get(0).timestamp;
 
+        long durationMs = (long) selectedMinutes * 60_000L;
+        float epsilon = EpsilonCalculator.calculateScaledEpsilon(this, gyroDataList, durationMs);
+        List<GyroData> dataToRender = DouglasPeukerAlg.simplify(gyroDataList, epsilon);
+
         ArrayList<Entry> entriesX = new ArrayList<>();
         ArrayList<Entry> entriesY = new ArrayList<>();
         ArrayList<Entry> entriesZ = new ArrayList<>();
 
-        for (GyroData data : gyroDataList) {
+        for (GyroData data : dataToRender) {
             float t = data.timestamp - windowStart;
             entriesX.add(new Entry(t, data.gyroX));
             entriesY.add(new Entry(t, data.gyroY));

@@ -21,6 +21,8 @@ import com.fhdw.biot.speech.iot.config.BiotApplication;
 import com.fhdw.biot.speech.iot.database.entities.AccelData;
 import com.fhdw.biot.speech.iot.events.EreignisActivity;
 import com.fhdw.biot.speech.iot.graph.BaseChartActivity;
+import com.fhdw.biot.speech.iot.graph.DouglasPeukerAlg;
+import com.fhdw.biot.speech.iot.graph.EpsilonCalculator;
 import com.fhdw.biot.speech.iot.graph.IFilterableChart;
 import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.fhdw.biot.speech.iot.repository.SensorRepository;
@@ -342,11 +344,15 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
 
         if (windowStart == 0) windowStart = accelDataList.get(0).timestamp;
 
+        long durationMs = (long) selectedMinutes * 60_000L;
+        float epsilon = EpsilonCalculator.calculateScaledEpsilon(this, accelDataList, durationMs);
+        List<AccelData> dataToRender = DouglasPeukerAlg.simplify(accelDataList, epsilon);
+
         ArrayList<Entry> entriesX = new ArrayList<>();
         ArrayList<Entry> entriesY = new ArrayList<>();
         ArrayList<Entry> entriesZ = new ArrayList<>();
 
-        for (AccelData data : accelDataList) {
+        for (AccelData data : dataToRender) {
             float t = data.timestamp - windowStart;
             entriesX.add(new Entry(t, data.accelX));
             entriesY.add(new Entry(t, data.accelY));
