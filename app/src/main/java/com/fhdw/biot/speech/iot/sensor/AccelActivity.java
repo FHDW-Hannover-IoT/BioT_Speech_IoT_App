@@ -6,10 +6,12 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageButton;
-import androidx.core.content.ContextCompat;
+import android.widget.Spinner;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -54,8 +56,8 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
     /** Date filter buttons ("von" / "bis" for X, Y, Z charts). */
     private Button xVonButton, xBisButton;
 
-    /** Quick filter button: show only last 10 minutes. */
-    private Button btnFilterLast10Min;
+    private Spinner spinnerTimeframe;
+    private int selectedMinutes = 10;
 
     /** Chart visibility checkboxes. */
     private CheckBox cbChartX, cbChartY, cbChartZ;
@@ -66,7 +68,6 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
     private Handler slidingWindowHandler = new Handler(Looper.getMainLooper());
     private Runnable slidingWindowRunnable;
     private boolean isTenMinuteFilterActive = false;
-    private boolean isStartPointFixed = false;
 
     /** Fixed reference timestamp for X-axis; reset when user manually changes the date range. */
     private long windowStart = 0;
@@ -131,9 +132,20 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
         xBisButton = findViewById(R.id.button_x_bis);
         xVonButton = findViewById(R.id.button_x_von);
 
-        // Quick filter: show last 10 minutes worth of accel data.
-        btnFilterLast10Min = findViewById(R.id.btn_x_10min);
-        btnFilterLast10Min.setOnClickListener(view -> toggleTenMinutesFilter());
+        spinnerTimeframe = findViewById(R.id.spinner_timeframe);
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+            this, R.array.timeframe_labels, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerTimeframe.setAdapter(adapter);
+        spinnerTimeframe.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                int[] minutes = {10, 30, 60, 480, 1440, 10080};
+                selectedMinutes = minutes[position];
+                applyTimeFilter(selectedMinutes);
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) {}
+        });
 
         // --------------------------------------------------------------------
         // Chart views
@@ -194,8 +206,6 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
         setupToDatePickers(xBisButton);
 
         isTenMinuteFilterActive = true;
-        isStartPointFixed = false;
-        btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.header));
         startSlidingWindow();
         checkVoiceFilterIntent();
     }
@@ -225,32 +235,6 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
         xBisButton.setText(makeDateTimeString(dateToCalendar));
     }
 
-    /**
-     * Convenience filter: sets the date range to "now minus 10 minutes" to "now", refreshes the
-     * charts immediately and updates it every 5 seconds.
-     */
-    private void toggleTenMinutesFilter() {
-        if (!isTenMinuteFilterActive) {
-            isTenMinuteFilterActive = true;
-            isStartPointFixed = false;
-            btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.button));
-            startSlidingWindow();
-
-        } else if (!isStartPointFixed) {
-            isStartPointFixed = true;
-            btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.header));
-
-        } else {
-            isStartPointFixed = false;
-            btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.button));
-
-            long now = System.currentTimeMillis();
-            dateFromCalendar.setTimeInMillis(now - (10 * 60 * 1000));
-            syncDateButtonTexts();
-            updateChartsWithDateFilter();
-        }
-    }
-
     private void startSlidingWindow() {
         slidingWindowHandler.removeCallbacks(slidingWindowRunnable);
         slidingWindowRunnable =
@@ -261,10 +245,7 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
 
                         long now = System.currentTimeMillis();
 
-                        if (!isStartPointFixed) {
-                            long tenMinutesAgo = now - (10 * 60 * 1000);
-                            dateFromCalendar.setTimeInMillis(tenMinutesAgo);
-                        }
+                        dateFromCalendar.setTimeInMillis(now - (selectedMinutes * 60 * 1000L));
 
                         dateToCalendar.setTimeInMillis(now);
 
@@ -280,7 +261,6 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
 
     private void stopSlidingWindow() {
         isTenMinuteFilterActive = false;
-        isStartPointFixed = false;
         if (slidingWindowHandler != null && slidingWindowRunnable != null) {
             slidingWindowHandler.removeCallbacks(slidingWindowRunnable);
         }

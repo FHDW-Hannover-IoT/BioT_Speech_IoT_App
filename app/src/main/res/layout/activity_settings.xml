@@ -53,74 +53,6 @@
             android:orientation="vertical"
             android:layout_margin="10dp">
 
-            <!-- ── Douglas-Peucker section ─────────────────────────────── -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_margin="20dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/settings_dp_title"
-                    android:textColor="@color/text"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="10dp"/>
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/settings_dp_desc"
-                    android:textColor="@color/text"
-                    android:textSize="14sp"
-                    android:layout_marginBottom="20dp"
-                    android:alpha="0.7"/>
-
-                <com.google.android.material.switchmaterial.SwitchMaterial
-                    android:id="@+id/switch_dp_active"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/settings_dp_enable"
-                    android:textColor="@color/text"
-                    android:textSize="18sp" />
-
-                <TextView
-                    android:id="@+id/tv_epsilon_value"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/settings_dp_epsilon_label"
-                    android:textColor="@color/text"
-                    android:layout_marginTop="20dp"
-                    android:textSize="16sp" />
-
-                <SeekBar
-                    android:id="@+id/seekbar_epsilon"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:max="100"
-                    android:progress="10" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/settings_dp_hint"
-                    android:textColor="@color/text"
-                    android:textSize="12sp"
-                    android:layout_marginTop="5dp"
-                    android:fontStyle="italic"
-                    android:alpha="0.5"/>
-
-            </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginHorizontal="20dp"
-                    android:background="@color/button" />
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -205,6 +137,74 @@
                     android:textSize="14sp"
                     android:layout_marginTop="5dp"
                     android:alpha="0.7"/>
+
+            </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginHorizontal="20dp"
+                    android:background="@color/button" />
+
+            <!-- ── Douglas-Peucker section ─────────────────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_margin="20dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_dp_title"
+                    android:textColor="@color/text"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="10dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_dp_desc"
+                    android:textColor="@color/text"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="20dp"
+                    android:alpha="0.7"/>
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/switch_dp_active"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_dp_enable"
+                    android:textColor="@color/text"
+                    android:textSize="18sp" />
+
+                <TextView
+                    android:id="@+id/tv_epsilon_value"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_dp_epsilon_label"
+                    android:textColor="@color/text"
+                    android:layout_marginTop="20dp"
+                    android:textSize="16sp" />
+
+                <SeekBar
+                    android:id="@+id/seekbar_epsilon"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:max="100"
+                    android:progress="10" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_dp_hint"
+                    android:textColor="@color/text"
+                    android:textSize="12sp"
+                    android:layout_marginTop="5dp"
+                    android:fontStyle="italic"
+                    android:alpha="0.5"/>
 
             </LinearLayout>
 

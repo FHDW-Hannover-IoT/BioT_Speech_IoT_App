@@ -115,19 +115,14 @@
                 android:id="@+id/resetX"
                 />
 
-            <Button
-                android:layout_width="50dp"
+            <Spinner
+                android:id="@+id/spinner_timeframe"
+                android:layout_width="wrap_content"
                 android:layout_height="30dp"
-                android:text="@string/btn_ten_min"
-                android:textSize="10sp"
-                android:textColor="@color/background"
-                android:backgroundTint="@color/header"
-                android:id="@+id/btn_x_10min"
-                android:layout_marginStart="60dp"
-                android:paddingStart="0dp"
-                android:paddingEnd="0dp"
-                android:paddingBottom="0dp"
-                android:paddingTop="0dp"/>
+                android:layout_marginStart="10dp"
+                android:background="@color/button"
+                android:spinnerMode="dropdown"
+                android:popupBackground="@color/header" />
 
         </LinearLayout>
 

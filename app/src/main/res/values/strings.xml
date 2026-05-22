@@ -106,4 +106,13 @@
 
     <!-- MQTT error banner -->
     <string name="mqtt_connection_error">Could not connect to MQTT broker!</string>
+
+    <string-array name="timeframe_labels">
+        <item>10 min</item>
+        <item>30 min</item>
+        <item>1 Std</item>
+        <item>8 Std</item>
+        <item>24 Std</item>
+        <item>7 Tage</item>
+    </string-array>
 </resources>
