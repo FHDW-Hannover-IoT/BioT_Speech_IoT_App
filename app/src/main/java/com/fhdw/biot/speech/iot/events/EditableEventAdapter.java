@@ -120,9 +120,10 @@ public class EditableEventAdapter
         holder.eventType.setText(currentEvent.eventType);
         holder.eventTypeWatcher = simpleWatcher(text -> currentEvent.eventType = text);
         holder.eventType.addTextChangedListener(holder.eventTypeWatcher);
-        holder.eventType.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) scrollToHolder(holder);
-        });
+        holder.eventType.setOnFocusChangeListener(
+                (v, hasFocus) -> {
+                    if (hasFocus) scrollToHolder(holder);
+                });
 
         holder.thresholdValue.removeTextChangedListener(holder.thresholdWatcher);
         holder.thresholdValue.setText(
@@ -139,9 +140,10 @@ public class EditableEventAdapter
                             }
                         });
         holder.thresholdValue.addTextChangedListener(holder.thresholdWatcher);
-        holder.thresholdValue.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) scrollToHolder(holder);
-        });
+        holder.thresholdValue.setOnFocusChangeListener(
+                (v, hasFocus) -> {
+                    if (hasFocus) scrollToHolder(holder);
+                });
 
         holder.btnDelete.setOnClickListener(
                 v -> {

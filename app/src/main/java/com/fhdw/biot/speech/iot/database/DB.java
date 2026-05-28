@@ -17,11 +17,10 @@ import com.fhdw.biot.speech.iot.database.entities.Sensor;
 import com.fhdw.biot.speech.iot.database.entities.ValueSensor;
 
 /**
- * Persistent Room database. Two-tier data model:
- * - {@code EreignisType} — event rule definitions; survive across sessions (user-configured).
- * - Sensor tables ({@code accel_data}, {@code gyro_data}, {@code magnet_data},
- *   {@code ereignis_data}) — session-only; cleared on every app start so live-session
- *   semantics are preserved while rules persist.
+ * Persistent Room database. Two-tier data model: - {@code EreignisType} — event rule definitions;
+ * survive across sessions (user-configured). - Sensor tables ({@code accel_data}, {@code
+ * gyro_data}, {@code magnet_data}, {@code ereignis_data}) — session-only; cleared on every app
+ * start so live-session semantics are preserved while rules persist.
  */
 @Database(
         entities = {

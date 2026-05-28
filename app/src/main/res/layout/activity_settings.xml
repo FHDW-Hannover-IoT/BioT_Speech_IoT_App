@@ -42,6 +42,54 @@
 
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/notification_unsaved_settings"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@color/button"
+        android:orientation="vertical"
+        android:layout_margin="15dp"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:visibility="gone">
+
+        <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Unsaved Changes!"
+        android:textAlignment="center"
+        android:textColor="@color/black"
+        android:textSize="20sp"
+            android:textStyle="bold"
+        android:padding="5dp"
+        android:layout_margin="16dp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/btn_discard_changes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:text="Discard Changes"
+            android:backgroundTint="@color/header"/>
+
+            <Button
+                android:id="@+id/btn_save_changes"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:text="Save Changes"
+                android:backgroundTint="@color/header"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"

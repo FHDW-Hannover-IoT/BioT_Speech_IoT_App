@@ -16,7 +16,6 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import com.fhdw.biot.speech.iot.BuildConfig;
 import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.config.AppContainer;
 import com.fhdw.biot.speech.iot.config.BiotApplication;
@@ -100,7 +99,11 @@ public class MainActivity extends BiotBaseActivity {
         try {
             container.initActivityScope(this);
         } catch (IllegalStateException e) {
-            Toast.makeText(this, getString(R.string.toast_mqtt_error, e.getMessage()), Toast.LENGTH_LONG).show();
+            Toast.makeText(
+                            this,
+                            getString(R.string.toast_mqtt_error, e.getMessage()),
+                            Toast.LENGTH_LONG)
+                    .show();
             return;
         }
         mqttHandler = container.mqttHandler();
@@ -267,7 +270,7 @@ public class MainActivity extends BiotBaseActivity {
     private void broadcastFilter(int minutes) {
         // If a non-zero range is requested, ensure Room has that data — fetches only the gap.
         if (minutes > 0) {
-            long now    = System.currentTimeMillis();
+            long now = System.currentTimeMillis();
             long fromMs = now - (minutes * 60_000L);
             container.mcpDataSync().fetchRange(fromMs, now);
         }
@@ -878,5 +881,4 @@ public class MainActivity extends BiotBaseActivity {
                         : R.string.label_modus_format;
         label.setText(getString(fmtRes, modeName));
     }
-
 }

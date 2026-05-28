@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -26,9 +27,9 @@ import com.google.android.material.switchmaterial.SwitchMaterial;
  *
  * <p>The broker URL field starts empty when no custom value has been saved; the hint shows the
  * active build.gradle IP so the user always knows what address is in use. A Save button appears
- * only when unsaved changes are detected. Saving validates input, persists to SharedPreferences
- * (or removes the override if the field is cleared), and reconnects MQTT immediately if the
- * broker URL changed.
+ * only when unsaved changes are detected. Saving validates input, persists to SharedPreferences (or
+ * removes the override if the field is cleared), and reconnects MQTT immediately if the broker URL
+ * changed.
  */
 public class SettingsActivity extends BiotBaseActivity {
 
@@ -48,14 +49,14 @@ public class SettingsActivity extends BiotBaseActivity {
         setContentView(R.layout.activity_settings);
 
         switchPushNotifications = findViewById(R.id.switch_push_notifications);
-        etMqttBrokerUrl         = findViewById(R.id.et_mqtt_broker_url);
-        btnSave                 = findViewById(R.id.btn_save_settings);
+        etMqttBrokerUrl = findViewById(R.id.et_mqtt_broker_url);
+        btnSave = findViewById(R.id.btn_save_settings);
 
         SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
 
         originalPushActive = prefs.getBoolean("PUSH_ACTIVE", true);
         // null = no custom override saved; field stays empty, hint shows the active default
-        originalBrokerUrl  = prefs.getString("MQTT_BROKER", null);
+        originalBrokerUrl = prefs.getString("MQTT_BROKER", null);
 
         switchPushNotifications.setChecked(originalPushActive);
 
@@ -77,30 +78,57 @@ public class SettingsActivity extends BiotBaseActivity {
 
         // Home button — navigates back without saving unsaved changes
         ImageButton buttonHome = findViewById(R.id.home_button);
-        buttonHome.setOnClickListener(v -> finish());
+        buttonHome.setOnClickListener(
+                v -> {
+                    if (btnSave.getVisibility() == View.GONE) finish();
+                    else {
+                        LinearLayout notSavedPopUp =
+                                findViewById(R.id.notification_unsaved_settings);
+                        notSavedPopUp.setVisibility(View.VISIBLE);
+                        Button btnDiscard = notSavedPopUp.findViewById(R.id.btn_discard_changes);
+                        Button btnSave = notSavedPopUp.findViewById(R.id.btn_save_changes);
+                        btnDiscard.setOnClickListener(v1 -> finish());
+                        btnSave.setOnClickListener(
+                                v1 -> {
+                                    saveSettings();
+                                    finish();
+                                });
+                    }
+                });
 
         ImageButton btnInfoServer = findViewById(R.id.btn_info_server_data);
         btnInfoServer.setOnClickListener(
-                v -> new androidx.appcompat.app.AlertDialog.Builder(this)
-                        .setTitle(R.string.settings_server_info_title)
-                        .setMessage(R.string.settings_server_info_message)
-                        .setPositiveButton(R.string.settings_server_info_ok, (d, w) -> d.dismiss())
-                        .setIcon(R.drawable.baseline_info_outline_24)
-                        .show());
+                v ->
+                        new androidx.appcompat.app.AlertDialog.Builder(this)
+                                .setTitle(R.string.settings_server_info_title)
+                                .setMessage(R.string.settings_server_info_message)
+                                .setPositiveButton(
+                                        R.string.settings_server_info_ok, (d, w) -> d.dismiss())
+                                .setIcon(R.drawable.baseline_info_outline_24)
+                                .show());
 
-        etMqttBrokerUrl.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
-            @Override public void onTextChanged(CharSequence s, int st, int b, int c) {}
-            @Override public void afterTextChanged(Editable s) { updateSaveVisibility(); }
-        });
-        switchPushNotifications.setOnCheckedChangeListener((btn, checked) -> updateSaveVisibility());
+        etMqttBrokerUrl.addTextChangedListener(
+                new TextWatcher() {
+                    @Override
+                    public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+
+                    @Override
+                    public void onTextChanged(CharSequence s, int st, int b, int c) {}
+
+                    @Override
+                    public void afterTextChanged(Editable s) {
+                        updateSaveVisibility();
+                    }
+                });
+        switchPushNotifications.setOnCheckedChangeListener(
+                (btn, checked) -> updateSaveVisibility());
 
         btnSave.setOnClickListener(v -> saveSettings());
 
         // ── Douglas-Peucker section ──────────────────────────────────────────
-        SwitchMaterial swActive  = findViewById(R.id.switch_dp_active);
-        SeekBar sbEpsilon        = findViewById(R.id.seekbar_epsilon);
-        TextView tvEpsilon       = findViewById(R.id.tv_epsilon_value);
+        SwitchMaterial swActive = findViewById(R.id.switch_dp_active);
+        SeekBar sbEpsilon = findViewById(R.id.seekbar_epsilon);
+        TextView tvEpsilon = findViewById(R.id.tv_epsilon_value);
 
         SharedPreferences graphPrefs = getSharedPreferences("GraphSettings", MODE_PRIVATE);
         boolean wasEnabled = graphPrefs.getBoolean("dp_enabled", false);
@@ -108,7 +136,8 @@ public class SettingsActivity extends BiotBaseActivity {
 
         swActive.setChecked(wasEnabled);
         sbEpsilon.setProgress((int) (savedEpsilon * 20));
-        tvEpsilon.setText(getString(R.string.settings_dp_epsilon_label, String.valueOf(savedEpsilon)));
+        tvEpsilon.setText(
+                getString(R.string.settings_dp_epsilon_label, String.valueOf(savedEpsilon)));
 
         swActive.setOnCheckedChangeListener(
                 (btn, isChecked) -> {
@@ -117,19 +146,25 @@ public class SettingsActivity extends BiotBaseActivity {
                         graphPrefs.edit().putBoolean("dp_epsilon_manual", false).apply();
                 });
 
-        sbEpsilon.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                float val = progress / 20f;
-                tvEpsilon.setText(getString(R.string.settings_dp_epsilon_label, String.valueOf(val)));
-                if (fromUser) {
-                    graphPrefs.edit().putFloat("dp_epsilon", val).apply();
-                    graphPrefs.edit().putBoolean("dp_epsilon_manual", true).apply();
-                }
-            }
-            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
-        });
+        sbEpsilon.setOnSeekBarChangeListener(
+                new SeekBar.OnSeekBarChangeListener() {
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                        float val = progress / 20f;
+                        tvEpsilon.setText(
+                                getString(R.string.settings_dp_epsilon_label, String.valueOf(val)));
+                        if (fromUser) {
+                            graphPrefs.edit().putFloat("dp_epsilon", val).apply();
+                            graphPrefs.edit().putBoolean("dp_epsilon_manual", true).apply();
+                        }
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {}
+
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {}
+                });
     }
 
     /** Shows the Save button only when at least one field differs from its loaded value. */
@@ -137,7 +172,7 @@ public class SettingsActivity extends BiotBaseActivity {
         String entered = etMqttBrokerUrl.getText().toString().trim();
         // A change means: the entered text differs from what was loaded (treating null as "")
         boolean brokerChanged = !entered.equals(originalBrokerUrl == null ? "" : originalBrokerUrl);
-        boolean pushChanged   = switchPushNotifications.isChecked() != originalPushActive;
+        boolean pushChanged = switchPushNotifications.isChecked() != originalPushActive;
         btnSave.setVisibility((brokerChanged || pushChanged) ? View.VISIBLE : View.GONE);
     }
 
@@ -178,8 +213,8 @@ public class SettingsActivity extends BiotBaseActivity {
     }
 
     /**
-     * Returns true if the URL is a valid MQTT broker address.
-     * Accepts tcp:// and ssl:// schemes with a non-empty host and a valid port number.
+     * Returns true if the URL is a valid MQTT broker address. Accepts tcp:// and ssl:// schemes
+     * with a non-empty host and a valid port number.
      */
     private boolean isValidBrokerUrl(String url) {
         if (url == null || url.isEmpty()) return false;
@@ -187,7 +222,7 @@ public class SettingsActivity extends BiotBaseActivity {
         String hostPort = url.substring(url.indexOf("://") + 3);
         int colonIdx = hostPort.lastIndexOf(':');
         if (colonIdx <= 0) return false;
-        String host    = hostPort.substring(0, colonIdx);
+        String host = hostPort.substring(0, colonIdx);
         String portStr = hostPort.substring(colonIdx + 1);
         if (host.isEmpty()) return false;
         try {

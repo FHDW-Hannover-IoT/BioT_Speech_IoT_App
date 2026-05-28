@@ -2,18 +2,18 @@ package com.fhdw.biot.speech.iot.config;
 
 import android.app.Activity;
 import android.content.Context;
-import com.fhdw.biot.speech.iot.BuildConfig;
 import android.util.Log;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+import com.fhdw.biot.speech.iot.BuildConfig;
 import com.fhdw.biot.speech.iot.database.DB;
 import com.fhdw.biot.speech.iot.database.DbContext;
+import com.fhdw.biot.speech.iot.events.RuleEvaluator;
 import com.fhdw.biot.speech.iot.llm.LlmAction;
 import com.fhdw.biot.speech.iot.llm.LlmQueryHandler;
 import com.fhdw.biot.speech.iot.mqtt.IMqttPublisher;
 import com.fhdw.biot.speech.iot.mqtt.MqttHandler;
 import com.fhdw.biot.speech.iot.repository.McpDataSyncService;
-import com.fhdw.biot.speech.iot.events.RuleEvaluator;
 import com.fhdw.biot.speech.iot.repository.SensorRepository;
 import com.fhdw.biot.speech.iot.voice.ILlmQueryHandler;
 import com.fhdw.biot.speech.iot.voice.TtsManager;
@@ -154,13 +154,13 @@ public class AppContainer {
     }
 
     /**
-     * Checks whether the broker URL in SharedPreferences differs from the URL the current
-     * {@link MqttHandler} was created with. If changed, disconnects the old handler and creates
-     * a new one with the updated URL. TtsManager is intentionally untouched — it has no
-     * relation to the broker URL and does not need to be recreated on reconnect.
+     * Checks whether the broker URL in SharedPreferences differs from the URL the current {@link
+     * MqttHandler} was created with. If changed, disconnects the old handler and creates a new one
+     * with the updated URL. TtsManager is intentionally untouched — it has no relation to the
+     * broker URL and does not need to be recreated on reconnect.
      *
-     * @return true if the handler was replaced (caller should update its local reference and
-     *         call connectMqtt()), false if the URL is unchanged.
+     * @return true if the handler was replaced (caller should update its local reference and call
+     *     connectMqtt()), false if the URL is unchanged.
      */
     public boolean reconnectIfBrokerChanged(Context context) {
         String desiredUrl = getBrokerUrl(context);
