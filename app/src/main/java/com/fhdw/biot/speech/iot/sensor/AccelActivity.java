@@ -317,8 +317,8 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
             toTime = adjustedToCalendar.getTimeInMillis();
         }
 
-        android.util.Log.d("AccelActivity", "GRAPH_UI: querying accel from=" + fromTime + " to=" + toTime);
-        currentLiveData = sensorRepository.getAccelBetween(fromTime, toTime);
+        android.util.Log.d("AccelActivity", "GRAPH_UI: querying accel from=" + fromTime + " to=" + toTime + " window=" + selectedMinutes + "min");
+        currentLiveData = sensorRepository.getAccelBucketed(fromTime, toTime);
 
         currentLiveData.observe(
                 this,

@@ -308,8 +308,8 @@ public class MainGraphActivity extends BaseChartActivity {
         // ============================
         // ACCEL DATA
         // ============================
-        android.util.Log.d("MainGraphActivity", "GRAPH_UI: querying accel from=" + fromTime + " to=" + toTime);
-        currentAccelLiveData = sensorRepository.getAccelBetween(fromTime, toTime);
+        android.util.Log.d("MainGraphActivity", "GRAPH_UI: querying bucketed accel from=" + fromTime + " to=" + toTime);
+        currentAccelLiveData = sensorRepository.getAccelBucketed(fromTime, toTime);
         currentAccelLiveData.observe(
                 this,
                 data -> {
@@ -329,8 +329,8 @@ public class MainGraphActivity extends BaseChartActivity {
         // ============================
         // GYRO DATA
         // ============================
-        android.util.Log.d("MainGraphActivity", "GRAPH_UI: querying gyro from=" + fromTime + " to=" + toTime);
-        currentGyroLiveData = sensorRepository.getGyroBetween(fromTime, toTime);
+        android.util.Log.d("MainGraphActivity", "GRAPH_UI: querying bucketed gyro from=" + fromTime + " to=" + toTime);
+        currentGyroLiveData = sensorRepository.getGyroBucketed(fromTime, toTime);
         currentGyroLiveData.observe(
                 this,
                 data -> {
@@ -349,8 +349,8 @@ public class MainGraphActivity extends BaseChartActivity {
         // ============================
         // MAGNET DATA
         // ============================
-        android.util.Log.d("MainGraphActivity", "GRAPH_UI: querying magnet from=" + fromTime + " to=" + toTime);
-        currentMagLiveData = sensorRepository.getMagnetBetween(fromTime, toTime);
+        android.util.Log.d("MainGraphActivity", "GRAPH_UI: querying bucketed magnet from=" + fromTime + " to=" + toTime);
+        currentMagLiveData = sensorRepository.getMagnetBucketed(fromTime, toTime);
         currentMagLiveData.observe(
                 this,
                 data -> {

@@ -333,7 +333,8 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
             toTime = adjustedToCalendar.getTimeInMillis();
         }
 
-        currentLiveData = sensorRepository.getMagnetBetween(fromTime, toTime);
+        android.util.Log.d("MagnetActivity", "GRAPH_UI: querying magnet from=" + fromTime + " to=" + toTime + " window=" + selectedMinutes + "min");
+        currentLiveData = sensorRepository.getMagnetBucketed(fromTime, toTime);
 
         currentLiveData.observe(
                 this,

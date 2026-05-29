@@ -1,6 +1,7 @@
 package com.fhdw.biot.speech.iot.repository;
 
 import androidx.lifecycle.LiveData;
+import androidx.sqlite.db.SimpleSQLiteQuery;
 import com.fhdw.biot.speech.iot.database.DbContext;
 import com.fhdw.biot.speech.iot.database.dao.SensorDao;
 import com.fhdw.biot.speech.iot.database.dao.ValueSensorDAO;
@@ -112,6 +113,38 @@ public class SensorRepository {
 
     public LiveData<List<MagnetData>> getMagnetBetween(long from, long to) {
         return dao.getMagnetDataBetween(from, to);
+    }
+
+    // Returns ~600 time-bucketed rows regardless of window size. Bucket size is derived from
+    // the requested window so all spinner values (10min → 1week) stay under the point budget.
+    public LiveData<List<AccelData>> getAccelBucketed(long from, long to) {
+        long bucketMs = Math.max(1L, (to - from) / 600L);
+        String sql = "SELECT (timestamp / ?) * ? AS timestamp, 0 AS id," +
+                     " AVG(accelX) AS accelX, AVG(accelY) AS accelY, AVG(accelZ) AS accelZ" +
+                     " FROM accel_data WHERE timestamp BETWEEN ? AND ?" +
+                     " GROUP BY (timestamp / ?) ORDER BY timestamp ASC";
+        return dao.getAccelBucketed(new SimpleSQLiteQuery(sql,
+                new Object[]{bucketMs, bucketMs, from, to, bucketMs}));
+    }
+
+    public LiveData<List<GyroData>> getGyroBucketed(long from, long to) {
+        long bucketMs = Math.max(1L, (to - from) / 600L);
+        String sql = "SELECT (timestamp / ?) * ? AS timestamp, 0 AS id," +
+                     " AVG(gyroX) AS gyroX, AVG(gyroY) AS gyroY, AVG(gyroZ) AS gyroZ" +
+                     " FROM gyro_data WHERE timestamp BETWEEN ? AND ?" +
+                     " GROUP BY (timestamp / ?) ORDER BY timestamp ASC";
+        return dao.getGyroBucketed(new SimpleSQLiteQuery(sql,
+                new Object[]{bucketMs, bucketMs, from, to, bucketMs}));
+    }
+
+    public LiveData<List<MagnetData>> getMagnetBucketed(long from, long to) {
+        long bucketMs = Math.max(1L, (to - from) / 600L);
+        String sql = "SELECT (timestamp / ?) * ? AS timestamp, 0 AS id," +
+                     " AVG(magnetX) AS magnetX, AVG(magnetY) AS magnetY, AVG(magnetZ) AS magnetZ" +
+                     " FROM magnet_data WHERE timestamp BETWEEN ? AND ?" +
+                     " GROUP BY (timestamp / ?) ORDER BY timestamp ASC";
+        return dao.getMagnetBucketed(new SimpleSQLiteQuery(sql,
+                new Object[]{bucketMs, bucketMs, from, to, bucketMs}));
     }
 
     public List<EreignisData> getAllEreignisData() {

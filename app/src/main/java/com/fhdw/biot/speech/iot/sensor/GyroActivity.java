@@ -339,7 +339,8 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
             toTime = adjustedToCalendar.getTimeInMillis();
         }
 
-        currentLiveData = sensorRepository.getGyroBetween(fromTime, toTime);
+        android.util.Log.d("GyroActivity", "GRAPH_UI: querying gyro from=" + fromTime + " to=" + toTime + " window=" + selectedMinutes + "min");
+        currentLiveData = sensorRepository.getGyroBucketed(fromTime, toTime);
 
         currentLiveData.observe(
                 this,

@@ -4,6 +4,8 @@ import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
+import androidx.room.RawQuery;
+import androidx.sqlite.db.SupportSQLiteQuery;
 import com.fhdw.biot.speech.iot.database.entities.AccelData;
 import com.fhdw.biot.speech.iot.database.entities.EreignisData;
 import com.fhdw.biot.speech.iot.database.entities.EreignisType;
@@ -59,6 +61,18 @@ public interface SensorDao {
     @Query(
             "SELECT * FROM magnet_data WHERE timestamp BETWEEN :startTime AND :endTime ORDER BY timestamp ASC")
     LiveData<List<MagnetData>> getMagnetDataBetween(long startTime, long endTime);
+
+    // Bucketed downsampling — groups rows into time buckets and returns AVG per bucket.
+    // Aliased to match entity field names so Room maps results without a separate projection class.
+    // bucketMs passed twice: once for division, once for multiplication to get bucket start time.
+    @RawQuery(observedEntities = AccelData.class)
+    LiveData<List<AccelData>> getAccelBucketed(SupportSQLiteQuery query);
+
+    @RawQuery(observedEntities = GyroData.class)
+    LiveData<List<GyroData>> getGyroBucketed(SupportSQLiteQuery query);
+
+    @RawQuery(observedEntities = MagnetData.class)
+    LiveData<List<MagnetData>> getMagnetBucketed(SupportSQLiteQuery query);
 
     @Query("SELECT * FROM ereignis_data ORDER BY timestamp ASC")
     List<EreignisData> getAllEreignisData();
