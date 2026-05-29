@@ -1,6 +1,7 @@
 package com.fhdw.biot.speech.iot.sensor;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -349,8 +350,9 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
             toTime = adjustedToCalendar.getTimeInMillis();
         }
 
-        android.util.Log.d("GyroActivity", "GRAPH_UI: querying gyro from=" + fromTime + " to=" + toTime + " window=" + selectedMinutes + "min");
-        currentLiveData = sensorRepository.getGyroBetween(fromTime, toTime);
+        String resolution = selectedMinutes <= 30 ? "raw" : selectedMinutes <= 1440 ? "1min" : "1hour";
+        android.util.Log.d("GyroActivity", "GRAPH_UI: querying gyro from=" + fromTime + " to=" + toTime + " window=" + selectedMinutes + "min res=" + resolution);
+        currentLiveData = sensorRepository.getGyroBetween(fromTime, toTime, resolution);
 
         currentLiveData.observe(
                 this,
@@ -398,9 +400,17 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
         android.util.Log.i("GyroActivity", "GRAPH_LOAD: start gyro gen=" + gen + " rows=" + list.size());
 
         chartExecutor.execute(() -> {
-            float epsilon = EpsilonCalculator.calculateScaledEpsilon(GyroActivity.this, list, durationMs);
-            final List<GyroData> simplified = DouglasPeukerAlg.simplify(list, epsilon);
-            android.util.Log.d("GyroActivity", "GRAPH_RENDER: gen=" + gen + " raw=" + list.size() + " simplified=" + simplified.size());
+            SharedPreferences prefs = GyroActivity.this.getSharedPreferences("GraphSettings", android.content.Context.MODE_PRIVATE);
+            boolean dpEnabled = prefs.getBoolean("dp_enabled", false);
+            final List<GyroData> simplified;
+            if (dpEnabled) {
+                float epsilon = EpsilonCalculator.calculateScaledEpsilon(GyroActivity.this, list, durationMs);
+                simplified = DouglasPeukerAlg.simplify(list, epsilon);
+                android.util.Log.d("GyroActivity", "GRAPH_RENDER: gen=" + gen + " raw=" + list.size() + " simplified=" + simplified.size());
+            } else {
+                simplified = list;
+                android.util.Log.d("GyroActivity", "GRAPH_RENDER: gen=" + gen + " raw=" + list.size() + " dp=off");
+            }
 
             if (renderGeneration.get() != gen) return;
 

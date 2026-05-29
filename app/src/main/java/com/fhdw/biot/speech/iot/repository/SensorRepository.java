@@ -113,6 +113,18 @@ public class SensorRepository {
         return dao.getMagnetDataBetween(from, to);
     }
 
+    public LiveData<List<AccelData>> getAccelBetween(long from, long to, String resolution) {
+        return dao.getAccelDataBetweenRes(from, to, resolution);
+    }
+
+    public LiveData<List<GyroData>> getGyroBetween(long from, long to, String resolution) {
+        return dao.getGyroDataBetweenRes(from, to, resolution);
+    }
+
+    public LiveData<List<MagnetData>> getMagnetBetween(long from, long to, String resolution) {
+        return dao.getMagnetDataBetweenRes(from, to, resolution);
+    }
+
     public List<EreignisData> getAllEreignisData() {
         return dao.getAllEreignisData();
     }

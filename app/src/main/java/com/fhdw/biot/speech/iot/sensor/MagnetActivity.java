@@ -1,6 +1,7 @@
 package com.fhdw.biot.speech.iot.sensor;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -348,8 +349,9 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
             toTime = adjustedToCalendar.getTimeInMillis();
         }
 
-        android.util.Log.d("MagnetActivity", "GRAPH_UI: querying magnet from=" + fromTime + " to=" + toTime + " window=" + selectedMinutes + "min");
-        currentLiveData = sensorRepository.getMagnetBetween(fromTime, toTime);
+        String resolution = selectedMinutes <= 30 ? "raw" : selectedMinutes <= 1440 ? "1min" : "1hour";
+        android.util.Log.d("MagnetActivity", "GRAPH_UI: querying magnet from=" + fromTime + " to=" + toTime + " window=" + selectedMinutes + "min res=" + resolution);
+        currentLiveData = sensorRepository.getMagnetBetween(fromTime, toTime, resolution);
 
         currentLiveData.observe(
                 this,
@@ -397,9 +399,17 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
         android.util.Log.i("MagnetActivity", "GRAPH_LOAD: start magnet gen=" + gen + " rows=" + list.size());
 
         chartExecutor.execute(() -> {
-            float epsilon = EpsilonCalculator.calculateScaledEpsilon(MagnetActivity.this, list, durationMs);
-            final List<MagnetData> simplified = DouglasPeukerAlg.simplify(list, epsilon);
-            android.util.Log.d("MagnetActivity", "GRAPH_RENDER: gen=" + gen + " raw=" + list.size() + " simplified=" + simplified.size());
+            SharedPreferences prefs = MagnetActivity.this.getSharedPreferences("GraphSettings", android.content.Context.MODE_PRIVATE);
+            boolean dpEnabled = prefs.getBoolean("dp_enabled", false);
+            final List<MagnetData> simplified;
+            if (dpEnabled) {
+                float epsilon = EpsilonCalculator.calculateScaledEpsilon(MagnetActivity.this, list, durationMs);
+                simplified = DouglasPeukerAlg.simplify(list, epsilon);
+                android.util.Log.d("MagnetActivity", "GRAPH_RENDER: gen=" + gen + " raw=" + list.size() + " simplified=" + simplified.size());
+            } else {
+                simplified = list;
+                android.util.Log.d("MagnetActivity", "GRAPH_RENDER: gen=" + gen + " raw=" + list.size() + " dp=off");
+            }
 
             if (renderGeneration.get() != gen) return;
 

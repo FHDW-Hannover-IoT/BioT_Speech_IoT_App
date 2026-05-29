@@ -33,7 +33,7 @@ import com.fhdw.biot.speech.iot.database.entities.ValueSensor;
             Sensor.class,
             EreignisType.class
         },
-        version = 6,
+        version = 7,
         exportSchema = false)
 public abstract class DB extends RoomDatabase {
 

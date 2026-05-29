@@ -93,166 +93,188 @@ public class McpDataSyncService {
     // ── Public API ────────────────────────────────────────────────────────────
 
     /**
-     * Fetches the last {@code LLM_INITIAL_FETCH_HOURS} hours of data for all three sensors
-     * in 500-row pages. Called once on app start. Charts begin updating after the first page.
+     * Fetches three resolution tiers for all sensors on app start:
+     * <ul>
+     *   <li><b>raw</b>  — last 1 hour; dense data for the 10-min / 30-min sliding window.</li>
+     *   <li><b>1min</b> — last 24 hours; one point per minute for the 1h–24h views.</li>
+     *   <li><b>1hour</b>— all available history; one point per hour for the >24h views.</li>
+     * </ul>
+     * After the raw tier finishes, {@code accelHistory} / {@code gyroHistory} / {@code magnetHistory}
+     * are posted so chart activities can anchor their sliding windows immediately.
      */
     public void fetchInitial() {
-        long toMs   = System.currentTimeMillis();
-        long fromMs = toMs - (BuildConfig.LLM_INITIAL_FETCH_HOURS * 3_600_000L);
-        Log.i(TAG, "GRAPH_FETCH: fetchInitial baseUrl=" + baseUrl + " from=" + fromMs + " to=" + toMs);
+        long now    = System.currentTimeMillis();
+        long rawFrom   = now - 3_600_000L;          // 1 hour
+        long min1From  = now - 86_400_000L;          // 24 hours
+        long hour1From = 0L;                          // all available history
+        Log.i(TAG, "GRAPH_FETCH: fetchInitial baseUrl=" + baseUrl + " tiers=raw/1min/1hour");
         executor.submit(() -> {
-            fetchPagedAccel(fromMs, toMs);
-            fetchPagedGyro(fromMs, toMs);
-            fetchPagedMagnet(fromMs, toMs);
-            Log.i(TAG, "GRAPH_FETCH: fetchInitial complete");
+            // Tier 1 — raw (last 1 h); post LiveData so activities can anchor their windows
+            fetchPagedAccel(rawFrom,   now, "raw");
+            fetchPagedGyro(rawFrom,    now, "raw");
+            fetchPagedMagnet(rawFrom,  now, "raw");
+
+            // Tier 2 — 1-min aggregates (last 24 h)
+            fetchPagedAccel(min1From,  now, "1min");
+            fetchPagedGyro(min1From,   now, "1min");
+            fetchPagedMagnet(min1From, now, "1min");
+
+            // Tier 3 — 1-hour aggregates (full history)
+            fetchPagedAccel(hour1From,  now, "1hour");
+            fetchPagedGyro(hour1From,   now, "1hour");
+            fetchPagedMagnet(hour1From, now, "1hour");
+
+            Log.i(TAG, "GRAPH_FETCH: fetchInitial complete (3 tiers)");
         });
     }
 
     /**
-     * Extends the local Room cache to cover {@code [fromMs, toMs]} for all three sensors.
-     * Only fetches the gap between {@code fromMs} and what is already in Room — skips sensors
-     * whose data already covers the requested range.
-     *
-     * <p>Call this whenever the user selects a time filter wider than the initial 1-hour window.
+     * Fetches a gap range for all three sensors — used when the user picks a manual date range
+     * via the date pickers that extends beyond what {@code fetchInitial} already covers.
+     * Resolution is auto-selected from the window size.
      *
      * @param fromMs start of the desired range in epoch milliseconds
      * @param toMs   end of the desired range in epoch milliseconds
      */
     public void fetchRange(long fromMs, long toMs) {
+        long windowMs  = toMs - fromMs;
+        String res = windowMs < 3_600_000L ? "raw" : windowMs <= 86_400_000L ? "1min" : "1hour";
         executor.submit(() -> {
             if (fromMs < oldestFetchedAccelMs) {
-                long fetchTo = Math.min(toMs, oldestFetchedAccelMs == Long.MAX_VALUE ? toMs : oldestFetchedAccelMs - 1);
-                fetchPagedAccel(fromMs, fetchTo);
+                long fetchTo = oldestFetchedAccelMs == Long.MAX_VALUE ? toMs : oldestFetchedAccelMs - 1;
+                fetchPagedAccel(fromMs, Math.min(toMs, fetchTo), res);
             }
             if (fromMs < oldestFetchedGyroMs) {
-                long fetchTo = Math.min(toMs, oldestFetchedGyroMs == Long.MAX_VALUE ? toMs : oldestFetchedGyroMs - 1);
-                fetchPagedGyro(fromMs, fetchTo);
+                long fetchTo = oldestFetchedGyroMs == Long.MAX_VALUE ? toMs : oldestFetchedGyroMs - 1;
+                fetchPagedGyro(fromMs, Math.min(toMs, fetchTo), res);
             }
             if (fromMs < oldestFetchedMagnetMs) {
-                long fetchTo = Math.min(toMs, oldestFetchedMagnetMs == Long.MAX_VALUE ? toMs : oldestFetchedMagnetMs - 1);
-                fetchPagedMagnet(fromMs, fetchTo);
+                long fetchTo = oldestFetchedMagnetMs == Long.MAX_VALUE ? toMs : oldestFetchedMagnetMs - 1;
+                fetchPagedMagnet(fromMs, Math.min(toMs, fetchTo), res);
             }
         });
     }
 
     // ── Per-sensor paginated fetchers ─────────────────────────────────────────
 
-    private void fetchPagedAccel(long fromMs, long toMs) {
+    private void fetchPagedAccel(long fromMs, long toMs, String resolution) {
         List<AccelData> accumulated = new ArrayList<>();
         long cursor = fromMs;
         try {
             while (true) {
-                JSONArray rows = fetchPage(PATH_ACCEL, cursor, toMs);
+                JSONArray rows = fetchPage(PATH_ACCEL, cursor, toMs, resolution);
                 if (rows.length() == 0) break;
 
                 List<AccelData> page = new ArrayList<>();
                 for (int i = 0; i < rows.length(); i++) {
                     JSONObject r = rows.getJSONObject(i);
                     AccelData d = new AccelData();
-                    d.timestamp = r.getLong("timestamp");
-                    d.accelX    = (float) r.getDouble("x");
-                    d.accelY    = (float) r.getDouble("y");
-                    d.accelZ    = (float) r.getDouble("z");
+                    d.timestamp  = r.getLong("timestamp");
+                    d.accelX     = (float) r.getDouble("x");
+                    d.accelY     = (float) r.getDouble("y");
+                    d.accelZ     = (float) r.getDouble("z");
+                    d.resolution = resolution;
                     page.add(d);
                 }
                 repository.insertAccelBatch(page);
                 accumulated.addAll(page);
-                accelHistory.postValue(new ArrayList<>(accumulated));
-                Log.i(TAG, "GRAPH_FETCH: accel page " + page.size() + " rows cursor=" + cursor + " total=" + accumulated.size());
+                if ("raw".equals(resolution)) accelHistory.postValue(new ArrayList<>(accumulated));
+                Log.i(TAG, "GRAPH_FETCH: accel[" + resolution + "] page " + page.size() + " rows cursor=" + cursor + " total=" + accumulated.size());
 
                 if (page.size() < BuildConfig.LLM_FETCH_PAGE_SIZE) break;
                 cursor = rows.getJSONObject(rows.length() - 1).getLong("timestamp") + 1;
             }
             oldestFetchedAccelMs = Math.min(oldestFetchedAccelMs, fromMs);
-            Log.i(TAG, "GRAPH_FETCH: accel done total=" + accumulated.size() + " rows queued to Room");
+            Log.i(TAG, "GRAPH_FETCH: accel[" + resolution + "] done total=" + accumulated.size());
         } catch (Exception e) {
-            Log.e(TAG, "fetchPagedAccel failed: " + e.getMessage(), e);
-            if (accumulated.isEmpty()) accelHistory.postValue(Collections.emptyList());
+            Log.e(TAG, "fetchPagedAccel[" + resolution + "] failed: " + e.getMessage(), e);
+            if (accumulated.isEmpty() && "raw".equals(resolution)) accelHistory.postValue(Collections.emptyList());
         }
     }
 
-    private void fetchPagedGyro(long fromMs, long toMs) {
+    private void fetchPagedGyro(long fromMs, long toMs, String resolution) {
         List<GyroData> accumulated = new ArrayList<>();
         long cursor = fromMs;
         try {
             while (true) {
-                JSONArray rows = fetchPage(PATH_GYRO, cursor, toMs);
+                JSONArray rows = fetchPage(PATH_GYRO, cursor, toMs, resolution);
                 if (rows.length() == 0) break;
 
                 List<GyroData> page = new ArrayList<>();
                 for (int i = 0; i < rows.length(); i++) {
                     JSONObject r = rows.getJSONObject(i);
                     GyroData d = new GyroData();
-                    d.timestamp = r.getLong("timestamp");
-                    d.gyroX     = (float) r.getDouble("x");
-                    d.gyroY     = (float) r.getDouble("y");
-                    d.gyroZ     = (float) r.getDouble("z");
+                    d.timestamp  = r.getLong("timestamp");
+                    d.gyroX      = (float) r.getDouble("x");
+                    d.gyroY      = (float) r.getDouble("y");
+                    d.gyroZ      = (float) r.getDouble("z");
+                    d.resolution = resolution;
                     page.add(d);
                 }
                 repository.insertGyroBatch(page);
                 accumulated.addAll(page);
-                gyroHistory.postValue(new ArrayList<>(accumulated));
-                Log.i(TAG, "GRAPH_FETCH: gyro page " + page.size() + " rows cursor=" + cursor + " total=" + accumulated.size());
+                if ("raw".equals(resolution)) gyroHistory.postValue(new ArrayList<>(accumulated));
+                Log.i(TAG, "GRAPH_FETCH: gyro[" + resolution + "] page " + page.size() + " rows cursor=" + cursor + " total=" + accumulated.size());
 
                 if (page.size() < BuildConfig.LLM_FETCH_PAGE_SIZE) break;
                 cursor = rows.getJSONObject(rows.length() - 1).getLong("timestamp") + 1;
             }
             oldestFetchedGyroMs = Math.min(oldestFetchedGyroMs, fromMs);
-            Log.i(TAG, "GRAPH_FETCH: gyro done total=" + accumulated.size() + " rows queued to Room");
+            Log.i(TAG, "GRAPH_FETCH: gyro[" + resolution + "] done total=" + accumulated.size());
         } catch (Exception e) {
-            Log.e(TAG, "fetchPagedGyro failed: " + e.getMessage(), e);
-            if (accumulated.isEmpty()) gyroHistory.postValue(Collections.emptyList());
+            Log.e(TAG, "fetchPagedGyro[" + resolution + "] failed: " + e.getMessage(), e);
+            if (accumulated.isEmpty() && "raw".equals(resolution)) gyroHistory.postValue(Collections.emptyList());
         }
     }
 
-    private void fetchPagedMagnet(long fromMs, long toMs) {
+    private void fetchPagedMagnet(long fromMs, long toMs, String resolution) {
         List<MagnetData> accumulated = new ArrayList<>();
         long cursor = fromMs;
         try {
             while (true) {
-                JSONArray rows = fetchPage(PATH_MAGNET, cursor, toMs);
+                JSONArray rows = fetchPage(PATH_MAGNET, cursor, toMs, resolution);
                 if (rows.length() == 0) break;
 
                 List<MagnetData> page = new ArrayList<>();
                 for (int i = 0; i < rows.length(); i++) {
                     JSONObject r = rows.getJSONObject(i);
                     MagnetData d = new MagnetData();
-                    d.timestamp = r.getLong("timestamp");
-                    d.magnetX   = (float) r.getDouble("x");
-                    d.magnetY   = (float) r.getDouble("y");
-                    d.magnetZ   = (float) r.getDouble("z");
+                    d.timestamp  = r.getLong("timestamp");
+                    d.magnetX    = (float) r.getDouble("x");
+                    d.magnetY    = (float) r.getDouble("y");
+                    d.magnetZ    = (float) r.getDouble("z");
+                    d.resolution = resolution;
                     page.add(d);
                 }
                 repository.insertMagnetBatch(page);
                 accumulated.addAll(page);
-                magnetHistory.postValue(new ArrayList<>(accumulated));
-                Log.i(TAG, "GRAPH_FETCH: magnet page " + page.size() + " rows cursor=" + cursor + " total=" + accumulated.size());
+                if ("raw".equals(resolution)) magnetHistory.postValue(new ArrayList<>(accumulated));
+                Log.i(TAG, "GRAPH_FETCH: magnet[" + resolution + "] page " + page.size() + " rows cursor=" + cursor + " total=" + accumulated.size());
 
                 if (page.size() < BuildConfig.LLM_FETCH_PAGE_SIZE) break;
                 cursor = rows.getJSONObject(rows.length() - 1).getLong("timestamp") + 1;
             }
             oldestFetchedMagnetMs = Math.min(oldestFetchedMagnetMs, fromMs);
-            Log.i(TAG, "GRAPH_FETCH: magnet done total=" + accumulated.size() + " rows queued to Room");
+            Log.i(TAG, "GRAPH_FETCH: magnet[" + resolution + "] done total=" + accumulated.size());
         } catch (Exception e) {
-            Log.e(TAG, "fetchPagedMagnet failed: " + e.getMessage(), e);
-            if (accumulated.isEmpty()) magnetHistory.postValue(Collections.emptyList());
+            Log.e(TAG, "fetchPagedMagnet[" + resolution + "] failed: " + e.getMessage(), e);
+            if (accumulated.isEmpty() && "raw".equals(resolution)) magnetHistory.postValue(Collections.emptyList());
         }
     }
 
     // ── HTTP ──────────────────────────────────────────────────────────────────
 
     /**
-     * Fetches one page of sensor rows from the server.
+     * Fetches one page of sensor rows from the server with an explicit resolution tier.
      * Does NOT call {@code disconnect()} — the JVM keep-alive pool reuses the socket
      * across consecutive pages and across sensor endpoints.
      */
-    private JSONArray fetchPage(String path, long fromMs, long toMs) throws Exception {
-        // resolution=auto: server picks raw/<1h, 1min/1h-24h, 1hour/>24h
+    private JSONArray fetchPage(String path, long fromMs, long toMs, String resolution) throws Exception {
         URL url = new URL(baseUrl + path
                 + "?from=" + fromMs
                 + "&to="   + toMs
                 + "&limit=" + BuildConfig.LLM_FETCH_PAGE_SIZE
-                + "&resolution=auto");
+                + "&resolution=" + resolution);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
         conn.setRequestProperty("Accept", "application/json");

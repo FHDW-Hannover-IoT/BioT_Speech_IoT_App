@@ -1,6 +1,7 @@
 package com.fhdw.biot.speech.iot.sensor;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -347,8 +348,9 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
             toTime = adjustedToCalendar.getTimeInMillis();
         }
 
-        android.util.Log.d("AccelActivity", "GRAPH_UI: querying accel from=" + fromTime + " to=" + toTime + " window=" + selectedMinutes + "min");
-        currentLiveData = sensorRepository.getAccelBetween(fromTime, toTime);
+        String resolution = selectedMinutes <= 30 ? "raw" : selectedMinutes <= 1440 ? "1min" : "1hour";
+        android.util.Log.d("AccelActivity", "GRAPH_UI: querying accel from=" + fromTime + " to=" + toTime + " window=" + selectedMinutes + "min res=" + resolution);
+        currentLiveData = sensorRepository.getAccelBetween(fromTime, toTime, resolution);
 
         currentLiveData.observe(
                 this,
@@ -393,10 +395,18 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
         android.util.Log.i("AccelActivity", "GRAPH_LOAD: start accel gen=" + gen + " rows=" + list.size());
 
         chartExecutor.execute(() -> {
-            // Step 1: DP on coordinator thread (CPU-heavy, single pass over data)
-            float epsilon = EpsilonCalculator.calculateScaledEpsilon(AccelActivity.this, list, durationMs);
-            final List<AccelData> simplified = DouglasPeukerAlg.simplify(list, epsilon);
-            android.util.Log.d("AccelActivity", "GRAPH_RENDER: gen=" + gen + " raw=" + list.size() + " simplified=" + simplified.size() + " epsilon=" + epsilon);
+            // Step 1: optionally run DP (respects the dp_enabled toggle in Settings)
+            SharedPreferences prefs = AccelActivity.this.getSharedPreferences("GraphSettings", android.content.Context.MODE_PRIVATE);
+            boolean dpEnabled = prefs.getBoolean("dp_enabled", false);
+            final List<AccelData> simplified;
+            if (dpEnabled) {
+                float epsilon = EpsilonCalculator.calculateScaledEpsilon(AccelActivity.this, list, durationMs);
+                simplified = DouglasPeukerAlg.simplify(list, epsilon);
+                android.util.Log.d("AccelActivity", "GRAPH_RENDER: gen=" + gen + " raw=" + list.size() + " simplified=" + simplified.size() + " epsilon=" + epsilon);
+            } else {
+                simplified = list;
+                android.util.Log.d("AccelActivity", "GRAPH_RENDER: gen=" + gen + " raw=" + list.size() + " dp=off");
+            }
 
             // Discard if superseded by a newer render request
             if (renderGeneration.get() != gen) {
