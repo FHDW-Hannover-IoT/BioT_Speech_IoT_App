@@ -302,12 +302,14 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
             toTime = adjustedToCalendar.getTimeInMillis();
         }
 
+        android.util.Log.d("AccelActivity", "GRAPH_UI: querying accel from=" + fromTime + " to=" + toTime);
         currentLiveData = sensorRepository.getAccelBetween(fromTime, toTime);
 
         currentLiveData.observe(
                 this,
                 filteredData -> {
                     if (filteredData != null && !filteredData.isEmpty()) {
+                        android.util.Log.d("AccelActivity", "GRAPH_UI: observer fired rows=" + filteredData.size() + " first_ts=" + filteredData.get(0).timestamp + " last_ts=" + filteredData.get(filteredData.size()-1).timestamp);
                         long firstTimestamp = filteredData.get(0).timestamp;
 
                         // Use earliest row in range as X-axis start.
@@ -317,6 +319,7 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
 
                         displayDataInCharts(filteredData);
                     } else {
+                        android.util.Log.w("AccelActivity", "GRAPH_UI: observer fired EMPTY for from=" + fromTime + " to=" + toTime);
                         // No data in this range → clear charts to avoid stale plots.
                         lineChartAccelX.clear();
                         lineChartAccelY.clear();
@@ -347,6 +350,7 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
         long durationMs = (long) selectedMinutes * 60_000L;
         float epsilon = EpsilonCalculator.calculateScaledEpsilon(this, accelDataList, durationMs);
         List<AccelData> dataToRender = DouglasPeukerAlg.simplify(accelDataList, epsilon);
+        android.util.Log.d("AccelActivity", "GRAPH_RENDER: accel raw=" + accelDataList.size() + " simplified=" + dataToRender.size() + " epsilon=" + epsilon + " windowStart=" + windowStart);
 
         ArrayList<Entry> entriesX = new ArrayList<>();
         ArrayList<Entry> entriesY = new ArrayList<>();

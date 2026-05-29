@@ -94,10 +94,12 @@ public class McpDataSyncService {
     public void fetchInitial() {
         long toMs   = System.currentTimeMillis();
         long fromMs = toMs - (BuildConfig.LLM_INITIAL_FETCH_HOURS * 3_600_000L);
+        Log.i(TAG, "GRAPH_FETCH: fetchInitial baseUrl=" + baseUrl + " from=" + fromMs + " to=" + toMs);
         executor.submit(() -> {
             fetchPagedAccel(fromMs, toMs);
             fetchPagedGyro(fromMs, toMs);
             fetchPagedMagnet(fromMs, toMs);
+            Log.i(TAG, "GRAPH_FETCH: fetchInitial complete");
         });
     }
 
@@ -151,12 +153,13 @@ public class McpDataSyncService {
                 repository.insertAccelBatch(page);
                 accumulated.addAll(page);
                 accelHistory.postValue(new ArrayList<>(accumulated));
-                Log.i(TAG, "Accel page: " + page.size() + " rows (cursor=" + cursor + ")");
+                Log.i(TAG, "GRAPH_FETCH: accel page " + page.size() + " rows cursor=" + cursor + " total=" + accumulated.size());
 
                 if (page.size() < BuildConfig.LLM_FETCH_PAGE_SIZE) break;
                 cursor = rows.getJSONObject(rows.length() - 1).getLong("timestamp") + 1;
             }
             oldestFetchedAccelMs = Math.min(oldestFetchedAccelMs, fromMs);
+            Log.i(TAG, "GRAPH_FETCH: accel done total=" + accumulated.size() + " rows queued to Room");
         } catch (Exception e) {
             Log.e(TAG, "fetchPagedAccel failed: " + e.getMessage(), e);
             syncError.postValue("Accel history unavailable: " + e.getMessage());
@@ -185,12 +188,13 @@ public class McpDataSyncService {
                 repository.insertGyroBatch(page);
                 accumulated.addAll(page);
                 gyroHistory.postValue(new ArrayList<>(accumulated));
-                Log.i(TAG, "Gyro page: " + page.size() + " rows (cursor=" + cursor + ")");
+                Log.i(TAG, "GRAPH_FETCH: gyro page " + page.size() + " rows cursor=" + cursor + " total=" + accumulated.size());
 
                 if (page.size() < BuildConfig.LLM_FETCH_PAGE_SIZE) break;
                 cursor = rows.getJSONObject(rows.length() - 1).getLong("timestamp") + 1;
             }
             oldestFetchedGyroMs = Math.min(oldestFetchedGyroMs, fromMs);
+            Log.i(TAG, "GRAPH_FETCH: gyro done total=" + accumulated.size() + " rows queued to Room");
         } catch (Exception e) {
             Log.e(TAG, "fetchPagedGyro failed: " + e.getMessage(), e);
             syncError.postValue("Gyro history unavailable: " + e.getMessage());
@@ -219,12 +223,13 @@ public class McpDataSyncService {
                 repository.insertMagnetBatch(page);
                 accumulated.addAll(page);
                 magnetHistory.postValue(new ArrayList<>(accumulated));
-                Log.i(TAG, "Magnet page: " + page.size() + " rows (cursor=" + cursor + ")");
+                Log.i(TAG, "GRAPH_FETCH: magnet page " + page.size() + " rows cursor=" + cursor + " total=" + accumulated.size());
 
                 if (page.size() < BuildConfig.LLM_FETCH_PAGE_SIZE) break;
                 cursor = rows.getJSONObject(rows.length() - 1).getLong("timestamp") + 1;
             }
             oldestFetchedMagnetMs = Math.min(oldestFetchedMagnetMs, fromMs);
+            Log.i(TAG, "GRAPH_FETCH: magnet done total=" + accumulated.size() + " rows queued to Room");
         } catch (Exception e) {
             Log.e(TAG, "fetchPagedMagnet failed: " + e.getMessage(), e);
             syncError.postValue("Magnet history unavailable: " + e.getMessage());

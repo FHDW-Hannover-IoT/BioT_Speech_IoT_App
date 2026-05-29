@@ -74,32 +74,41 @@ public class DbContext {
 
     public void insertAccelBatch(List<AccelData> batch) {
         if (batch == null || batch.isEmpty()) return;
-        executor.execute(
-                () ->
-                        db.runInTransaction(
-                                () -> {
-                                    for (AccelData d : batch) sensorDao.insert(d);
-                                }));
+        android.util.Log.d("DbContext", "GRAPH_DB: queuing accel batch size=" + batch.size());
+        executor.execute(() -> {
+            try {
+                db.runInTransaction(() -> { for (AccelData d : batch) sensorDao.insert(d); });
+                android.util.Log.d("DbContext", "GRAPH_DB: accel batch committed size=" + batch.size());
+            } catch (Exception e) {
+                android.util.Log.e("DbContext", "GRAPH_DB: accel batch FAILED: " + e.getMessage(), e);
+            }
+        });
     }
 
     public void insertGyroBatch(List<GyroData> batch) {
         if (batch == null || batch.isEmpty()) return;
-        executor.execute(
-                () ->
-                        db.runInTransaction(
-                                () -> {
-                                    for (GyroData d : batch) sensorDao.insert(d);
-                                }));
+        android.util.Log.d("DbContext", "GRAPH_DB: queuing gyro batch size=" + batch.size());
+        executor.execute(() -> {
+            try {
+                db.runInTransaction(() -> { for (GyroData d : batch) sensorDao.insert(d); });
+                android.util.Log.d("DbContext", "GRAPH_DB: gyro batch committed size=" + batch.size());
+            } catch (Exception e) {
+                android.util.Log.e("DbContext", "GRAPH_DB: gyro batch FAILED: " + e.getMessage(), e);
+            }
+        });
     }
 
     public void insertMagnetBatch(List<MagnetData> batch) {
         if (batch == null || batch.isEmpty()) return;
-        executor.execute(
-                () ->
-                        db.runInTransaction(
-                                () -> {
-                                    for (MagnetData d : batch) sensorDao.insert(d);
-                                }));
+        android.util.Log.d("DbContext", "GRAPH_DB: queuing magnet batch size=" + batch.size());
+        executor.execute(() -> {
+            try {
+                db.runInTransaction(() -> { for (MagnetData d : batch) sensorDao.insert(d); });
+                android.util.Log.d("DbContext", "GRAPH_DB: magnet batch committed size=" + batch.size());
+            } catch (Exception e) {
+                android.util.Log.e("DbContext", "GRAPH_DB: magnet batch FAILED: " + e.getMessage(), e);
+            }
+        });
     }
 
     // ── DAO accessors (for read LiveData) ─────────────────────────────────────

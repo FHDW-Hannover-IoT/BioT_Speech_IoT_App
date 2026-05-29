@@ -293,13 +293,16 @@ public class MainGraphActivity extends BaseChartActivity {
         // ============================
         // ACCEL DATA
         // ============================
+        android.util.Log.d("MainGraphActivity", "GRAPH_UI: querying accel from=" + fromTime + " to=" + toTime);
         currentAccelLiveData = sensorRepository.getAccelBetween(fromTime, toTime);
         currentAccelLiveData.observe(
                 this,
                 data -> {
                     if (data != null && !data.isEmpty()) {
+                        android.util.Log.d("MainGraphActivity", "GRAPH_UI: accel observer fired rows=" + data.size() + " first_ts=" + data.get(0).timestamp);
                         initializeAccelDataSets(data, fromTime, toTime);
                     } else {
+                        android.util.Log.w("MainGraphActivity", "GRAPH_UI: accel observer EMPTY from=" + fromTime + " to=" + toTime);
                         lineDataAccelx =
                                 lineDataAccely = lineDataAccelz = lineDataAccelTotal = null;
                         setupChart(lineChartAccel, "Beschleunigung", fromTime);
@@ -311,13 +314,16 @@ public class MainGraphActivity extends BaseChartActivity {
         // ============================
         // GYRO DATA
         // ============================
+        android.util.Log.d("MainGraphActivity", "GRAPH_UI: querying gyro from=" + fromTime + " to=" + toTime);
         currentGyroLiveData = sensorRepository.getGyroBetween(fromTime, toTime);
         currentGyroLiveData.observe(
                 this,
                 data -> {
                     if (data != null && !data.isEmpty()) {
+                        android.util.Log.d("MainGraphActivity", "GRAPH_UI: gyro observer fired rows=" + data.size());
                         initializeGyroDataSets(data, fromTime, toTime);
                     } else {
+                        android.util.Log.w("MainGraphActivity", "GRAPH_UI: gyro observer EMPTY from=" + fromTime + " to=" + toTime);
                         lineDataGyrox = lineDataGyroy = lineDataGyroz = lineDataGyroTotal = null;
                         setupChart(lineChartGyro, "Gyroskop", fromTime);
                         pinXAxisRange(lineChartGyro, 0, toTime - fromTime);
@@ -328,13 +334,16 @@ public class MainGraphActivity extends BaseChartActivity {
         // ============================
         // MAGNET DATA
         // ============================
+        android.util.Log.d("MainGraphActivity", "GRAPH_UI: querying magnet from=" + fromTime + " to=" + toTime);
         currentMagLiveData = sensorRepository.getMagnetBetween(fromTime, toTime);
         currentMagLiveData.observe(
                 this,
                 data -> {
                     if (data != null && !data.isEmpty()) {
+                        android.util.Log.d("MainGraphActivity", "GRAPH_UI: magnet observer fired rows=" + data.size());
                         initializeMagDataSets(data, fromTime, toTime);
                     } else {
+                        android.util.Log.w("MainGraphActivity", "GRAPH_UI: magnet observer EMPTY from=" + fromTime + " to=" + toTime);
                         lineDataMagx = lineDataMagy = lineDataMagz = lineDataMagTotal = null;
                         setupChart(lineChartMag, "Magnetfeld", fromTime);
                         pinXAxisRange(lineChartMag, 0, toTime - fromTime);
@@ -511,6 +520,7 @@ public class MainGraphActivity extends BaseChartActivity {
         long durationMs = toTime - fromTime;
         float epsilon = EpsilonCalculator.calculateScaledEpsilon(this, list, durationMs);
         List<AccelData> dataToUse = DouglasPeukerAlg.simplify(list, epsilon);
+        android.util.Log.d("MainGraphActivity", "GRAPH_RENDER: accel raw=" + list.size() + " simplified=" + dataToUse.size() + " epsilon=" + epsilon);
 
         ArrayList<Entry> xs = new ArrayList<>();
         ArrayList<Entry> ys = new ArrayList<>();
