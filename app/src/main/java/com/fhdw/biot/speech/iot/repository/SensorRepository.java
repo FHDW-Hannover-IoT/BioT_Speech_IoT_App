@@ -1,7 +1,6 @@
 package com.fhdw.biot.speech.iot.repository;
 
 import androidx.lifecycle.LiveData;
-import androidx.sqlite.db.SimpleSQLiteQuery;
 import com.fhdw.biot.speech.iot.database.DbContext;
 import com.fhdw.biot.speech.iot.database.dao.SensorDao;
 import com.fhdw.biot.speech.iot.database.dao.ValueSensorDAO;
@@ -15,13 +14,18 @@ import com.fhdw.biot.speech.iot.database.entities.ValueSensor;
 import java.util.List;
 
 /**
- * SensorRepository — single access point for sensor data.
+ * SensorRepository — single access point for all sensor data in the Android Room database.
  *
- * <p>Writes always go through {@link DbContext} (ACID, background thread). Reads return
- * Room-managed {@link LiveData} so the UI auto-updates without polling.
+ * <p><b>Write path:</b> all writes go through {@link DbContext} which owns the single-thread
+ * executor and transaction boundary. Callers never write directly to the DAO.
  *
- * <p>No Activity or Fragment reference is held here — the LiveData lifecycle is managed by the
- * observer (Activity/Fragment) at call site.
+ * <p><b>Read path:</b> returns Room-managed {@link LiveData} so graph activities auto-update
+ * when new rows are inserted — no polling required. The data returned is already
+ * pre-aggregated by the server (raw / 1min / 1hour depending on the requested window),
+ * so every read is a fast indexed range scan with no GROUP BY on the device.
+ *
+ * <p>No Activity or Fragment reference is held here. LiveData lifecycle (observe/remove)
+ * is managed by the observer at the call site.
  */
 public class SensorRepository {
 
@@ -79,18 +83,7 @@ public class SensorRepository {
 
     // ── Live reads ────────────────────────────────────────────────────────────
 
-    public LiveData<List<AccelData>> getAllAccelData() {
-        return dao.getAllAccelData();
-    }
-
-    public LiveData<List<GyroData>> getAllGyroData() {
-        return dao.getAllGyroData();
-    }
-
-    public LiveData<List<MagnetData>> getAllMagnetData() {
-        return dao.getAllMagnetData();
-    }
-
+    /** Used by MainGraphActivity to anchor the initial "from" date to the oldest available row. */
     public LiveData<Long> getOldestAccelTimestamp() {
         return dao.getOldestAccelTimestamp();
     }
@@ -103,6 +96,11 @@ public class SensorRepository {
         return dao.getOldestMagnetTimestamp();
     }
 
+    /**
+     * Returns a reactive range query that fires whenever {@code accel_data} is modified.
+     * The server pre-aggregates data to the correct resolution before sending it, so this
+     * query always returns ≤600 rows regardless of the time window selected by the user.
+     */
     public LiveData<List<AccelData>> getAccelBetween(long from, long to) {
         return dao.getAccelDataBetween(from, to);
     }
@@ -113,38 +111,6 @@ public class SensorRepository {
 
     public LiveData<List<MagnetData>> getMagnetBetween(long from, long to) {
         return dao.getMagnetDataBetween(from, to);
-    }
-
-    // Returns ~600 time-bucketed rows regardless of window size. Bucket size is derived from
-    // the requested window so all spinner values (10min → 1week) stay under the point budget.
-    public LiveData<List<AccelData>> getAccelBucketed(long from, long to) {
-        long bucketMs = Math.max(1L, (to - from) / 600L);
-        String sql = "SELECT (timestamp / ?) * ? AS timestamp, 0 AS id," +
-                     " AVG(accelX) AS accelX, AVG(accelY) AS accelY, AVG(accelZ) AS accelZ" +
-                     " FROM accel_data WHERE timestamp BETWEEN ? AND ?" +
-                     " GROUP BY (timestamp / ?) ORDER BY timestamp ASC";
-        return dao.getAccelBucketed(new SimpleSQLiteQuery(sql,
-                new Object[]{bucketMs, bucketMs, from, to, bucketMs}));
-    }
-
-    public LiveData<List<GyroData>> getGyroBucketed(long from, long to) {
-        long bucketMs = Math.max(1L, (to - from) / 600L);
-        String sql = "SELECT (timestamp / ?) * ? AS timestamp, 0 AS id," +
-                     " AVG(gyroX) AS gyroX, AVG(gyroY) AS gyroY, AVG(gyroZ) AS gyroZ" +
-                     " FROM gyro_data WHERE timestamp BETWEEN ? AND ?" +
-                     " GROUP BY (timestamp / ?) ORDER BY timestamp ASC";
-        return dao.getGyroBucketed(new SimpleSQLiteQuery(sql,
-                new Object[]{bucketMs, bucketMs, from, to, bucketMs}));
-    }
-
-    public LiveData<List<MagnetData>> getMagnetBucketed(long from, long to) {
-        long bucketMs = Math.max(1L, (to - from) / 600L);
-        String sql = "SELECT (timestamp / ?) * ? AS timestamp, 0 AS id," +
-                     " AVG(magnetX) AS magnetX, AVG(magnetY) AS magnetY, AVG(magnetZ) AS magnetZ" +
-                     " FROM magnet_data WHERE timestamp BETWEEN ? AND ?" +
-                     " GROUP BY (timestamp / ?) ORDER BY timestamp ASC";
-        return dao.getMagnetBucketed(new SimpleSQLiteQuery(sql,
-                new Object[]{bucketMs, bucketMs, from, to, bucketMs}));
     }
 
     public List<EreignisData> getAllEreignisData() {

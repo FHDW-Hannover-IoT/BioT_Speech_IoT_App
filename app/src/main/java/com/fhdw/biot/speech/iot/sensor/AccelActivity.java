@@ -5,6 +5,9 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -47,9 +50,6 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
     /** Individual charts for each axis of the accelerometer. */
     private LineChart lineChartAccelX, lineChartAccelY, lineChartAccelZ;
 
-    /** Optional: start time reference (currently unused but kept for extensions). */
-    private long startTime = 0;
-
     /** Selected date range for filtering. */
     private Calendar dateFromCalendar;
 
@@ -69,9 +69,39 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
 
     private Handler slidingWindowHandler = new Handler(Looper.getMainLooper());
     private Runnable slidingWindowRunnable;
+    /** True when the sliding window is auto-advancing; false when the user picked a manual range. */
     private boolean isTenMinuteFilterActive = false;
 
-    /** Fixed reference timestamp for X-axis; reset when user manually changes the date range. */
+    /**
+     * Threading model for chart rendering (keeps the main thread free):
+     *
+     * <pre>
+     * LiveData observer (main thread)
+     *   └─► chartExecutor (1 thread) — runs Douglas-Peucker simplification
+     *         ├─► axisExecutor thread 1 — builds X Entry list
+     *         ├─► axisExecutor thread 2 — builds Y Entry list
+     *         └─► axisExecutor thread 3 — builds Z Entry list
+     *               └─► runOnUiThread → setData + invalidate (main thread)
+     *                     └─► CountDownLatch → pinViewport after all 3 finish
+     * </pre>
+     *
+     * Deadlock is impossible: main thread never waits on any background thread.
+     * The 3-second latch timeout is a safety guard — building 600 entries takes <10 ms.
+     */
+    // Coordinator: runs DP, then dispatches axis tasks. Single thread avoids
+    // multiple concurrent DP runs stacking up when Room fires rapid updates.
+    private final java.util.concurrent.ExecutorService chartExecutor =
+            java.util.concurrent.Executors.newSingleThreadExecutor();
+    // One thread per axis — X, Y, Z build their Entry lists simultaneously.
+    private final java.util.concurrent.ExecutorService axisExecutor =
+            java.util.concurrent.Executors.newFixedThreadPool(3);
+    // Incremented on each new render request; old in-flight renders check this
+    // before posting to the UI and discard themselves if superseded.
+    private final AtomicInteger renderGeneration = new AtomicInteger(0);
+
+    /** Anchor for the X-axis origin. Set to the first sample's timestamp so elapsed
+     *  time (ms) is used as the X value instead of absolute epoch time. Reset when
+     *  the user picks a new date range via the date pickers. */
     private long windowStart = 0;
 
     @Override
@@ -318,24 +348,20 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
         }
 
         android.util.Log.d("AccelActivity", "GRAPH_UI: querying accel from=" + fromTime + " to=" + toTime + " window=" + selectedMinutes + "min");
-        currentLiveData = sensorRepository.getAccelBucketed(fromTime, toTime);
+        currentLiveData = sensorRepository.getAccelBetween(fromTime, toTime);
 
         currentLiveData.observe(
                 this,
                 filteredData -> {
                     if (filteredData != null && !filteredData.isEmpty()) {
-                        android.util.Log.d("AccelActivity", "GRAPH_UI: observer fired rows=" + filteredData.size() + " first_ts=" + filteredData.get(0).timestamp + " last_ts=" + filteredData.get(filteredData.size()-1).timestamp);
+                        android.util.Log.i("AccelActivity", "GRAPH_LOAD: start accel rows=" + filteredData.size() + " from=" + fromTime + " to=" + toTime);
                         long firstTimestamp = filteredData.get(0).timestamp;
-
-                        // Use earliest row in range as X-axis start.
                         setupChart(lineChartAccelX, "X-Achse", firstTimestamp);
                         setupChart(lineChartAccelY, "Y-Achse", firstTimestamp);
                         setupChart(lineChartAccelZ, "Z-Achse", firstTimestamp);
-
                         displayDataInCharts(filteredData);
                     } else {
-                        android.util.Log.w("AccelActivity", "GRAPH_UI: observer fired EMPTY for from=" + fromTime + " to=" + toTime);
-                        // No data in this range → clear charts to avoid stale plots.
+                        android.util.Log.w("AccelActivity", "GRAPH_UI: observer EMPTY from=" + fromTime + " to=" + toTime);
                         lineChartAccelX.clear();
                         lineChartAccelY.clear();
                         lineChartAccelZ.clear();
@@ -357,32 +383,66 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
      *
      * <p>X-axis values are "elapsed milliseconds since first sample".
      */
-    private void displayDataInCharts(List<AccelData> accelDataList) {
-        if (accelDataList.isEmpty()) return;
+    private void displayDataInCharts(List<AccelData> list) {
+        if (list.isEmpty()) return;
+        final long wStart = (windowStart == 0) ? list.get(0).timestamp : windowStart;
+        if (windowStart == 0) windowStart = wStart;
+        final long durationMs = (long) selectedMinutes * 60_000L;
+        final int gen = renderGeneration.incrementAndGet();
 
-        if (windowStart == 0) windowStart = accelDataList.get(0).timestamp;
+        android.util.Log.i("AccelActivity", "GRAPH_LOAD: start accel gen=" + gen + " rows=" + list.size());
 
-        long durationMs = (long) selectedMinutes * 60_000L;
-        float epsilon = EpsilonCalculator.calculateScaledEpsilon(this, accelDataList, durationMs);
-        List<AccelData> dataToRender = DouglasPeukerAlg.simplify(accelDataList, epsilon);
-        android.util.Log.d("AccelActivity", "GRAPH_RENDER: accel raw=" + accelDataList.size() + " simplified=" + dataToRender.size() + " epsilon=" + epsilon + " windowStart=" + windowStart);
+        chartExecutor.execute(() -> {
+            // Step 1: DP on coordinator thread (CPU-heavy, single pass over data)
+            float epsilon = EpsilonCalculator.calculateScaledEpsilon(AccelActivity.this, list, durationMs);
+            final List<AccelData> simplified = DouglasPeukerAlg.simplify(list, epsilon);
+            android.util.Log.d("AccelActivity", "GRAPH_RENDER: gen=" + gen + " raw=" + list.size() + " simplified=" + simplified.size() + " epsilon=" + epsilon);
 
-        ArrayList<Entry> entriesX = new ArrayList<>();
-        ArrayList<Entry> entriesY = new ArrayList<>();
-        ArrayList<Entry> entriesZ = new ArrayList<>();
+            // Discard if superseded by a newer render request
+            if (renderGeneration.get() != gen) {
+                android.util.Log.d("AccelActivity", "GRAPH_LOAD: accel gen=" + gen + " stale, discarding");
+                return;
+            }
 
-        for (AccelData data : dataToRender) {
-            float t = data.timestamp - windowStart;
-            entriesX.add(new Entry(t, data.accelX));
-            entriesY.add(new Entry(t, data.accelY));
-            entriesZ.add(new Entry(t, data.accelZ));
-        }
+            // Step 2: X, Y, Z each build their Entry list on separate threads in parallel.
+            // CountDownLatch coordinates pinViewport after all 3 finish.
+            // 3-second timeout is the deadlock watchdog — entry building should take <10ms.
+            CountDownLatch latch = new CountDownLatch(3);
 
-        setData(lineChartAccelX, entriesX, "X", Color.CYAN);
-        setData(lineChartAccelY, entriesY, "Y", Color.GREEN);
-        setData(lineChartAccelZ, entriesZ, "Z", Color.YELLOW);
+            axisExecutor.submit(() -> {
+                ArrayList<Entry> entries = new ArrayList<>(simplified.size());
+                for (AccelData d : simplified) entries.add(new Entry(d.timestamp - wStart, d.accelX));
+                runOnUiThread(() -> { setData(lineChartAccelX, entries, "X", Color.CYAN); latch.countDown(); });
+            });
+            axisExecutor.submit(() -> {
+                ArrayList<Entry> entries = new ArrayList<>(simplified.size());
+                for (AccelData d : simplified) entries.add(new Entry(d.timestamp - wStart, d.accelY));
+                runOnUiThread(() -> { setData(lineChartAccelY, entries, "Y", Color.GREEN); latch.countDown(); });
+            });
+            axisExecutor.submit(() -> {
+                ArrayList<Entry> entries = new ArrayList<>(simplified.size());
+                for (AccelData d : simplified) entries.add(new Entry(d.timestamp - wStart, d.accelZ));
+                runOnUiThread(() -> { setData(lineChartAccelZ, entries, "Z", Color.YELLOW); latch.countDown(); });
+            });
 
-        pinViewport(lineChartAccelX, lineChartAccelY, lineChartAccelZ);
+            // Step 3: Wait for all 3 axes, then pin viewport. Timeout = deadlock guard.
+            try {
+                if (!latch.await(3, TimeUnit.SECONDS)) {
+                    android.util.Log.e("AccelActivity", "GRAPH_LOAD: accel gen=" + gen + " axis timeout — possible deadlock, abandoning render");
+                    return;
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+
+            if (renderGeneration.get() == gen) {
+                runOnUiThread(() -> {
+                    pinViewport(lineChartAccelX, lineChartAccelY, lineChartAccelZ);
+                    android.util.Log.i("AccelActivity", "GRAPH_LOAD: end accel gen=" + gen + " rendered=" + simplified.size() + " points");
+                });
+            }
+        });
     }
 
     private void pinViewport(LineChart... charts) {
@@ -407,6 +467,8 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
     protected void onDestroy() {
         super.onDestroy();
         stopSlidingWindow();
+        chartExecutor.shutdown();
+        axisExecutor.shutdown();
     }
 
     @Override

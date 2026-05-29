@@ -1,10 +1,12 @@
 package com.fhdw.biot.speech.iot.database.entities;
 
 import androidx.room.Entity;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 import com.fhdw.biot.speech.iot.sensor.SensorPoint;
 
-@Entity(tableName = "accel_data")
+@Entity(tableName = "accel_data",
+        indices = {@Index(value = "timestamp", unique = true)})
 public class AccelData implements SensorPoint {
 
     @PrimaryKey(autoGenerate = true)

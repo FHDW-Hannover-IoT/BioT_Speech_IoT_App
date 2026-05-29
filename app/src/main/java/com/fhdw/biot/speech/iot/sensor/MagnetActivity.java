@@ -5,6 +5,9 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -66,7 +69,19 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
 
     private Handler slidingWindowHandler = new Handler(Looper.getMainLooper());
     private Runnable slidingWindowRunnable;
+    /** True when the sliding window auto-advances; false when user picked a manual range. */
     private boolean isTenMinuteFilterActive = false;
+
+    // Threading model: same as AccelActivity — chartExecutor (DP) → axisExecutor x3 (X/Y/Z
+    // Entry lists in parallel) → runOnUiThread (setData). Deadlock-free by design.
+    private final java.util.concurrent.ExecutorService chartExecutor =
+            java.util.concurrent.Executors.newSingleThreadExecutor();
+    private final java.util.concurrent.ExecutorService axisExecutor =
+            java.util.concurrent.Executors.newFixedThreadPool(3);
+    /** Incremented on each render request; stale in-flight renders self-discard. */
+    private final AtomicInteger renderGeneration = new AtomicInteger(0);
+
+    /** X-axis anchor — first sample's timestamp in the current window. */
     private long windowStart = 0;
 
     @Override
@@ -334,7 +349,7 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
         }
 
         android.util.Log.d("MagnetActivity", "GRAPH_UI: querying magnet from=" + fromTime + " to=" + toTime + " window=" + selectedMinutes + "min");
-        currentLiveData = sensorRepository.getMagnetBucketed(fromTime, toTime);
+        currentLiveData = sensorRepository.getMagnetBetween(fromTime, toTime);
 
         currentLiveData.observe(
                 this,
@@ -372,31 +387,57 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
      * <p>X-axis values = "elapsed milliseconds since firstTimestamp", so the charts show
      * time-relative data instead of absolute wall-clock time.
      */
-    private void displayDataInCharts(List<MagnetData> magnetDataList) {
-        if (magnetDataList == null || magnetDataList.isEmpty()) return;
+    private void displayDataInCharts(List<MagnetData> list) {
+        if (list == null || list.isEmpty()) return;
+        final long wStart = (windowStart == 0) ? list.get(0).timestamp : windowStart;
+        if (windowStart == 0) windowStart = wStart;
+        final long durationMs = (long) selectedMinutes * 60_000L;
+        final int gen = renderGeneration.incrementAndGet();
 
-        if (windowStart == 0) windowStart = magnetDataList.get(0).timestamp;
+        android.util.Log.i("MagnetActivity", "GRAPH_LOAD: start magnet gen=" + gen + " rows=" + list.size());
 
-        long durationMs = (long) selectedMinutes * 60_000L;
-        float epsilon = EpsilonCalculator.calculateScaledEpsilon(this, magnetDataList, durationMs);
-        List<MagnetData> dataToRender = DouglasPeukerAlg.simplify(magnetDataList, epsilon);
+        chartExecutor.execute(() -> {
+            float epsilon = EpsilonCalculator.calculateScaledEpsilon(MagnetActivity.this, list, durationMs);
+            final List<MagnetData> simplified = DouglasPeukerAlg.simplify(list, epsilon);
+            android.util.Log.d("MagnetActivity", "GRAPH_RENDER: gen=" + gen + " raw=" + list.size() + " simplified=" + simplified.size());
 
-        ArrayList<Entry> entriesX = new ArrayList<>();
-        ArrayList<Entry> entriesY = new ArrayList<>();
-        ArrayList<Entry> entriesZ = new ArrayList<>();
+            if (renderGeneration.get() != gen) return;
 
-        for (MagnetData data : dataToRender) {
-            float t = data.timestamp - windowStart;
-            entriesX.add(new Entry(t, data.magnetX));
-            entriesY.add(new Entry(t, data.magnetY));
-            entriesZ.add(new Entry(t, data.magnetZ));
-        }
+            CountDownLatch latch = new CountDownLatch(3);
 
-        setData(lineChartMagnetX, entriesX, "X", Color.CYAN);
-        setData(lineChartMagnetY, entriesY, "Y", Color.GREEN);
-        setData(lineChartMagnetZ, entriesZ, "Z", Color.YELLOW);
+            axisExecutor.submit(() -> {
+                ArrayList<Entry> entries = new ArrayList<>(simplified.size());
+                for (MagnetData d : simplified) entries.add(new Entry(d.timestamp - wStart, d.magnetX));
+                runOnUiThread(() -> { setData(lineChartMagnetX, entries, "X", Color.CYAN); latch.countDown(); });
+            });
+            axisExecutor.submit(() -> {
+                ArrayList<Entry> entries = new ArrayList<>(simplified.size());
+                for (MagnetData d : simplified) entries.add(new Entry(d.timestamp - wStart, d.magnetY));
+                runOnUiThread(() -> { setData(lineChartMagnetY, entries, "Y", Color.GREEN); latch.countDown(); });
+            });
+            axisExecutor.submit(() -> {
+                ArrayList<Entry> entries = new ArrayList<>(simplified.size());
+                for (MagnetData d : simplified) entries.add(new Entry(d.timestamp - wStart, d.magnetZ));
+                runOnUiThread(() -> { setData(lineChartMagnetZ, entries, "Z", Color.YELLOW); latch.countDown(); });
+            });
 
-        pinViewport(lineChartMagnetX, lineChartMagnetY, lineChartMagnetZ);
+            try {
+                if (!latch.await(3, TimeUnit.SECONDS)) {
+                    android.util.Log.e("MagnetActivity", "GRAPH_LOAD: magnet gen=" + gen + " axis timeout — abandoning render");
+                    return;
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+
+            if (renderGeneration.get() == gen) {
+                runOnUiThread(() -> {
+                    pinViewport(lineChartMagnetX, lineChartMagnetY, lineChartMagnetZ);
+                    android.util.Log.i("MagnetActivity", "GRAPH_LOAD: end magnet gen=" + gen + " rendered=" + simplified.size() + " points");
+                });
+            }
+        });
     }
 
     private void pinViewport(LineChart... charts) {
@@ -420,6 +461,8 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
     protected void onDestroy() {
         super.onDestroy();
         stopSlidingWindow();
+        chartExecutor.shutdown();
+        axisExecutor.shutdown();
     }
 
     @Override

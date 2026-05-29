@@ -33,7 +33,7 @@ import com.fhdw.biot.speech.iot.database.entities.ValueSensor;
             Sensor.class,
             EreignisType.class
         },
-        version = 5,
+        version = 6,
         exportSchema = false)
 public abstract class DB extends RoomDatabase {
 
@@ -50,6 +50,9 @@ public abstract class DB extends RoomDatabase {
                 if (INSTANCE == null) {
                     INSTANCE =
                             Room.databaseBuilder(context.getApplicationContext(), DB.class, DB_NAME)
+                                    // Destructive migration is safe here: all sensor data is
+                                    // session-scoped and re-fetched from the server on every
+                                    // app start. Only EreignisType rows survive (re-seeded in onCreate).
                                     .fallbackToDestructiveMigration()
                                     .addCallback(
                                             new RoomDatabase.Callback() {

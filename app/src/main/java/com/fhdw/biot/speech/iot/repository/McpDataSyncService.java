@@ -59,15 +59,16 @@ public class McpDataSyncService {
 
     // ── LiveData ──────────────────────────────────────────────────────────────
 
+    // Observed by sensor activities to anchor the chart window to the latest
+    // fetched timestamp rather than phone clock time (avoids sliding-window miss
+    // when seeded data timestamps are behind the phone's current time).
     private final MutableLiveData<List<AccelData>>  accelHistory  = new MutableLiveData<>();
     private final MutableLiveData<List<GyroData>>   gyroHistory   = new MutableLiveData<>();
     private final MutableLiveData<List<MagnetData>> magnetHistory = new MutableLiveData<>();
-    private final MutableLiveData<String>           syncError     = new MutableLiveData<>();
 
     public LiveData<List<AccelData>>  accelHistory()  { return accelHistory; }
     public LiveData<List<GyroData>>   gyroHistory()   { return gyroHistory; }
     public LiveData<List<MagnetData>> magnetHistory() { return magnetHistory; }
-    public LiveData<String>           syncError()     { return syncError; }
 
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -81,6 +82,10 @@ public class McpDataSyncService {
         });
     }
 
+    /**
+     * Updates the base URL at runtime when the user changes the server IP in Settings.
+     * Volatile field ensures the change is visible to the background executor thread immediately.
+     */
     public void setBaseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
     }
@@ -162,7 +167,6 @@ public class McpDataSyncService {
             Log.i(TAG, "GRAPH_FETCH: accel done total=" + accumulated.size() + " rows queued to Room");
         } catch (Exception e) {
             Log.e(TAG, "fetchPagedAccel failed: " + e.getMessage(), e);
-            syncError.postValue("Accel history unavailable: " + e.getMessage());
             if (accumulated.isEmpty()) accelHistory.postValue(Collections.emptyList());
         }
     }
@@ -197,7 +201,6 @@ public class McpDataSyncService {
             Log.i(TAG, "GRAPH_FETCH: gyro done total=" + accumulated.size() + " rows queued to Room");
         } catch (Exception e) {
             Log.e(TAG, "fetchPagedGyro failed: " + e.getMessage(), e);
-            syncError.postValue("Gyro history unavailable: " + e.getMessage());
             if (accumulated.isEmpty()) gyroHistory.postValue(Collections.emptyList());
         }
     }
@@ -232,7 +235,6 @@ public class McpDataSyncService {
             Log.i(TAG, "GRAPH_FETCH: magnet done total=" + accumulated.size() + " rows queued to Room");
         } catch (Exception e) {
             Log.e(TAG, "fetchPagedMagnet failed: " + e.getMessage(), e);
-            syncError.postValue("Magnet history unavailable: " + e.getMessage());
             if (accumulated.isEmpty()) magnetHistory.postValue(Collections.emptyList());
         }
     }
@@ -245,10 +247,12 @@ public class McpDataSyncService {
      * across consecutive pages and across sensor endpoints.
      */
     private JSONArray fetchPage(String path, long fromMs, long toMs) throws Exception {
+        // resolution=auto: server picks raw/<1h, 1min/1h-24h, 1hour/>24h
         URL url = new URL(baseUrl + path
                 + "?from=" + fromMs
                 + "&to="   + toMs
-                + "&limit=" + BuildConfig.LLM_FETCH_PAGE_SIZE);
+                + "&limit=" + BuildConfig.LLM_FETCH_PAGE_SIZE
+                + "&resolution=auto");
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
         conn.setRequestProperty("Accept", "application/json");

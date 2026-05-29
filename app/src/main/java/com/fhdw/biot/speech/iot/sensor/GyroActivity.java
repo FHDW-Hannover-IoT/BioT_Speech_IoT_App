@@ -5,6 +5,9 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -56,12 +59,19 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
     /** Buttons that display and modify the filter range ("von" / "bis" per axis). */
     private Button xVonButton, xBisButton;
 
-    /** Optional reference start time (not strictly needed, kept for future use). */
-    private long startTime = 0;
-
     private Handler slidingWindowHandler = new Handler(Looper.getMainLooper());
     private Runnable slidingWindowRunnable;
+    /** True when the sliding window auto-advances; false when user picked a manual range. */
     private boolean isTenMinuteFilterActive = false;
+
+    // Threading model: same as AccelActivity — chartExecutor (DP) → axisExecutor x3 (X/Y/Z
+    // Entry lists in parallel) → runOnUiThread (setData). Deadlock-free by design.
+    private final java.util.concurrent.ExecutorService chartExecutor =
+            java.util.concurrent.Executors.newSingleThreadExecutor();
+    private final java.util.concurrent.ExecutorService axisExecutor =
+            java.util.concurrent.Executors.newFixedThreadPool(3);
+    /** Incremented on each render request; stale in-flight renders self-discard. */
+    private final AtomicInteger renderGeneration = new AtomicInteger(0);
 
     private Spinner spinnerTimeframe;
     private int selectedMinutes = 10;
@@ -340,7 +350,7 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
         }
 
         android.util.Log.d("GyroActivity", "GRAPH_UI: querying gyro from=" + fromTime + " to=" + toTime + " window=" + selectedMinutes + "min");
-        currentLiveData = sensorRepository.getGyroBucketed(fromTime, toTime);
+        currentLiveData = sensorRepository.getGyroBetween(fromTime, toTime);
 
         currentLiveData.observe(
                 this,
@@ -378,31 +388,57 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
      * <p>X-axis values are "elapsed milliseconds since firstTimestamp", so the charts show
      * time-relative data instead of absolute timestamps.
      */
-    private void displayDataInCharts(List<GyroData> gyroDataList) {
-        if (gyroDataList == null || gyroDataList.isEmpty()) return;
+    private void displayDataInCharts(List<GyroData> list) {
+        if (list == null || list.isEmpty()) return;
+        final long wStart = (windowStart == 0) ? list.get(0).timestamp : windowStart;
+        if (windowStart == 0) windowStart = wStart;
+        final long durationMs = (long) selectedMinutes * 60_000L;
+        final int gen = renderGeneration.incrementAndGet();
 
-        if (windowStart == 0) windowStart = gyroDataList.get(0).timestamp;
+        android.util.Log.i("GyroActivity", "GRAPH_LOAD: start gyro gen=" + gen + " rows=" + list.size());
 
-        long durationMs = (long) selectedMinutes * 60_000L;
-        float epsilon = EpsilonCalculator.calculateScaledEpsilon(this, gyroDataList, durationMs);
-        List<GyroData> dataToRender = DouglasPeukerAlg.simplify(gyroDataList, epsilon);
+        chartExecutor.execute(() -> {
+            float epsilon = EpsilonCalculator.calculateScaledEpsilon(GyroActivity.this, list, durationMs);
+            final List<GyroData> simplified = DouglasPeukerAlg.simplify(list, epsilon);
+            android.util.Log.d("GyroActivity", "GRAPH_RENDER: gen=" + gen + " raw=" + list.size() + " simplified=" + simplified.size());
 
-        ArrayList<Entry> entriesX = new ArrayList<>();
-        ArrayList<Entry> entriesY = new ArrayList<>();
-        ArrayList<Entry> entriesZ = new ArrayList<>();
+            if (renderGeneration.get() != gen) return;
 
-        for (GyroData data : dataToRender) {
-            float t = data.timestamp - windowStart;
-            entriesX.add(new Entry(t, data.gyroX));
-            entriesY.add(new Entry(t, data.gyroY));
-            entriesZ.add(new Entry(t, data.gyroZ));
-        }
+            CountDownLatch latch = new CountDownLatch(3);
 
-        setData(lineChartGyroX, entriesX, "X", Color.CYAN);
-        setData(lineChartGyroY, entriesY, "Y", Color.GREEN);
-        setData(lineChartGyroZ, entriesZ, "Z", Color.YELLOW);
+            axisExecutor.submit(() -> {
+                ArrayList<Entry> entries = new ArrayList<>(simplified.size());
+                for (GyroData d : simplified) entries.add(new Entry(d.timestamp - wStart, d.gyroX));
+                runOnUiThread(() -> { setData(lineChartGyroX, entries, "X", Color.CYAN); latch.countDown(); });
+            });
+            axisExecutor.submit(() -> {
+                ArrayList<Entry> entries = new ArrayList<>(simplified.size());
+                for (GyroData d : simplified) entries.add(new Entry(d.timestamp - wStart, d.gyroY));
+                runOnUiThread(() -> { setData(lineChartGyroY, entries, "Y", Color.GREEN); latch.countDown(); });
+            });
+            axisExecutor.submit(() -> {
+                ArrayList<Entry> entries = new ArrayList<>(simplified.size());
+                for (GyroData d : simplified) entries.add(new Entry(d.timestamp - wStart, d.gyroZ));
+                runOnUiThread(() -> { setData(lineChartGyroZ, entries, "Z", Color.YELLOW); latch.countDown(); });
+            });
 
-        pinViewport(lineChartGyroX, lineChartGyroY, lineChartGyroZ);
+            try {
+                if (!latch.await(3, TimeUnit.SECONDS)) {
+                    android.util.Log.e("GyroActivity", "GRAPH_LOAD: gyro gen=" + gen + " axis timeout — abandoning render");
+                    return;
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+
+            if (renderGeneration.get() == gen) {
+                runOnUiThread(() -> {
+                    pinViewport(lineChartGyroX, lineChartGyroY, lineChartGyroZ);
+                    android.util.Log.i("GyroActivity", "GRAPH_LOAD: end gyro gen=" + gen + " rendered=" + simplified.size() + " points");
+                });
+            }
+        });
     }
 
     private void pinViewport(LineChart... charts) {
@@ -426,6 +462,8 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
     protected void onDestroy() {
         super.onDestroy();
         stopSlidingWindow();
+        chartExecutor.shutdown();
+        axisExecutor.shutdown();
     }
 
     @Override

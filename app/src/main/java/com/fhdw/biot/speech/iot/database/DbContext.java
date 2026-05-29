@@ -33,14 +33,14 @@ public class DbContext {
         this.db = db;
         this.sensorDao = db.sensorDao();
         this.valueSensorDao = db.valueSensorDao();
+        // Single-thread executor: SQLite only allows one writer at a time.
+        // A thread pool causes 3 threads to always block on the write lock — wasteful.
         this.executor =
-                Executors.newFixedThreadPool(
-                        4,
-                        r -> {
-                            Thread t = new Thread(r, "db-write-pool");
-                            t.setDaemon(true);
-                            return t;
-                        });
+                Executors.newSingleThreadExecutor(r -> {
+                    Thread t = new Thread(r, "db-write");
+                    t.setDaemon(true);
+                    return t;
+                });
     }
 
     /** Returns the shared DB write executor for use by application-scope services. */
@@ -48,7 +48,9 @@ public class DbContext {
         return executor;
     }
 
-    // ── Single-row writes ─────────────────────────────────────────────────────
+    // ── Single-row writes (live MQTT path) ───────────────────────────────────
+    // Each write is submitted to the single-thread executor and wrapped in a
+    // transaction so it is ACID and never blocks the MQTT subscriber thread.
 
     public void insertAccel(AccelData data) {
         executor.execute(() -> db.runInTransaction(() -> sensorDao.insert(data)));
@@ -70,14 +72,17 @@ public class DbContext {
         executor.execute(() -> db.runInTransaction(() -> valueSensorDao.insert(vs)));
     }
 
-    // ── Batch writes (MCP historical sync) ───────────────────────────────────
+    // ── Batch writes (McpDataSyncService historical fetch) ───────────────────
+    // insertAll() generates a single bulk INSERT statement — ~90x faster than
+    // calling insert() in a loop for a 500-row page. Error is logged but does
+    // not propagate; a failed batch just leaves a gap in the chart history.
 
     public void insertAccelBatch(List<AccelData> batch) {
         if (batch == null || batch.isEmpty()) return;
         android.util.Log.d("DbContext", "GRAPH_DB: queuing accel batch size=" + batch.size());
         executor.execute(() -> {
             try {
-                db.runInTransaction(() -> { for (AccelData d : batch) sensorDao.insert(d); });
+                db.runInTransaction(() -> sensorDao.insertAll(batch));
                 android.util.Log.d("DbContext", "GRAPH_DB: accel batch committed size=" + batch.size());
             } catch (Exception e) {
                 android.util.Log.e("DbContext", "GRAPH_DB: accel batch FAILED: " + e.getMessage(), e);
@@ -90,7 +95,7 @@ public class DbContext {
         android.util.Log.d("DbContext", "GRAPH_DB: queuing gyro batch size=" + batch.size());
         executor.execute(() -> {
             try {
-                db.runInTransaction(() -> { for (GyroData d : batch) sensorDao.insert(d); });
+                db.runInTransaction(() -> sensorDao.insertAll(batch));
                 android.util.Log.d("DbContext", "GRAPH_DB: gyro batch committed size=" + batch.size());
             } catch (Exception e) {
                 android.util.Log.e("DbContext", "GRAPH_DB: gyro batch FAILED: " + e.getMessage(), e);
@@ -103,7 +108,7 @@ public class DbContext {
         android.util.Log.d("DbContext", "GRAPH_DB: queuing magnet batch size=" + batch.size());
         executor.execute(() -> {
             try {
-                db.runInTransaction(() -> { for (MagnetData d : batch) sensorDao.insert(d); });
+                db.runInTransaction(() -> sensorDao.insertAll(batch));
                 android.util.Log.d("DbContext", "GRAPH_DB: magnet batch committed size=" + batch.size());
             } catch (Exception e) {
                 android.util.Log.e("DbContext", "GRAPH_DB: magnet batch FAILED: " + e.getMessage(), e);

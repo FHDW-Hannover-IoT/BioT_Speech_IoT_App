@@ -23,28 +23,35 @@ import java.util.List;
 public class DouglasPeukerAlg {
 
     /**
-     * Public entry point.
+     * Reduces {@code list} to the minimum set of points that preserves the visual shape
+     * of the line within {@code epsilon} tolerance.
      *
-     * @param list Full list of data points.
-     * @param epsilon Tolerance threshold (higher = more aggressive simplification).
+     * <p>Internally uses squared distances throughout to avoid {@code Math.sqrt} in the
+     * inner loop — {@code epsilon} is squared once here so callers pass the natural unit.
+     *
+     * @param list    Full list of data points (at least 3; smaller lists are returned as-is).
+     * @param epsilon Tolerance threshold in sensor units (higher = more aggressive simplification).
      */
     public static <T extends SensorPoint> List<T> simplify(List<T> list, float epsilon) {
-        if (list == null || list.size() < 3) return list; // too few points to simplify
-        return dp(list, 0, list.size() - 1, epsilon);
+        if (list == null || list.size() < 3) return list;
+        // Square epsilon once so the recursive inner loop only compares squared distances,
+        // eliminating sqrt calls from the O(n log n) hot path.
+        return dp(list, 0, list.size() - 1, epsilon * epsilon);
     }
 
     /**
-     * Recursive Douglas–Peucker implementation.
+     * Recursive Douglas–Peucker split. Operates entirely in squared-distance space so
+     * no {@code Math.sqrt} or {@code Math.abs} is needed in the hot inner loop.
      *
-     * @param pts All points
-     * @param start Index of first point in segment
-     * @param end Index of last point in segment
-     * @param epsilon Threshhold for keeping detail
+     * @param pts       All points (never modified)
+     * @param start     Index of first point in the current segment
+     * @param end       Index of last point in the current segment
+     * @param epsilonSq Pre-squared tolerance (epsilon²)
      */
     private static <T extends SensorPoint> List<T> dp(
-            List<T> pts, int start, int end, float epsilon) {
+            List<T> pts, int start, int end, float epsilonSq) {
 
-        float maxDistance = 0f;
+        float maxDistSq = 0f;
         int indexOfFarthest = -1;
 
         T first = pts.get(start);
@@ -52,18 +59,18 @@ public class DouglasPeukerAlg {
 
         // Find the point most distant from the baseline
         for (int i = start + 1; i < end; i++) {
-            float dist = perpendicularDistance(pts.get(i), first, last);
-            if (dist > maxDistance) {
-                maxDistance = dist;
+            float distSq = perpendicularDistanceSq(pts.get(i), first, last);
+            if (distSq > maxDistSq) {
+                maxDistSq = distSq;
                 indexOfFarthest = i;
             }
         }
 
         // If the farthest point exceeds tolerance → split in two segments
-        if (maxDistance > epsilon) {
+        if (maxDistSq > epsilonSq) {
 
-            List<T> left = dp(pts, start, indexOfFarthest, epsilon);
-            List<T> right = dp(pts, indexOfFarthest, end, epsilon);
+            List<T> left = dp(pts, start, indexOfFarthest, epsilonSq);
+            List<T> right = dp(pts, indexOfFarthest, end, epsilonSq);
 
             // Combine results: include all from left except last,
             // then include all from right.
@@ -83,13 +90,15 @@ public class DouglasPeukerAlg {
     }
 
     /**
-     * Compute perpendicular distance of point p from line AB.
+     * Returns the SQUARED perpendicular distance of point {@code p} from line AB.
      *
-     * <p>X-axis = timestamp. Y-axis = magnitude of (x,y,z vector).
+     * <p>Avoids {@code Math.sqrt} and {@code Math.abs} — safe because DP only compares
+     * distances against a threshold, never needs the actual distance value. The squared
+     * result is compared against {@code epsilonSq} (also squared) so the comparison is valid.
+     *
+     * <p>X-axis = timestamp, Y-axis = Euclidean magnitude of the (x,y,z) sensor vector.
      */
-    private static float perpendicularDistance(SensorPoint p, SensorPoint a, SensorPoint b) {
-
-        // Convert sensor point to graph space
+    private static float perpendicularDistanceSq(SensorPoint p, SensorPoint a, SensorPoint b) {
         float x = p.getTimestamp();
         float y = magnitude(p);
 
@@ -102,18 +111,15 @@ public class DouglasPeukerAlg {
         float dx = x2 - x1;
         float dy = y2 - y1;
 
-        // If both points are identical → fallback to point distance
-        if (dx == 0 && dy == 0) {
-            dx = x - x1;
-            dy = y - y1;
-            return (float) Math.sqrt(dx * dx + dy * dy);
+        float denomSq = dx * dx + dy * dy;
+        if (denomSq == 0) {
+            float ddx = x - x1;
+            float ddy = y - y1;
+            return ddx * ddx + ddy * ddy;
         }
 
-        // Standard perpendicular distance formula
-        float numerator = Math.abs(dy * x - dx * y + x2 * y1 - y2 * x1);
-        float denominator = (float) Math.sqrt(dx * dx + dy * dy);
-
-        return numerator / denominator;
+        float n = dy * x - dx * y + x2 * y1 - y2 * x1;
+        return (n * n) / denomSq;
     }
 
     /** Magnitude of a 3D acceleration/gyro/magnet vector. sqrt(x² + y² + z²) */

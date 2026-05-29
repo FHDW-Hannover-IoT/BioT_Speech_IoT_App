@@ -59,9 +59,12 @@ public class EpsilonCalculator {
                 return savedEpsilon;
             }
 
-            // If not manual, calculate fresh and save it
+            // Calculate fresh; only write to SharedPreferences when the value actually changes
+            // to avoid scheduling a disk write on every chart render cycle.
             float calculatedEpsilon = calculateDefaultEpsilon(dataPoints);
-            prefs.edit().putFloat("dp_epsilon", calculatedEpsilon).apply();
+            if (calculatedEpsilon != savedEpsilon) {
+                prefs.edit().putFloat("dp_epsilon", calculatedEpsilon).apply();
+            }
             return calculatedEpsilon;
         }
 

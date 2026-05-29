@@ -1,10 +1,12 @@
 package com.fhdw.biot.speech.iot.database.entities;
 
 import androidx.room.Entity;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 import com.fhdw.biot.speech.iot.sensor.SensorPoint;
 
-@Entity(tableName = "magnet_data")
+@Entity(tableName = "magnet_data",
+        indices = {@Index(value = "timestamp", unique = true)})
 public class MagnetData implements SensorPoint {
 
     @PrimaryKey(autoGenerate = true)
