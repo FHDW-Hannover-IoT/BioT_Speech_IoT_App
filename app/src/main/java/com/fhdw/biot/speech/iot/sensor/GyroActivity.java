@@ -79,6 +79,21 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
         setContentView(R.layout.activity_gyroskop);
         sensorRepository = ((BiotApplication) getApplication()).getContainer().sensorRepository();
 
+        // When McpDataSyncService delivers fetched history, anchor the sliding window to
+        // the latest data timestamp. Skipped if the user manually picked a date range.
+        ((BiotApplication) getApplication()).getContainer().mcpDataSync()
+                .gyroHistory()
+                .observe(this, fetched -> {
+                    if (fetched == null || fetched.isEmpty()) return;
+                    if (!isTenMinuteFilterActive) return;
+                    long latestTs = fetched.get(fetched.size() - 1).timestamp;
+                    long windowMs = (long) selectedMinutes * 60_000L;
+                    dateFromCalendar.setTimeInMillis(latestTs - windowMs);
+                    dateToCalendar.setTimeInMillis(latestTs);
+                    android.util.Log.i("GyroActivity", "GRAPH_UI: gyroHistory fired rows=" + fetched.size() + " latestTs=" + latestTs + " window=" + selectedMinutes + "min");
+                    updateChartsWithDateFilter();
+                });
+
         // --------------------------------------------------------------------
         // Window insets handling (status bar / navigation bar)
         // --------------------------------------------------------------------

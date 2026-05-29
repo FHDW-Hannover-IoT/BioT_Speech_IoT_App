@@ -75,6 +75,21 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
         setContentView(R.layout.activity_magnetfeld);
         sensorRepository = ((BiotApplication) getApplication()).getContainer().sensorRepository();
 
+        // When McpDataSyncService delivers fetched history, anchor the sliding window to
+        // the latest data timestamp. Skipped if the user manually picked a date range.
+        ((BiotApplication) getApplication()).getContainer().mcpDataSync()
+                .magnetHistory()
+                .observe(this, fetched -> {
+                    if (fetched == null || fetched.isEmpty()) return;
+                    if (!isTenMinuteFilterActive) return;
+                    long latestTs = fetched.get(fetched.size() - 1).timestamp;
+                    long windowMs = (long) selectedMinutes * 60_000L;
+                    dateFromCalendar.setTimeInMillis(latestTs - windowMs);
+                    dateToCalendar.setTimeInMillis(latestTs);
+                    android.util.Log.i("MagnetActivity", "GRAPH_UI: magnetHistory fired rows=" + fetched.size() + " latestTs=" + latestTs + " window=" + selectedMinutes + "min");
+                    updateChartsWithDateFilter();
+                });
+
         // --------------------------------------------------------------------
         // Window insets handling (edge-to-edge UI + system bars)
         // --------------------------------------------------------------------

@@ -111,6 +111,21 @@ public class MainGraphActivity extends BaseChartActivity {
         setContentView(R.layout.activity_main_graph);
         sensorRepository = ((BiotApplication) getApplication()).getContainer().sensorRepository();
 
+        // When McpDataSyncService delivers fetched history, anchor the chart window to
+        // the latest data timestamp so the seeded/historical data is always visible.
+        // Only active when sliding window is running and user hasn't fixed the start point.
+        ((BiotApplication) getApplication()).getContainer().mcpDataSync()
+                .accelHistory()
+                .observe(this, fetched -> {
+                    if (fetched == null || fetched.isEmpty()) return;
+                    if (!isTenMinuteFilterActive || isStartPointFixed) return;
+                    long latestTs = fetched.get(fetched.size() - 1).timestamp;
+                    dateToCalendar.setTimeInMillis(latestTs);
+                    dateFromCalendar.setTimeInMillis(latestTs - 10 * 60 * 1000L);
+                    android.util.Log.i("MainGraphActivity", "GRAPH_UI: accelHistory fired rows=" + fetched.size() + " latestTs=" + latestTs + " adjusting window");
+                    updateChartsWithDateFilter();
+                });
+
         // ------------------------------------------------------------
         // SAFE INSETS (dynamic padding for status/navigation bars)
         // ------------------------------------------------------------
