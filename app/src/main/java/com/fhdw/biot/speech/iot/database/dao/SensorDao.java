@@ -37,15 +37,18 @@ public interface SensorDao {
     void insert(MagnetData data);
 
     // ── Bulk inserts (used by McpDataSyncService historical fetch) ────────────
+    // Named distinctly because Java type erasure makes List<AccelData>, List<GyroData>,
+    // and List<MagnetData> indistinguishable at runtime — overloading on generic type
+    // parameter is not allowed.
 
     @Insert(onConflict = androidx.room.OnConflictStrategy.IGNORE)
-    void insertAll(List<AccelData> items);
+    void insertAllAccel(List<AccelData> items);
 
     @Insert(onConflict = androidx.room.OnConflictStrategy.IGNORE)
-    void insertAll(List<GyroData> items);
+    void insertAllGyro(List<GyroData> items);
 
     @Insert(onConflict = androidx.room.OnConflictStrategy.IGNORE)
-    void insertAll(List<MagnetData> items);
+    void insertAllMagnet(List<MagnetData> items);
 
     @Insert
     void insert(EreignisData data);

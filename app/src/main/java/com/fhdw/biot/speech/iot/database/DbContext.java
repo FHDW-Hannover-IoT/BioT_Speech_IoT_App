@@ -82,7 +82,7 @@ public class DbContext {
         android.util.Log.d("DbContext", "GRAPH_DB: queuing accel batch size=" + batch.size());
         executor.execute(() -> {
             try {
-                db.runInTransaction(() -> sensorDao.insertAll(batch));
+                db.runInTransaction(() -> sensorDao.insertAllAccel(batch));
                 android.util.Log.d("DbContext", "GRAPH_DB: accel batch committed size=" + batch.size());
             } catch (Exception e) {
                 android.util.Log.e("DbContext", "GRAPH_DB: accel batch FAILED: " + e.getMessage(), e);
@@ -95,7 +95,7 @@ public class DbContext {
         android.util.Log.d("DbContext", "GRAPH_DB: queuing gyro batch size=" + batch.size());
         executor.execute(() -> {
             try {
-                db.runInTransaction(() -> sensorDao.insertAll(batch));
+                db.runInTransaction(() -> sensorDao.insertAllGyro(batch));
                 android.util.Log.d("DbContext", "GRAPH_DB: gyro batch committed size=" + batch.size());
             } catch (Exception e) {
                 android.util.Log.e("DbContext", "GRAPH_DB: gyro batch FAILED: " + e.getMessage(), e);
@@ -108,7 +108,7 @@ public class DbContext {
         android.util.Log.d("DbContext", "GRAPH_DB: queuing magnet batch size=" + batch.size());
         executor.execute(() -> {
             try {
-                db.runInTransaction(() -> sensorDao.insertAll(batch));
+                db.runInTransaction(() -> sensorDao.insertAllMagnet(batch));
                 android.util.Log.d("DbContext", "GRAPH_DB: magnet batch committed size=" + batch.size());
             } catch (Exception e) {
                 android.util.Log.e("DbContext", "GRAPH_DB: magnet batch FAILED: " + e.getMessage(), e);
