@@ -40,9 +40,10 @@ pub_log = logging.getLogger("mockup.publisher")
 # ─────────────────────────────────────────────────────────────────────────────
 # BROKER
 # ─────────────────────────────────────────────────────────────────────────────
-BROKER_HOST      = "192.168.178.27"
+BROKER_HOST      = "172.20.10.2"
 BROKER_PORT      = 1883
-PUBLISH_INTERVAL = 0.02   # seconds between publish cycles
+PUBLISH_INTERVAL = 0.01   # seconds between publish cycles
+MAX_MESSAGES = 0
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SENSOR CONFIGURATION
@@ -193,7 +194,7 @@ print(f"Writing log to: {LOG_FILE}\n")
 # ─────────────────────────────────────────────────────────────────────────────
 t = 0.0
 try:
-    while True:
+    while MAX_MESSAGES == 0 or message_count < MAX_MESSAGES:
         t += PUBLISH_INTERVAL
         log_parts = []
 
@@ -221,6 +222,7 @@ try:
         print("\n".join(log_parts))
         print()
         time.sleep(PUBLISH_INTERVAL)
+        message_count = message_count +1
 
 except KeyboardInterrupt:
     print("\nStopping mockup.")
