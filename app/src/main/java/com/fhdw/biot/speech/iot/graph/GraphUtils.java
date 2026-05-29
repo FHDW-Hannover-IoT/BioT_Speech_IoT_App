@@ -71,8 +71,13 @@ public final class GraphUtils {
         LineDataSet ds = new LineDataSet(new ArrayList<>(entries), label);
         ds.setColor(color);
         ds.setDrawCircles(false);
-        ds.setValueTextSize(10f);
-        ds.setValueTextColor(Color.DKGRAY);
+        ds.setDrawValues(false);
+        ds.setLineWidth(1.8f);
+        ds.setDrawFilled(true);
+        ds.setFillAlpha(30);
+        ds.setFillColor(color);
+        ds.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+        ds.setCubicIntensity(0.05f);
         applyHighlightStyle(ds);
         return ds;
     }

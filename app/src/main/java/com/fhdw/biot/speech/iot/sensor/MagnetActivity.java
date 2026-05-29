@@ -6,10 +6,12 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageButton;
-import androidx.core.content.ContextCompat;
+import android.widget.Spinner;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -19,6 +21,8 @@ import com.fhdw.biot.speech.iot.config.BiotApplication;
 import com.fhdw.biot.speech.iot.database.entities.MagnetData;
 import com.fhdw.biot.speech.iot.events.EreignisActivity;
 import com.fhdw.biot.speech.iot.graph.BaseChartActivity;
+import com.fhdw.biot.speech.iot.graph.DouglasPeukerAlg;
+import com.fhdw.biot.speech.iot.graph.EpsilonCalculator;
 import com.fhdw.biot.speech.iot.graph.IFilterableChart;
 import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.fhdw.biot.speech.iot.repository.SensorRepository;
@@ -52,8 +56,8 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
     /** Buttons used to show / pick "from" and "to" dates for each axis. */
     private Button xVonButton, xBisButton;
 
-    /** Quick filter button: show only last 10 minutes. */
-    private Button btnFilterLast10Min;
+    private Spinner spinnerTimeframe;
+    private int selectedMinutes = 10;
 
     private CheckBox cbChartX, cbChartY, cbChartZ;
 
@@ -63,7 +67,6 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
     private Handler slidingWindowHandler = new Handler(Looper.getMainLooper());
     private Runnable slidingWindowRunnable;
     private boolean isTenMinuteFilterActive = false;
-    private boolean isStartPointFixed = false;
     private long windowStart = 0;
 
     @Override
@@ -129,9 +132,20 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
         xBisButton = findViewById(R.id.button_x_bis);
         xVonButton = findViewById(R.id.button_x_von);
 
-        // Quick filter: show last 10 minutes worth of accel data.
-        btnFilterLast10Min = findViewById(R.id.btn_x_10min);
-        btnFilterLast10Min.setOnClickListener(view -> toggleTenMinutesFilter());
+        spinnerTimeframe = findViewById(R.id.spinner_timeframe);
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+            this, R.array.timeframe_labels, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerTimeframe.setAdapter(adapter);
+        spinnerTimeframe.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                int[] minutes = {10, 30, 60, 480, 1440, 10080};
+                selectedMinutes = minutes[position];
+                applyTimeFilter(selectedMinutes);
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) {}
+        });
 
         // --------------------------------------------------------------------
         // Chart references
@@ -198,8 +212,6 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
         setupToDatePickers(xBisButton);
 
         isTenMinuteFilterActive = true;
-        isStartPointFixed = false;
-        btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.header));
         startSlidingWindow();
         checkVoiceFilterIntent();
     }
@@ -235,32 +247,6 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
         xBisButton.setText(makeDateTimeString(dateToCalendar));
     }
 
-    /**
-     * Convenience filter: sets the date range to "now minus 10 minutes" to "now", refreshes the
-     * charts immediately and updates it every 5 seconds.
-     */
-    private void toggleTenMinutesFilter() {
-        if (!isTenMinuteFilterActive) {
-            isTenMinuteFilterActive = true;
-            isStartPointFixed = false;
-            btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.button));
-            startSlidingWindow();
-
-        } else if (!isStartPointFixed) {
-            isStartPointFixed = true;
-            btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.header));
-
-        } else {
-            isStartPointFixed = false;
-            btnFilterLast10Min.setBackgroundColor(ContextCompat.getColor(this, R.color.button));
-
-            long now = System.currentTimeMillis();
-            dateFromCalendar.setTimeInMillis(now - (10 * 60 * 1000));
-            syncDateButtonTexts();
-            updateChartsWithDateFilter();
-        }
-    }
-
     private void startSlidingWindow() {
         slidingWindowHandler.removeCallbacks(slidingWindowRunnable);
         slidingWindowRunnable =
@@ -271,10 +257,7 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
 
                         long now = System.currentTimeMillis();
 
-                        if (!isStartPointFixed) {
-                            long tenMinutesAgo = now - (10 * 60 * 1000);
-                            dateFromCalendar.setTimeInMillis(tenMinutesAgo);
-                        }
+                        dateFromCalendar.setTimeInMillis(now - (selectedMinutes * 60 * 1000L));
 
                         dateToCalendar.setTimeInMillis(now);
 
@@ -290,7 +273,6 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
 
     private void stopSlidingWindow() {
         isTenMinuteFilterActive = false;
-        isStartPointFixed = false;
         if (slidingWindowHandler != null && slidingWindowRunnable != null) {
             slidingWindowHandler.removeCallbacks(slidingWindowRunnable);
         }
@@ -379,11 +361,15 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
 
         if (windowStart == 0) windowStart = magnetDataList.get(0).timestamp;
 
+        long durationMs = (long) selectedMinutes * 60_000L;
+        float epsilon = EpsilonCalculator.calculateScaledEpsilon(this, magnetDataList, durationMs);
+        List<MagnetData> dataToRender = DouglasPeukerAlg.simplify(magnetDataList, epsilon);
+
         ArrayList<Entry> entriesX = new ArrayList<>();
         ArrayList<Entry> entriesY = new ArrayList<>();
         ArrayList<Entry> entriesZ = new ArrayList<>();
 
-        for (MagnetData data : magnetDataList) {
+        for (MagnetData data : dataToRender) {
             float t = data.timestamp - windowStart;
             entriesX.add(new Entry(t, data.magnetX));
             entriesY.add(new Entry(t, data.magnetY));
@@ -400,8 +386,7 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
     private void pinViewport(LineChart... charts) {
         for (LineChart chart : charts) {
             if (chart.getData() == null) continue;
-            chart.setVisibleXRangeMaximum(120_000f);
-            chart.moveViewToX(chart.getData().getXMax());
+            chart.fitScreen();
         }
     }
 

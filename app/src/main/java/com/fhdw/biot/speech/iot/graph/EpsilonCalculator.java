@@ -33,6 +33,18 @@ public class EpsilonCalculator {
      * @param dataPoints List of sensor data points (AccelData, GyroData, MagnetData, etc.)
      * @return The epsilon value to use for Douglas-Peucker.
      */
+    /**
+     * Scaled variant: same as calculateEpsilon but multiplies by sqrt(durationMs / 600_000)
+     * so longer timeframes get more aggressive compression automatically.
+     * Baseline is 10 minutes (600 000 ms) → scale factor 1.0.
+     */
+    public static float calculateScaledEpsilon(
+            Context context, List<? extends SensorPoint> dataPoints, long durationMs) {
+        float base = calculateEpsilon(context, dataPoints);
+        float scale = (float) Math.sqrt(Math.max(1.0, durationMs / 600_000.0));
+        return base * scale;
+    }
+
     public static float calculateEpsilon(Context context, List<? extends SensorPoint> dataPoints) {
         if (context != null) {
             SharedPreferences prefs =

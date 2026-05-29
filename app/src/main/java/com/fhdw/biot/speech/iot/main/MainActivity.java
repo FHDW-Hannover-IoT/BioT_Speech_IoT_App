@@ -107,6 +107,8 @@ public class MainActivity extends BiotBaseActivity {
             return;
         }
         mqttHandler = container.mqttHandler();
+        mqttHandler.setMessageListener(
+                (topic, message) -> runOnUiThread(() -> dispatchMqttMessage(topic, message)));
         ttsManager = container.ttsManager();
         llmHandler = container.llmQueryHandler();
 

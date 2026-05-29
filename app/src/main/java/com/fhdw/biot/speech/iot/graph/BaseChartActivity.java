@@ -59,13 +59,20 @@ public abstract class BaseChartActivity extends BiotBaseActivity {
             applyAbsoluteXAxis(chart, startTime);
         }
 
+        chart.setDrawGridBackground(false);
+        chart.setExtraOffsets(8f, 16f, 8f, 8f);
+
         // Y-axis styling + faint horizontal grid lines
         chart.getAxisLeft().setTextColor(Color.WHITE);
         chart.getAxisLeft().setDrawGridLines(true);
         chart.getAxisLeft().setGridColor(Color.argb(40, 255, 255, 255)); // ~15% white
         chart.getAxisLeft().setGridLineWidth(0.5f);
+        chart.getAxisLeft().setAxisLineColor(Color.argb(80, 255, 255, 255));
+        chart.getAxisLeft().setAxisLineWidth(0.5f);
         chart.getAxisRight().setEnabled(false);
         chart.getXAxis().setDrawGridLines(false);
+        chart.getXAxis().setDrawAxisLine(true);
+        chart.getXAxis().setAxisLineColor(Color.argb(60, 255, 255, 255));
 
         // Custom renderer: draws a filled circle at the touched data point
         chart.setRenderer(
@@ -117,9 +124,14 @@ public abstract class BaseChartActivity extends BiotBaseActivity {
         // Convert points into a drawable dataset
         LineDataSet lineDataSet = new LineDataSet(entries, label);
         lineDataSet.setColor(color);
-        lineDataSet.setDrawCircles(false); // smoother line, no points
-        lineDataSet.setValueTextSize(10f);
-        lineDataSet.setValueTextColor(Color.DKGRAY);
+        lineDataSet.setDrawCircles(false);
+        lineDataSet.setDrawValues(false);
+        lineDataSet.setLineWidth(1.8f);
+        lineDataSet.setDrawFilled(true);
+        lineDataSet.setFillAlpha(30);
+        lineDataSet.setFillColor(color);
+        lineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+        lineDataSet.setCubicIntensity(0.05f);
         GraphUtils.applyHighlightStyle(lineDataSet);
 
         // Wrap into LineData and submit to chart

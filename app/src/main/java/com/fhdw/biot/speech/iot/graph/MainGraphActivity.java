@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -509,17 +508,9 @@ public class MainGraphActivity extends BaseChartActivity {
     // =====================================================================
 
     private void initializeAccelDataSets(List<AccelData> list, long fromTime, long toTime) {
-        // Check if Douglas-Peucker is enabled in Settings
-        SharedPreferences prefs = getSharedPreferences("GraphSettings", MODE_PRIVATE);
-        boolean dpEnabled = prefs.getBoolean("dp_enabled", false);
-
-        List<AccelData> dataToUse = list;
-
-        // Only apply Douglas-Peucker if enabled
-        if (dpEnabled) {
-            float epsilon = EpsilonCalculator.calculateEpsilon(this, list);
-            dataToUse = DouglasPeukerAlg.simplify(list, epsilon);
-        }
+        long durationMs = toTime - fromTime;
+        float epsilon = EpsilonCalculator.calculateScaledEpsilon(this, list, durationMs);
+        List<AccelData> dataToUse = DouglasPeukerAlg.simplify(list, epsilon);
 
         ArrayList<Entry> xs = new ArrayList<>();
         ArrayList<Entry> ys = new ArrayList<>();
@@ -553,17 +544,9 @@ public class MainGraphActivity extends BaseChartActivity {
     }
 
     private void initializeGyroDataSets(List<GyroData> list, long fromTime, long toTime) {
-        // Check if Douglas-Peucker is enabled in Settings
-        SharedPreferences prefs = getSharedPreferences("GraphSettings", MODE_PRIVATE);
-        boolean dpEnabled = prefs.getBoolean("dp_enabled", false);
-
-        List<GyroData> dataToUse = list;
-
-        // Only apply Douglas-Peucker if enabled
-        if (dpEnabled) {
-            float epsilon = EpsilonCalculator.calculateEpsilon(this, list);
-            dataToUse = DouglasPeukerAlg.simplify(list, epsilon);
-        }
+        long durationMs = toTime - fromTime;
+        float epsilon = EpsilonCalculator.calculateScaledEpsilon(this, list, durationMs);
+        List<GyroData> dataToUse = DouglasPeukerAlg.simplify(list, epsilon);
 
         ArrayList<Entry> xs = new ArrayList<>();
         ArrayList<Entry> ys = new ArrayList<>();
@@ -597,17 +580,9 @@ public class MainGraphActivity extends BaseChartActivity {
     }
 
     private void initializeMagDataSets(List<MagnetData> list, long fromTime, long toTime) {
-        // Check if Douglas-Peucker is enabled in Settings
-        SharedPreferences prefs = getSharedPreferences("GraphSettings", MODE_PRIVATE);
-        boolean dpEnabled = prefs.getBoolean("dp_enabled", false);
-
-        List<MagnetData> dataToUse = list;
-
-        // Only apply Douglas-Peucker if enabled
-        if (dpEnabled) {
-            float epsilon = EpsilonCalculator.calculateEpsilon(this, list);
-            dataToUse = DouglasPeukerAlg.simplify(list, epsilon);
-        }
+        long durationMs = toTime - fromTime;
+        float epsilon = EpsilonCalculator.calculateScaledEpsilon(this, list, durationMs);
+        List<MagnetData> dataToUse = DouglasPeukerAlg.simplify(list, epsilon);
 
         ArrayList<Entry> xs = new ArrayList<>();
         ArrayList<Entry> ys = new ArrayList<>();

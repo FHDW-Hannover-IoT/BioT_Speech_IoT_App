@@ -103,7 +103,20 @@
     <string name="settings_save">Save Settings</string>
     <string name="settings_saved">Settings saved</string>
     <string name="settings_broker_url_invalid">Invalid broker URL — must be tcp://&lt;host&gt;:&lt;port&gt;</string>
+    <string name="settings_llm_host_label">LLM Server IP Address</string>
+    <string name="settings_llm_host_desc">IP of the FastAPI/LLM server (port 8001). Leave empty to use the build default.</string>
+    <string name="settings_llm_host_hint">192.168.x.x</string>
+    <string name="settings_llm_host_hint_default">e.g. %s  (build default)</string>
 
     <!-- MQTT error banner -->
     <string name="mqtt_connection_error">Could not connect to MQTT broker!</string>
+
+    <string-array name="timeframe_labels">
+        <item>10 min</item>
+        <item>30 min</item>
+        <item>1 Std</item>
+        <item>8 Std</item>
+        <item>24 Std</item>
+        <item>7 Tage</item>
+    </string-array>
 </resources>
