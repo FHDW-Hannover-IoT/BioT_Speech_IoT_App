@@ -30,8 +30,8 @@ public class SensorMarkerView extends MarkerView {
         super(context, R.layout.marker_sensor);
         this.unit = unit;
         tvValue = findViewById(R.id.tv_marker_value);
-        tvDate  = findViewById(R.id.tv_marker_date);
-        tvTime  = findViewById(R.id.tv_marker_time);
+        tvDate = findViewById(R.id.tv_marker_date);
+        tvTime = findViewById(R.id.tv_marker_time);
     }
 
     @Override

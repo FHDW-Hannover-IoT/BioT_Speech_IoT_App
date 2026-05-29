@@ -83,8 +83,9 @@ public class SensorEreignis {
             int reqCode = (int) (System.currentTimeMillis() % 10000);
             Intent intent = new Intent(this.context, MainActivity.class);
 
-            String title   = context.getString(R.string.event_notification_title, eventName);
-            String message = context.getString(R.string.event_notification_body, sensorType, axis, value);
+            String title = context.getString(R.string.event_notification_title, eventName);
+            String message =
+                    context.getString(R.string.event_notification_body, sensorType, axis, value);
 
             this.showNotification(this.context, title, message, intent, reqCode);
         } else {

@@ -65,7 +65,7 @@ public abstract class BaseChartActivity extends BiotBaseActivity {
         // Y-axis styling + faint horizontal grid lines
         chart.getAxisLeft().setTextColor(Color.WHITE);
         chart.getAxisLeft().setDrawGridLines(true);
-        chart.getAxisLeft().setGridColor(Color.argb(40, 255, 255, 255));  // ~15% white
+        chart.getAxisLeft().setGridColor(Color.argb(40, 255, 255, 255)); // ~15% white
         chart.getAxisLeft().setGridLineWidth(0.5f);
         chart.getAxisLeft().setAxisLineColor(Color.argb(80, 255, 255, 255));
         chart.getAxisLeft().setAxisLineWidth(0.5f);
@@ -95,9 +95,9 @@ public abstract class BaseChartActivity extends BiotBaseActivity {
     }
 
     /**
-     * Pin the visible X-axis range so the chart always shows the full selected time window,
-     * even when data only covers part of it. Values are millisecond offsets from the chart's
-     * startTime anchor (same coordinate space as the data entries).
+     * Pin the visible X-axis range so the chart always shows the full selected time window, even
+     * when data only covers part of it. Values are millisecond offsets from the chart's startTime
+     * anchor (same coordinate space as the data entries).
      */
     protected void pinXAxisRange(LineChart chart, float minMs, float maxMs) {
         XAxis xAxis = chart.getXAxis();

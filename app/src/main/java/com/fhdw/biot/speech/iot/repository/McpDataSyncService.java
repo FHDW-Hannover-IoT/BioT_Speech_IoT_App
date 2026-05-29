@@ -21,13 +21,14 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
- * McpDataSyncService — fetches historical sensor data from the LLM/FastAPI server and inserts
- * it into the local Room database in paginated chunks.
+ * McpDataSyncService — fetches historical sensor data from the LLM/FastAPI server and inserts it
+ * into the local Room database in paginated chunks.
  *
  * <p>Fetch strategy:
+ *
  * <ol>
- *   <li>{@link #fetchInitial()} — called on app start; pulls the last
- *       {@code LLM_INITIAL_FETCH_HOURS} of data in 500-row pages so charts have data immediately.
+ *   <li>{@link #fetchInitial()} — called on app start; pulls the last {@code
+ *       LLM_INITIAL_FETCH_HOURS} of data in 500-row pages so charts have data immediately.
  *   <li>{@link #fetchRange(long, long)} — called when the user selects a time filter wider than
  *       what is already in Room; extends the fetch window backwards in 500-row pages.
  * </ol>
@@ -35,15 +36,15 @@ import org.json.JSONObject;
  * <p>Each page is inserted into Room and posted to LiveData immediately, so charts update
  * progressively instead of waiting for a single large response.
  *
- * <p>HTTP keep-alive is preserved (no {@code disconnect()} call) so the JVM connection pool
- * reuses the same TCP socket across all pages and all three sensor endpoints.
+ * <p>HTTP keep-alive is preserved (no {@code disconnect()} call) so the JVM connection pool reuses
+ * the same TCP socket across all pages and all three sensor endpoints.
  */
 public class McpDataSyncService {
 
     private static final String TAG = "McpDataSyncService";
 
-    private static final String PATH_ACCEL  = "/data/accel";
-    private static final String PATH_GYRO   = "/data/gyro";
+    private static final String PATH_ACCEL = "/data/accel";
+    private static final String PATH_GYRO = "/data/gyro";
     private static final String PATH_MAGNET = "/data/magnet";
 
     private final SensorRepository repository;
@@ -53,32 +54,45 @@ public class McpDataSyncService {
     // ── Oldest fetched timestamp per sensor ───────────────────────────────────
     // Long.MAX_VALUE = nothing fetched yet (Room is always cleared on startup).
     // Written only from within executor tasks — no race conditions on the single-thread pool.
-    private long oldestFetchedAccelMs  = Long.MAX_VALUE;
-    private long oldestFetchedGyroMs   = Long.MAX_VALUE;
+    private long oldestFetchedAccelMs = Long.MAX_VALUE;
+    private long oldestFetchedGyroMs = Long.MAX_VALUE;
     private long oldestFetchedMagnetMs = Long.MAX_VALUE;
 
     // ── LiveData ──────────────────────────────────────────────────────────────
 
-    private final MutableLiveData<List<AccelData>>  accelHistory  = new MutableLiveData<>();
-    private final MutableLiveData<List<GyroData>>   gyroHistory   = new MutableLiveData<>();
+    private final MutableLiveData<List<AccelData>> accelHistory = new MutableLiveData<>();
+    private final MutableLiveData<List<GyroData>> gyroHistory = new MutableLiveData<>();
     private final MutableLiveData<List<MagnetData>> magnetHistory = new MutableLiveData<>();
-    private final MutableLiveData<String>           syncError     = new MutableLiveData<>();
+    private final MutableLiveData<String> syncError = new MutableLiveData<>();
 
-    public LiveData<List<AccelData>>  accelHistory()  { return accelHistory; }
-    public LiveData<List<GyroData>>   gyroHistory()   { return gyroHistory; }
-    public LiveData<List<MagnetData>> magnetHistory() { return magnetHistory; }
-    public LiveData<String>           syncError()     { return syncError; }
+    public LiveData<List<AccelData>> accelHistory() {
+        return accelHistory;
+    }
+
+    public LiveData<List<GyroData>> gyroHistory() {
+        return gyroHistory;
+    }
+
+    public LiveData<List<MagnetData>> magnetHistory() {
+        return magnetHistory;
+    }
+
+    public LiveData<String> syncError() {
+        return syncError;
+    }
 
     // ─────────────────────────────────────────────────────────────────────────
 
     public McpDataSyncService(SensorRepository repository, String baseUrl) {
         this.repository = repository;
-        this.baseUrl    = baseUrl;
-        this.executor   = Executors.newSingleThreadExecutor(r -> {
-            Thread t = new Thread(r, "mcp-sync-thread");
-            t.setDaemon(true);
-            return t;
-        });
+        this.baseUrl = baseUrl;
+        this.executor =
+                Executors.newSingleThreadExecutor(
+                        r -> {
+                            Thread t = new Thread(r, "mcp-sync-thread");
+                            t.setDaemon(true);
+                            return t;
+                        });
     }
 
     public void setBaseUrl(String baseUrl) {
@@ -88,44 +102,61 @@ public class McpDataSyncService {
     // ── Public API ────────────────────────────────────────────────────────────
 
     /**
-     * Fetches the last {@code LLM_INITIAL_FETCH_HOURS} hours of data for all three sensors
-     * in 500-row pages. Called once on app start. Charts begin updating after the first page.
+     * Fetches the last {@code LLM_INITIAL_FETCH_HOURS} hours of data for all three sensors in
+     * 500-row pages. Called once on app start. Charts begin updating after the first page.
      */
     public void fetchInitial() {
-        long toMs   = System.currentTimeMillis();
+        long toMs = System.currentTimeMillis();
         long fromMs = toMs - (BuildConfig.LLM_INITIAL_FETCH_HOURS * 3_600_000L);
-        executor.submit(() -> {
-            fetchPagedAccel(fromMs, toMs);
-            fetchPagedGyro(fromMs, toMs);
-            fetchPagedMagnet(fromMs, toMs);
-        });
+        executor.submit(
+                () -> {
+                    fetchPagedAccel(fromMs, toMs);
+                    fetchPagedGyro(fromMs, toMs);
+                    fetchPagedMagnet(fromMs, toMs);
+                });
     }
 
     /**
-     * Extends the local Room cache to cover {@code [fromMs, toMs]} for all three sensors.
-     * Only fetches the gap between {@code fromMs} and what is already in Room — skips sensors
-     * whose data already covers the requested range.
+     * Extends the local Room cache to cover {@code [fromMs, toMs]} for all three sensors. Only
+     * fetches the gap between {@code fromMs} and what is already in Room — skips sensors whose data
+     * already covers the requested range.
      *
      * <p>Call this whenever the user selects a time filter wider than the initial 1-hour window.
      *
      * @param fromMs start of the desired range in epoch milliseconds
-     * @param toMs   end of the desired range in epoch milliseconds
+     * @param toMs end of the desired range in epoch milliseconds
      */
     public void fetchRange(long fromMs, long toMs) {
-        executor.submit(() -> {
-            if (fromMs < oldestFetchedAccelMs) {
-                long fetchTo = Math.min(toMs, oldestFetchedAccelMs == Long.MAX_VALUE ? toMs : oldestFetchedAccelMs - 1);
-                fetchPagedAccel(fromMs, fetchTo);
-            }
-            if (fromMs < oldestFetchedGyroMs) {
-                long fetchTo = Math.min(toMs, oldestFetchedGyroMs == Long.MAX_VALUE ? toMs : oldestFetchedGyroMs - 1);
-                fetchPagedGyro(fromMs, fetchTo);
-            }
-            if (fromMs < oldestFetchedMagnetMs) {
-                long fetchTo = Math.min(toMs, oldestFetchedMagnetMs == Long.MAX_VALUE ? toMs : oldestFetchedMagnetMs - 1);
-                fetchPagedMagnet(fromMs, fetchTo);
-            }
-        });
+        executor.submit(
+                () -> {
+                    if (fromMs < oldestFetchedAccelMs) {
+                        long fetchTo =
+                                Math.min(
+                                        toMs,
+                                        oldestFetchedAccelMs == Long.MAX_VALUE
+                                                ? toMs
+                                                : oldestFetchedAccelMs - 1);
+                        fetchPagedAccel(fromMs, fetchTo);
+                    }
+                    if (fromMs < oldestFetchedGyroMs) {
+                        long fetchTo =
+                                Math.min(
+                                        toMs,
+                                        oldestFetchedGyroMs == Long.MAX_VALUE
+                                                ? toMs
+                                                : oldestFetchedGyroMs - 1);
+                        fetchPagedGyro(fromMs, fetchTo);
+                    }
+                    if (fromMs < oldestFetchedMagnetMs) {
+                        long fetchTo =
+                                Math.min(
+                                        toMs,
+                                        oldestFetchedMagnetMs == Long.MAX_VALUE
+                                                ? toMs
+                                                : oldestFetchedMagnetMs - 1);
+                        fetchPagedMagnet(fromMs, fetchTo);
+                    }
+                });
     }
 
     // ── Per-sensor paginated fetchers ─────────────────────────────────────────
@@ -143,9 +174,9 @@ public class McpDataSyncService {
                     JSONObject r = rows.getJSONObject(i);
                     AccelData d = new AccelData();
                     d.timestamp = r.getLong("timestamp");
-                    d.accelX    = (float) r.getDouble("x");
-                    d.accelY    = (float) r.getDouble("y");
-                    d.accelZ    = (float) r.getDouble("z");
+                    d.accelX = (float) r.getDouble("x");
+                    d.accelY = (float) r.getDouble("y");
+                    d.accelZ = (float) r.getDouble("z");
                     page.add(d);
                 }
                 repository.insertAccelBatch(page);
@@ -177,9 +208,9 @@ public class McpDataSyncService {
                     JSONObject r = rows.getJSONObject(i);
                     GyroData d = new GyroData();
                     d.timestamp = r.getLong("timestamp");
-                    d.gyroX     = (float) r.getDouble("x");
-                    d.gyroY     = (float) r.getDouble("y");
-                    d.gyroZ     = (float) r.getDouble("z");
+                    d.gyroX = (float) r.getDouble("x");
+                    d.gyroY = (float) r.getDouble("y");
+                    d.gyroZ = (float) r.getDouble("z");
                     page.add(d);
                 }
                 repository.insertGyroBatch(page);
@@ -211,9 +242,9 @@ public class McpDataSyncService {
                     JSONObject r = rows.getJSONObject(i);
                     MagnetData d = new MagnetData();
                     d.timestamp = r.getLong("timestamp");
-                    d.magnetX   = (float) r.getDouble("x");
-                    d.magnetY   = (float) r.getDouble("y");
-                    d.magnetZ   = (float) r.getDouble("z");
+                    d.magnetX = (float) r.getDouble("x");
+                    d.magnetY = (float) r.getDouble("y");
+                    d.magnetZ = (float) r.getDouble("z");
                     page.add(d);
                 }
                 repository.insertMagnetBatch(page);
@@ -235,15 +266,20 @@ public class McpDataSyncService {
     // ── HTTP ──────────────────────────────────────────────────────────────────
 
     /**
-     * Fetches one page of sensor rows from the server.
-     * Does NOT call {@code disconnect()} — the JVM keep-alive pool reuses the socket
-     * across consecutive pages and across sensor endpoints.
+     * Fetches one page of sensor rows from the server. Does NOT call {@code disconnect()} — the JVM
+     * keep-alive pool reuses the socket across consecutive pages and across sensor endpoints.
      */
     private JSONArray fetchPage(String path, long fromMs, long toMs) throws Exception {
-        URL url = new URL(baseUrl + path
-                + "?from=" + fromMs
-                + "&to="   + toMs
-                + "&limit=" + BuildConfig.LLM_FETCH_PAGE_SIZE);
+        URL url =
+                new URL(
+                        baseUrl
+                                + path
+                                + "?from="
+                                + fromMs
+                                + "&to="
+                                + toMs
+                                + "&limit="
+                                + BuildConfig.LLM_FETCH_PAGE_SIZE);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
         conn.setRequestProperty("Accept", "application/json");
@@ -257,8 +293,9 @@ public class McpDataSyncService {
         }
 
         StringBuilder sb = new StringBuilder();
-        try (BufferedReader br = new BufferedReader(
-                new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+        try (BufferedReader br =
+                new BufferedReader(
+                        new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
             String line;
             while ((line = br.readLine()) != null) sb.append(line);
         }
