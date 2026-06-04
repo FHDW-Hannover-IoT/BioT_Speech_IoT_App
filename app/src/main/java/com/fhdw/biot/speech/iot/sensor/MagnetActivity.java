@@ -1,7 +1,6 @@
 package com.fhdw.biot.speech.iot.sensor;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -25,12 +24,9 @@ import com.fhdw.biot.speech.iot.config.BiotApplication;
 import com.fhdw.biot.speech.iot.database.entities.MagnetData;
 import com.fhdw.biot.speech.iot.events.EreignisActivity;
 import com.fhdw.biot.speech.iot.graph.BaseChartActivity;
-import com.fhdw.biot.speech.iot.graph.DouglasPeukerAlg;
-import com.fhdw.biot.speech.iot.graph.EpsilonCalculator;
 import com.fhdw.biot.speech.iot.graph.IFilterableChart;
 import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.fhdw.biot.speech.iot.repository.SensorRepository;
-import com.fhdw.biot.speech.iot.util.DateTimePickerHandler;
 import com.fhdw.biot.speech.iot.voice.VoiceCommandExecutor;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
@@ -56,9 +52,6 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
     private Calendar dateFromCalendar;
 
     private Calendar dateToCalendar;
-
-    /** Buttons used to show / pick "from" and "to" dates for each axis. */
-    private Button xVonButton, xBisButton;
 
     private Spinner spinnerTimeframe;
     private int selectedMinutes = 10;
@@ -158,10 +151,8 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
                 });
 
         // --------------------------------------------------------------------
-        // Date range buttons
+        // Timeframe filter spinner
         // --------------------------------------------------------------------
-        xBisButton = findViewById(R.id.button_x_bis);
-        xVonButton = findViewById(R.id.button_x_von);
 
         spinnerTimeframe = findViewById(R.id.spinner_timeframe);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
@@ -196,8 +187,6 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
                     lineChartMagnetX.fitScreen();
                     lineChartMagnetY.fitScreen();
                     lineChartMagnetZ.fitScreen();
-                    xBisButton.setText("");
-                    xVonButton.setText("");
                 });
 
         // --------------------------------------------------------------------
@@ -239,43 +228,9 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
         dateFromCalendar = Calendar.getInstance();
         dateToCalendar = Calendar.getInstance();
 
-        setupFromDatePickers(xVonButton);
-        setupToDatePickers(xBisButton);
-
         isTenMinuteFilterActive = true;
         startSlidingWindow();
         checkVoiceFilterIntent();
-    }
-
-    /**
-     * Attaches DatePickers to the three "von" buttons and sets their initial text.
-     *
-     * <p>For each: - opens a calendar dialog, - updates {@link #dateFromCalendar}, - triggers
-     * {@link #updateChartsWithDateFilter()}.
-     */
-    private void setupFromDatePickers(Button xVonButton) {
-        DateTimePickerHandler.createForButton(
-                xVonButton,
-                calendar -> {
-                    stopSlidingWindow();
-                    dateFromCalendar = calendar;
-                    windowStart = 0;
-                    updateChartsWithDateFilter();
-                },
-                MagnetActivity.this);
-        xVonButton.setText(makeDateTimeString(dateFromCalendar));
-    }
-
-    private void setupToDatePickers(Button xBisButton) {
-        DateTimePickerHandler.createForButton(
-                xBisButton,
-                calendar -> {
-                    stopSlidingWindow();
-                    dateToCalendar = calendar;
-                    updateChartsWithDateFilter();
-                },
-                MagnetActivity.this);
-        xBisButton.setText(makeDateTimeString(dateToCalendar));
     }
 
     private void startSlidingWindow() {
@@ -292,7 +247,6 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
 
                         dateToCalendar.setTimeInMillis(now);
 
-                        syncDateButtonTexts();
                         updateChartsWithDateFilter();
 
                         slidingWindowHandler.postDelayed(this, 5000);
@@ -307,14 +261,6 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
         if (slidingWindowHandler != null && slidingWindowRunnable != null) {
             slidingWindowHandler.removeCallbacks(slidingWindowRunnable);
         }
-    }
-
-    /** Updates all six date filter buttons to match the current from/to calendars. */
-    private void syncDateButtonTexts() {
-        xVonButton.setText(makeDateTimeString(dateFromCalendar));
-
-        // "Bis"-Buttons
-        xBisButton.setText(makeDateTimeString(dateToCalendar));
     }
 
     // ------------------------------------------------------------------------
@@ -374,10 +320,6 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
                 });
     }
 
-    private String makeDateTimeString(Calendar calendar) {
-        return DateTimePickerHandler.format(calendar);
-    }
-
     // ------------------------------------------------------------------------
     // Data → chart mapping
     // ------------------------------------------------------------------------
@@ -393,41 +335,28 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
         if (list == null || list.isEmpty()) return;
         final long wStart = (windowStart == 0) ? list.get(0).timestamp : windowStart;
         if (windowStart == 0) windowStart = wStart;
-        final long durationMs = (long) selectedMinutes * 60_000L;
         final int gen = renderGeneration.incrementAndGet();
 
         android.util.Log.i("MagnetActivity", "GRAPH_LOAD: start magnet gen=" + gen + " rows=" + list.size());
 
         chartExecutor.execute(() -> {
-            SharedPreferences prefs = MagnetActivity.this.getSharedPreferences("GraphSettings", android.content.Context.MODE_PRIVATE);
-            boolean dpEnabled = prefs.getBoolean("dp_enabled", false);
-            final List<MagnetData> simplified;
-            if (dpEnabled) {
-                float epsilon = EpsilonCalculator.calculateScaledEpsilon(MagnetActivity.this, list, durationMs);
-                simplified = DouglasPeukerAlg.simplify(list, epsilon);
-                android.util.Log.d("MagnetActivity", "GRAPH_RENDER: gen=" + gen + " raw=" + list.size() + " simplified=" + simplified.size());
-            } else {
-                simplified = list;
-                android.util.Log.d("MagnetActivity", "GRAPH_RENDER: gen=" + gen + " raw=" + list.size() + " dp=off");
-            }
-
             if (renderGeneration.get() != gen) return;
 
             CountDownLatch latch = new CountDownLatch(3);
 
             axisExecutor.submit(() -> {
-                ArrayList<Entry> entries = new ArrayList<>(simplified.size());
-                for (MagnetData d : simplified) entries.add(new Entry(d.timestamp - wStart, d.magnetX));
+                ArrayList<Entry> entries = new ArrayList<>(list.size());
+                for (MagnetData d : list) entries.add(new Entry(d.timestamp - wStart, d.magnetX));
                 runOnUiThread(() -> { setData(lineChartMagnetX, entries, "X", Color.CYAN); latch.countDown(); });
             });
             axisExecutor.submit(() -> {
-                ArrayList<Entry> entries = new ArrayList<>(simplified.size());
-                for (MagnetData d : simplified) entries.add(new Entry(d.timestamp - wStart, d.magnetY));
+                ArrayList<Entry> entries = new ArrayList<>(list.size());
+                for (MagnetData d : list) entries.add(new Entry(d.timestamp - wStart, d.magnetY));
                 runOnUiThread(() -> { setData(lineChartMagnetY, entries, "Y", Color.GREEN); latch.countDown(); });
             });
             axisExecutor.submit(() -> {
-                ArrayList<Entry> entries = new ArrayList<>(simplified.size());
-                for (MagnetData d : simplified) entries.add(new Entry(d.timestamp - wStart, d.magnetZ));
+                ArrayList<Entry> entries = new ArrayList<>(list.size());
+                for (MagnetData d : list) entries.add(new Entry(d.timestamp - wStart, d.magnetZ));
                 runOnUiThread(() -> { setData(lineChartMagnetZ, entries, "Z", Color.YELLOW); latch.countDown(); });
             });
 
@@ -444,7 +373,7 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
             if (renderGeneration.get() == gen) {
                 runOnUiThread(() -> {
                     pinViewport(lineChartMagnetX, lineChartMagnetY, lineChartMagnetZ);
-                    android.util.Log.i("MagnetActivity", "GRAPH_LOAD: end magnet gen=" + gen + " rendered=" + simplified.size() + " points");
+                    android.util.Log.i("MagnetActivity", "GRAPH_LOAD: end magnet gen=" + gen + " rendered=" + list.size() + " points");
                 });
             }
         });
@@ -486,7 +415,6 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
         dateFromCalendar.setTimeInMillis(now - ((long) minutes * 60 * 1000));
         dateToCalendar.setTimeInMillis(now);
         isTenMinuteFilterActive = true;
-        syncDateButtonTexts();
         updateChartsWithDateFilter();
         startSlidingWindow();
     }
@@ -497,7 +425,6 @@ public class MagnetActivity extends BaseChartActivity implements IFilterableChar
         dateFromCalendar = Calendar.getInstance();
         dateToCalendar = Calendar.getInstance();
         windowStart = 0;
-        syncDateButtonTexts();
         updateChartsWithDateFilter();
     }
 

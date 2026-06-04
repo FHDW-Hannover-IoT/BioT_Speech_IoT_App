@@ -32,6 +32,9 @@ public final class GraphUtils {
         if (entries.size() == 1)
             return Collections.singletonList(makeDataSet(entries, label, color));
 
+        // MPAndroidChart requires entries sorted ascending by X — unsorted entries cause loops.
+        entries.sort((a, b) -> Float.compare(a.getX(), b.getX()));
+
         float threshold = computeGapThreshold(entries);
 
         List<LineDataSet> result = new ArrayList<>();

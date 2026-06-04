@@ -1,7 +1,6 @@
 package com.fhdw.biot.speech.iot.sensor;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -25,12 +24,9 @@ import com.fhdw.biot.speech.iot.config.BiotApplication;
 import com.fhdw.biot.speech.iot.database.entities.GyroData;
 import com.fhdw.biot.speech.iot.events.EreignisActivity;
 import com.fhdw.biot.speech.iot.graph.BaseChartActivity;
-import com.fhdw.biot.speech.iot.graph.DouglasPeukerAlg;
-import com.fhdw.biot.speech.iot.graph.EpsilonCalculator;
 import com.fhdw.biot.speech.iot.graph.IFilterableChart;
 import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.fhdw.biot.speech.iot.repository.SensorRepository;
-import com.fhdw.biot.speech.iot.util.DateTimePickerHandler;
 import com.fhdw.biot.speech.iot.voice.VoiceCommandExecutor;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
@@ -56,9 +52,6 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
     private Calendar dateFromCalendar;
 
     private Calendar dateToCalendar;
-
-    /** Buttons that display and modify the filter range ("von" / "bis" per axis). */
-    private Button xVonButton, xBisButton;
 
     private Handler slidingWindowHandler = new Handler(Looper.getMainLooper());
     private Runnable slidingWindowRunnable;
@@ -164,10 +157,8 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
         lineChartGyroZ = findViewById(R.id.lineChartGyroZ);
 
         // --------------------------------------------------------------------
-        // Date filter buttons
+        // Timeframe filter spinner
         // --------------------------------------------------------------------
-        xBisButton = findViewById(R.id.button_x_bis);
-        xVonButton = findViewById(R.id.button_x_von);
 
         spinnerTimeframe = findViewById(R.id.spinner_timeframe);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
@@ -195,8 +186,6 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
                     lineChartGyroX.fitScreen();
                     lineChartGyroY.fitScreen();
                     lineChartGyroZ.fitScreen();
-                    xBisButton.setText("");
-                    xVonButton.setText("");
                 });
 
         // --------------------------------------------------------------------
@@ -239,44 +228,9 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
         dateFromCalendar = Calendar.getInstance();
         dateToCalendar = Calendar.getInstance();
 
-        setupFromDatePickers(xVonButton);
-        setupToDatePickers(xBisButton);
-
         isTenMinuteFilterActive = true;
         startSlidingWindow();
         checkVoiceFilterIntent();
-    }
-
-    /**
-     * Attaches DatePickers to the three "von" buttons and sets their texts to the current value of
-     * {@link #dateFromCalendar}.
-     *
-     * <p>For each button: - opens a calendar dialog, - updates {@link #dateFromCalendar}, - calls
-     * {@link #updateChartsWithDateFilter()} so the data refreshes.
-     */
-    private void setupFromDatePickers(Button xVonButton) {
-        DateTimePickerHandler.createForButton(
-                xVonButton,
-                calendar -> {
-                    stopSlidingWindow();
-                    dateFromCalendar = calendar;
-                    windowStart = 0;
-                    updateChartsWithDateFilter();
-                },
-                GyroActivity.this);
-        xVonButton.setText(makeDateTimeString(dateFromCalendar));
-    }
-
-    private void setupToDatePickers(Button xBisButton) {
-        DateTimePickerHandler.createForButton(
-                xBisButton,
-                calendar -> {
-                    stopSlidingWindow();
-                    dateToCalendar = calendar;
-                    updateChartsWithDateFilter();
-                },
-                GyroActivity.this);
-        xBisButton.setText(makeDateTimeString(dateToCalendar));
     }
 
     private void startSlidingWindow() {
@@ -293,7 +247,6 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
 
                         dateToCalendar.setTimeInMillis(now);
 
-                        syncDateButtonTexts();
                         updateChartsWithDateFilter();
 
                         slidingWindowHandler.postDelayed(this, 5000);
@@ -308,14 +261,6 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
         if (slidingWindowHandler != null && slidingWindowRunnable != null) {
             slidingWindowHandler.removeCallbacks(slidingWindowRunnable);
         }
-    }
-
-    /** Updates all six date filter buttons to match the current from/to calendars. */
-    private void syncDateButtonTexts() {
-        xVonButton.setText(makeDateTimeString(dateFromCalendar));
-
-        // "Bis"-Buttons
-        xBisButton.setText(makeDateTimeString(dateToCalendar));
     }
 
     // ------------------------------------------------------------------------
@@ -375,10 +320,6 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
                 });
     }
 
-    private String makeDateTimeString(Calendar calendar) {
-        return DateTimePickerHandler.format(calendar);
-    }
-
     // ------------------------------------------------------------------------
     // Data → chart mapping
     // ------------------------------------------------------------------------
@@ -394,41 +335,28 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
         if (list == null || list.isEmpty()) return;
         final long wStart = (windowStart == 0) ? list.get(0).timestamp : windowStart;
         if (windowStart == 0) windowStart = wStart;
-        final long durationMs = (long) selectedMinutes * 60_000L;
         final int gen = renderGeneration.incrementAndGet();
 
         android.util.Log.i("GyroActivity", "GRAPH_LOAD: start gyro gen=" + gen + " rows=" + list.size());
 
         chartExecutor.execute(() -> {
-            SharedPreferences prefs = GyroActivity.this.getSharedPreferences("GraphSettings", android.content.Context.MODE_PRIVATE);
-            boolean dpEnabled = prefs.getBoolean("dp_enabled", false);
-            final List<GyroData> simplified;
-            if (dpEnabled) {
-                float epsilon = EpsilonCalculator.calculateScaledEpsilon(GyroActivity.this, list, durationMs);
-                simplified = DouglasPeukerAlg.simplify(list, epsilon);
-                android.util.Log.d("GyroActivity", "GRAPH_RENDER: gen=" + gen + " raw=" + list.size() + " simplified=" + simplified.size());
-            } else {
-                simplified = list;
-                android.util.Log.d("GyroActivity", "GRAPH_RENDER: gen=" + gen + " raw=" + list.size() + " dp=off");
-            }
-
             if (renderGeneration.get() != gen) return;
 
             CountDownLatch latch = new CountDownLatch(3);
 
             axisExecutor.submit(() -> {
-                ArrayList<Entry> entries = new ArrayList<>(simplified.size());
-                for (GyroData d : simplified) entries.add(new Entry(d.timestamp - wStart, d.gyroX));
+                ArrayList<Entry> entries = new ArrayList<>(list.size());
+                for (GyroData d : list) entries.add(new Entry(d.timestamp - wStart, d.gyroX));
                 runOnUiThread(() -> { setData(lineChartGyroX, entries, "X", Color.CYAN); latch.countDown(); });
             });
             axisExecutor.submit(() -> {
-                ArrayList<Entry> entries = new ArrayList<>(simplified.size());
-                for (GyroData d : simplified) entries.add(new Entry(d.timestamp - wStart, d.gyroY));
+                ArrayList<Entry> entries = new ArrayList<>(list.size());
+                for (GyroData d : list) entries.add(new Entry(d.timestamp - wStart, d.gyroY));
                 runOnUiThread(() -> { setData(lineChartGyroY, entries, "Y", Color.GREEN); latch.countDown(); });
             });
             axisExecutor.submit(() -> {
-                ArrayList<Entry> entries = new ArrayList<>(simplified.size());
-                for (GyroData d : simplified) entries.add(new Entry(d.timestamp - wStart, d.gyroZ));
+                ArrayList<Entry> entries = new ArrayList<>(list.size());
+                for (GyroData d : list) entries.add(new Entry(d.timestamp - wStart, d.gyroZ));
                 runOnUiThread(() -> { setData(lineChartGyroZ, entries, "Z", Color.YELLOW); latch.countDown(); });
             });
 
@@ -445,7 +373,7 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
             if (renderGeneration.get() == gen) {
                 runOnUiThread(() -> {
                     pinViewport(lineChartGyroX, lineChartGyroY, lineChartGyroZ);
-                    android.util.Log.i("GyroActivity", "GRAPH_LOAD: end gyro gen=" + gen + " rendered=" + simplified.size() + " points");
+                    android.util.Log.i("GyroActivity", "GRAPH_LOAD: end gyro gen=" + gen + " rendered=" + list.size() + " points");
                 });
             }
         });
@@ -487,7 +415,6 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
         dateFromCalendar.setTimeInMillis(now - ((long) minutes * 60 * 1000));
         dateToCalendar.setTimeInMillis(now);
         isTenMinuteFilterActive = true;
-        syncDateButtonTexts();
         updateChartsWithDateFilter();
         startSlidingWindow();
     }
@@ -498,7 +425,6 @@ public class GyroActivity extends BaseChartActivity implements IFilterableChart 
         dateFromCalendar = Calendar.getInstance();
         dateToCalendar = Calendar.getInstance();
         windowStart = 0;
-        syncDateButtonTexts();
         updateChartsWithDateFilter();
     }
 

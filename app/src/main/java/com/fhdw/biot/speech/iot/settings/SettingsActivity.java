@@ -9,8 +9,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.SeekBar;
-import android.widget.TextView;
 import android.widget.Toast;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -19,11 +17,11 @@ import com.fhdw.biot.speech.iot.R;
 import com.fhdw.biot.speech.iot.config.AppConfig;
 import com.fhdw.biot.speech.iot.config.BiotApplication;
 import com.fhdw.biot.speech.iot.config.BiotBaseActivity;
+import com.fhdw.biot.speech.iot.repository.McpDataSyncService;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
 /**
- * SettingsActivity — lets the user configure the MQTT broker URL, push notifications, and
- * Douglas-Peucker graph reduction.
+ * SettingsActivity — lets the user configure the MQTT broker URL and push notifications.
  *
  * <p>The broker URL field starts empty when no custom value has been saved; the hint shows the
  * active build.gradle IP so the user always knows what address is in use. A Save button appears
@@ -39,12 +37,18 @@ public class SettingsActivity extends BiotBaseActivity {
     private SwitchMaterial switchServerData;
     private EditText etMqttBrokerUrl;
     private EditText etLlmHost;
+    private EditText etEpsilonAccel;
+    private EditText etEpsilonGyro;
+    private EditText etEpsilonMagnet;
     private Button btnSave;
 
     // Values as they were when the screen opened — used to detect unsaved changes
     private String originalBrokerUrl; // null means "no custom override — using build.gradle"
     private String originalLlmHost;   // null means "no custom override — using build.gradle"
     private boolean originalPushActive;
+    private float originalEpsilonAccel;
+    private float originalEpsilonGyro;
+    private float originalEpsilonMagnet;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,14 +59,24 @@ public class SettingsActivity extends BiotBaseActivity {
         switchServerData        = findViewById(R.id.switch_server_data);
         etMqttBrokerUrl         = findViewById(R.id.et_mqtt_broker_url);
         etLlmHost               = findViewById(R.id.et_llm_host);
+        etEpsilonAccel          = findViewById(R.id.et_epsilon_accel);
+        etEpsilonGyro           = findViewById(R.id.et_epsilon_gyro);
+        etEpsilonMagnet         = findViewById(R.id.et_epsilon_magnet);
         btnSave                 = findViewById(R.id.btn_save_settings);
 
         SharedPreferences prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
 
-        originalPushActive = prefs.getBoolean("PUSH_ACTIVE", true);
+        originalPushActive    = prefs.getBoolean("PUSH_ACTIVE", true);
         // null = no custom override saved; field stays empty, hint shows the active default
-        originalBrokerUrl  = prefs.getString("MQTT_BROKER", null);
-        originalLlmHost    = prefs.getString("LLM_HOST", null);
+        originalBrokerUrl     = prefs.getString("MQTT_BROKER", null);
+        originalLlmHost       = prefs.getString("LLM_HOST", null);
+        originalEpsilonAccel  = prefs.getFloat(McpDataSyncService.PREF_EPSILON_ACCEL,  com.fhdw.biot.speech.iot.BuildConfig.DP_EPSILON_ACCEL_RAW);
+        originalEpsilonGyro   = prefs.getFloat(McpDataSyncService.PREF_EPSILON_GYRO,   com.fhdw.biot.speech.iot.BuildConfig.DP_EPSILON_GYRO_RAW);
+        originalEpsilonMagnet = prefs.getFloat(McpDataSyncService.PREF_EPSILON_MAGNET, com.fhdw.biot.speech.iot.BuildConfig.DP_EPSILON_MAGNET_RAW);
+
+        etEpsilonAccel.setText(String.valueOf(originalEpsilonAccel));
+        etEpsilonGyro.setText(String.valueOf(originalEpsilonGyro));
+        etEpsilonMagnet.setText(String.valueOf(originalEpsilonMagnet));
 
         switchPushNotifications.setChecked(originalPushActive);
         switchServerData.setChecked(prefs.getBoolean("SERVER_DATA_ENABLED", true));
@@ -118,53 +132,46 @@ public class SettingsActivity extends BiotBaseActivity {
             @Override public void onTextChanged(CharSequence s, int st, int b, int c) {}
             @Override public void afterTextChanged(Editable s) { updateSaveVisibility(); }
         });
+        etEpsilonAccel.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+            @Override public void onTextChanged(CharSequence s, int st, int b, int c) {}
+            @Override public void afterTextChanged(Editable s) { updateSaveVisibility(); }
+        });
+        etEpsilonGyro.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+            @Override public void onTextChanged(CharSequence s, int st, int b, int c) {}
+            @Override public void afterTextChanged(Editable s) { updateSaveVisibility(); }
+        });
+        etEpsilonMagnet.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+            @Override public void onTextChanged(CharSequence s, int st, int b, int c) {}
+            @Override public void afterTextChanged(Editable s) { updateSaveVisibility(); }
+        });
         switchPushNotifications.setOnCheckedChangeListener((btn, checked) -> updateSaveVisibility());
 
         btnSave.setOnClickListener(v -> saveSettings());
-
-        // ── Douglas-Peucker section ──────────────────────────────────────────
-        SwitchMaterial swActive  = findViewById(R.id.switch_dp_active);
-        SeekBar sbEpsilon        = findViewById(R.id.seekbar_epsilon);
-        TextView tvEpsilon       = findViewById(R.id.tv_epsilon_value);
-
-        SharedPreferences graphPrefs = getSharedPreferences("GraphSettings", MODE_PRIVATE);
-        boolean wasEnabled = graphPrefs.getBoolean("dp_enabled", false);
-        float savedEpsilon = graphPrefs.getFloat("dp_epsilon", 0.5f);
-
-        swActive.setChecked(wasEnabled);
-        sbEpsilon.setProgress((int) (savedEpsilon * 20));
-        tvEpsilon.setText(getString(R.string.settings_dp_epsilon_label, String.valueOf(savedEpsilon)));
-
-        swActive.setOnCheckedChangeListener(
-                (btn, isChecked) -> {
-                    graphPrefs.edit().putBoolean("dp_enabled", isChecked).apply();
-                    if (isChecked && !wasEnabled)
-                        graphPrefs.edit().putBoolean("dp_epsilon_manual", false).apply();
-                });
-
-        sbEpsilon.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                float val = progress / 20f;
-                tvEpsilon.setText(getString(R.string.settings_dp_epsilon_label, String.valueOf(val)));
-                if (fromUser) {
-                    graphPrefs.edit().putFloat("dp_epsilon", val).apply();
-                    graphPrefs.edit().putBoolean("dp_epsilon_manual", true).apply();
-                }
-            }
-            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
-        });
     }
 
     /** Shows the Save button only when at least one field differs from its loaded value. */
     private void updateSaveVisibility() {
         String enteredBroker = etMqttBrokerUrl.getText().toString().trim();
         String enteredLlm    = etLlmHost.getText().toString().trim();
-        boolean brokerChanged = !enteredBroker.equals(originalBrokerUrl == null ? "" : originalBrokerUrl);
-        boolean llmChanged    = !enteredLlm.equals(originalLlmHost == null ? "" : originalLlmHost);
-        boolean pushChanged   = switchPushNotifications.isChecked() != originalPushActive;
-        btnSave.setVisibility((brokerChanged || llmChanged || pushChanged) ? View.VISIBLE : View.GONE);
+        boolean brokerChanged   = !enteredBroker.equals(originalBrokerUrl == null ? "" : originalBrokerUrl);
+        boolean llmChanged      = !enteredLlm.equals(originalLlmHost == null ? "" : originalLlmHost);
+        boolean pushChanged     = switchPushNotifications.isChecked() != originalPushActive;
+        boolean epsilonChanged  = epsilonChanged();
+        btnSave.setVisibility((brokerChanged || llmChanged || pushChanged || epsilonChanged) ? View.VISIBLE : View.GONE);
+    }
+
+    private boolean epsilonChanged() {
+        return parsedEpsilon(etEpsilonAccel,  originalEpsilonAccel)  != originalEpsilonAccel
+            || parsedEpsilon(etEpsilonGyro,   originalEpsilonGyro)   != originalEpsilonGyro
+            || parsedEpsilon(etEpsilonMagnet, originalEpsilonMagnet) != originalEpsilonMagnet;
+    }
+
+    private float parsedEpsilon(EditText field, float fallback) {
+        try { return Float.parseFloat(field.getText().toString().trim()); }
+        catch (NumberFormatException e) { return fallback; }
     }
 
     /**
@@ -202,6 +209,9 @@ public class SettingsActivity extends BiotBaseActivity {
         } else {
             editor.putString("LLM_HOST", enteredLlm);
         }
+        editor.putFloat(McpDataSyncService.PREF_EPSILON_ACCEL,  parsedEpsilon(etEpsilonAccel,  com.fhdw.biot.speech.iot.BuildConfig.DP_EPSILON_ACCEL_RAW));
+        editor.putFloat(McpDataSyncService.PREF_EPSILON_GYRO,   parsedEpsilon(etEpsilonGyro,   com.fhdw.biot.speech.iot.BuildConfig.DP_EPSILON_GYRO_RAW));
+        editor.putFloat(McpDataSyncService.PREF_EPSILON_MAGNET, parsedEpsilon(etEpsilonMagnet, com.fhdw.biot.speech.iot.BuildConfig.DP_EPSILON_MAGNET_RAW));
         editor.apply();
 
         ((BiotApplication) getApplication()).getContainer().refreshMcpHost(this);

@@ -1,10 +1,12 @@
 package com.fhdw.biot.speech.iot.repository;
 
+import android.content.SharedPreferences;
 import android.util.Log;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import com.fhdw.biot.speech.iot.BuildConfig;
 import com.fhdw.biot.speech.iot.database.entities.AccelData;
+import com.fhdw.biot.speech.iot.graph.DouglasPeukerAlg;
 import com.fhdw.biot.speech.iot.database.entities.GyroData;
 import com.fhdw.biot.speech.iot.database.entities.MagnetData;
 import java.io.BufferedReader;
@@ -49,6 +51,7 @@ public class McpDataSyncService {
     private final SensorRepository repository;
     private volatile String baseUrl;
     private final ExecutorService executor;
+    private final SharedPreferences prefs;
 
     // ── Oldest fetched timestamp per sensor ───────────────────────────────────
     // Long.MAX_VALUE = nothing fetched yet (Room is always cleared on startup).
@@ -72,9 +75,10 @@ public class McpDataSyncService {
 
     // ─────────────────────────────────────────────────────────────────────────
 
-    public McpDataSyncService(SensorRepository repository, String baseUrl) {
+    public McpDataSyncService(SensorRepository repository, String baseUrl, SharedPreferences prefs) {
         this.repository = repository;
         this.baseUrl    = baseUrl;
+        this.prefs      = prefs;
         this.executor   = Executors.newSingleThreadExecutor(r -> {
             Thread t = new Thread(r, "mcp-sync-thread");
             t.setDaemon(true);
@@ -164,8 +168,6 @@ public class McpDataSyncService {
             while (true) {
                 JSONArray rows = fetchPage(PATH_ACCEL, cursor, toMs, resolution);
                 if (rows.length() == 0) break;
-
-                List<AccelData> page = new ArrayList<>();
                 for (int i = 0; i < rows.length(); i++) {
                     JSONObject r = rows.getJSONObject(i);
                     AccelData d = new AccelData();
@@ -174,18 +176,17 @@ public class McpDataSyncService {
                     d.accelY     = (float) r.getDouble("y");
                     d.accelZ     = (float) r.getDouble("z");
                     d.resolution = resolution;
-                    page.add(d);
+                    accumulated.add(d);
                 }
-                repository.insertAccelBatch(page);
-                accumulated.addAll(page);
-                if ("raw".equals(resolution)) accelHistory.postValue(new ArrayList<>(accumulated));
-                Log.i(TAG, "GRAPH_FETCH: accel[" + resolution + "] page " + page.size() + " rows cursor=" + cursor + " total=" + accumulated.size());
-
-                if (page.size() < BuildConfig.LLM_FETCH_PAGE_SIZE) break;
+                Log.i(TAG, "GRAPH_FETCH: accel[" + resolution + "] page " + rows.length() + " rows total=" + accumulated.size());
+                if (rows.length() < BuildConfig.LLM_FETCH_PAGE_SIZE) break;
                 cursor = rows.getJSONObject(rows.length() - 1).getLong("timestamp") + 1;
             }
+            List<AccelData> simplified = DouglasPeukerAlg.simplify(accumulated, accelEpsilon(resolution));
+            Log.i(TAG, "GRAPH_FETCH: accel[" + resolution + "] DP raw=" + accumulated.size() + " stored=" + simplified.size());
+            repository.insertAccelBatch(simplified);
+            if ("raw".equals(resolution)) accelHistory.postValue(simplified);
             oldestFetchedAccelMs = Math.min(oldestFetchedAccelMs, fromMs);
-            Log.i(TAG, "GRAPH_FETCH: accel[" + resolution + "] done total=" + accumulated.size());
         } catch (Exception e) {
             Log.e(TAG, "fetchPagedAccel[" + resolution + "] failed: " + e.getMessage(), e);
             if (accumulated.isEmpty() && "raw".equals(resolution)) accelHistory.postValue(Collections.emptyList());
@@ -199,8 +200,6 @@ public class McpDataSyncService {
             while (true) {
                 JSONArray rows = fetchPage(PATH_GYRO, cursor, toMs, resolution);
                 if (rows.length() == 0) break;
-
-                List<GyroData> page = new ArrayList<>();
                 for (int i = 0; i < rows.length(); i++) {
                     JSONObject r = rows.getJSONObject(i);
                     GyroData d = new GyroData();
@@ -209,18 +208,17 @@ public class McpDataSyncService {
                     d.gyroY      = (float) r.getDouble("y");
                     d.gyroZ      = (float) r.getDouble("z");
                     d.resolution = resolution;
-                    page.add(d);
+                    accumulated.add(d);
                 }
-                repository.insertGyroBatch(page);
-                accumulated.addAll(page);
-                if ("raw".equals(resolution)) gyroHistory.postValue(new ArrayList<>(accumulated));
-                Log.i(TAG, "GRAPH_FETCH: gyro[" + resolution + "] page " + page.size() + " rows cursor=" + cursor + " total=" + accumulated.size());
-
-                if (page.size() < BuildConfig.LLM_FETCH_PAGE_SIZE) break;
+                Log.i(TAG, "GRAPH_FETCH: gyro[" + resolution + "] page " + rows.length() + " rows total=" + accumulated.size());
+                if (rows.length() < BuildConfig.LLM_FETCH_PAGE_SIZE) break;
                 cursor = rows.getJSONObject(rows.length() - 1).getLong("timestamp") + 1;
             }
+            List<GyroData> simplified = DouglasPeukerAlg.simplify(accumulated, gyroEpsilon(resolution));
+            Log.i(TAG, "GRAPH_FETCH: gyro[" + resolution + "] DP raw=" + accumulated.size() + " stored=" + simplified.size());
+            repository.insertGyroBatch(simplified);
+            if ("raw".equals(resolution)) gyroHistory.postValue(simplified);
             oldestFetchedGyroMs = Math.min(oldestFetchedGyroMs, fromMs);
-            Log.i(TAG, "GRAPH_FETCH: gyro[" + resolution + "] done total=" + accumulated.size());
         } catch (Exception e) {
             Log.e(TAG, "fetchPagedGyro[" + resolution + "] failed: " + e.getMessage(), e);
             if (accumulated.isEmpty() && "raw".equals(resolution)) gyroHistory.postValue(Collections.emptyList());
@@ -234,8 +232,6 @@ public class McpDataSyncService {
             while (true) {
                 JSONArray rows = fetchPage(PATH_MAGNET, cursor, toMs, resolution);
                 if (rows.length() == 0) break;
-
-                List<MagnetData> page = new ArrayList<>();
                 for (int i = 0; i < rows.length(); i++) {
                     JSONObject r = rows.getJSONObject(i);
                     MagnetData d = new MagnetData();
@@ -244,21 +240,50 @@ public class McpDataSyncService {
                     d.magnetY    = (float) r.getDouble("y");
                     d.magnetZ    = (float) r.getDouble("z");
                     d.resolution = resolution;
-                    page.add(d);
+                    accumulated.add(d);
                 }
-                repository.insertMagnetBatch(page);
-                accumulated.addAll(page);
-                if ("raw".equals(resolution)) magnetHistory.postValue(new ArrayList<>(accumulated));
-                Log.i(TAG, "GRAPH_FETCH: magnet[" + resolution + "] page " + page.size() + " rows cursor=" + cursor + " total=" + accumulated.size());
-
-                if (page.size() < BuildConfig.LLM_FETCH_PAGE_SIZE) break;
+                Log.i(TAG, "GRAPH_FETCH: magnet[" + resolution + "] page " + rows.length() + " rows total=" + accumulated.size());
+                if (rows.length() < BuildConfig.LLM_FETCH_PAGE_SIZE) break;
                 cursor = rows.getJSONObject(rows.length() - 1).getLong("timestamp") + 1;
             }
+            List<MagnetData> simplified = DouglasPeukerAlg.simplify(accumulated, magnetEpsilon(resolution));
+            Log.i(TAG, "GRAPH_FETCH: magnet[" + resolution + "] DP raw=" + accumulated.size() + " stored=" + simplified.size());
+            repository.insertMagnetBatch(simplified);
+            if ("raw".equals(resolution)) magnetHistory.postValue(simplified);
             oldestFetchedMagnetMs = Math.min(oldestFetchedMagnetMs, fromMs);
-            Log.i(TAG, "GRAPH_FETCH: magnet[" + resolution + "] done total=" + accumulated.size());
         } catch (Exception e) {
             Log.e(TAG, "fetchPagedMagnet[" + resolution + "] failed: " + e.getMessage(), e);
             if (accumulated.isEmpty() && "raw".equals(resolution)) magnetHistory.postValue(Collections.emptyList());
+        }
+    }
+
+    // User-configurable epsilon keys (stored as float strings in SharedPreferences).
+    // Only the raw tier is user-adjustable; 1min/1hour use BuildConfig defaults.
+    public static final String PREF_EPSILON_ACCEL  = "dp_epsilon_accel";
+    public static final String PREF_EPSILON_GYRO   = "dp_epsilon_gyro";
+    public static final String PREF_EPSILON_MAGNET = "dp_epsilon_magnet";
+
+    private float accelEpsilon(String resolution) {
+        switch (resolution) {
+            case "1min":  return BuildConfig.DP_EPSILON_ACCEL_1MIN;
+            case "1hour": return BuildConfig.DP_EPSILON_ACCEL_1HOUR;
+            default:      return prefs.getFloat(PREF_EPSILON_ACCEL, BuildConfig.DP_EPSILON_ACCEL_RAW);
+        }
+    }
+
+    private float gyroEpsilon(String resolution) {
+        switch (resolution) {
+            case "1min":  return BuildConfig.DP_EPSILON_GYRO_1MIN;
+            case "1hour": return BuildConfig.DP_EPSILON_GYRO_1HOUR;
+            default:      return prefs.getFloat(PREF_EPSILON_GYRO, BuildConfig.DP_EPSILON_GYRO_RAW);
+        }
+    }
+
+    private float magnetEpsilon(String resolution) {
+        switch (resolution) {
+            case "1min":  return BuildConfig.DP_EPSILON_MAGNET_1MIN;
+            case "1hour": return BuildConfig.DP_EPSILON_MAGNET_1HOUR;
+            default:      return prefs.getFloat(PREF_EPSILON_MAGNET, BuildConfig.DP_EPSILON_MAGNET_RAW);
         }
     }
 

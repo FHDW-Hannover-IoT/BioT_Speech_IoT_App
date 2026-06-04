@@ -62,7 +62,7 @@ public class AppContainer {
         sensorRepository = new SensorRepository(dbContext);
         android.content.SharedPreferences prefs =
                 context.getSharedPreferences("AppPreferences", android.content.Context.MODE_PRIVATE);
-        mcpDataSync = new McpDataSyncService(sensorRepository, AppConfig.mcpBaseUrl(prefs));
+        mcpDataSync = new McpDataSyncService(sensorRepository, AppConfig.mcpBaseUrl(prefs), prefs);
         boolean serverDataEnabled = prefs.getBoolean("SERVER_DATA_ENABLED", true);
         if (serverDataEnabled) {
             mcpDataSync.fetchInitial();

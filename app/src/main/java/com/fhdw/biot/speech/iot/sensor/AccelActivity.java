@@ -1,7 +1,6 @@
 package com.fhdw.biot.speech.iot.sensor;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -25,12 +24,9 @@ import com.fhdw.biot.speech.iot.config.BiotApplication;
 import com.fhdw.biot.speech.iot.database.entities.AccelData;
 import com.fhdw.biot.speech.iot.events.EreignisActivity;
 import com.fhdw.biot.speech.iot.graph.BaseChartActivity;
-import com.fhdw.biot.speech.iot.graph.DouglasPeukerAlg;
-import com.fhdw.biot.speech.iot.graph.EpsilonCalculator;
 import com.fhdw.biot.speech.iot.graph.IFilterableChart;
 import com.fhdw.biot.speech.iot.main.MainActivity;
 import com.fhdw.biot.speech.iot.repository.SensorRepository;
-import com.fhdw.biot.speech.iot.util.DateTimePickerHandler;
 import com.fhdw.biot.speech.iot.voice.VoiceCommandExecutor;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
@@ -55,9 +51,6 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
     private Calendar dateFromCalendar;
 
     private Calendar dateToCalendar;
-
-    /** Date filter buttons ("von" / "bis" for X, Y, Z charts). */
-    private Button xVonButton, xBisButton;
 
     private Spinner spinnerTimeframe;
     private int selectedMinutes = 10;
@@ -174,11 +167,8 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
                 });
 
         // --------------------------------------------------------------------
-        // Date filter buttons
+        // Timeframe filter spinner
         // --------------------------------------------------------------------
-
-        xBisButton = findViewById(R.id.button_x_bis);
-        xVonButton = findViewById(R.id.button_x_von);
 
         spinnerTimeframe = findViewById(R.id.spinner_timeframe);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
@@ -210,8 +200,6 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
                     lineChartAccelX.fitScreen();
                     lineChartAccelY.fitScreen();
                     lineChartAccelZ.fitScreen();
-                    xBisButton.setText("");
-                    xVonButton.setText("");
                 });
 
         // Initial "empty" chart configuration; actual data will come from DB.
@@ -249,38 +237,9 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
         dateFromCalendar = Calendar.getInstance();
         dateToCalendar = Calendar.getInstance();
 
-        // Wire buttons immediately so they work even with an empty DB.
-        setupFromDatePickers(xVonButton);
-        setupToDatePickers(xBisButton);
-
         isTenMinuteFilterActive = true;
         startSlidingWindow();
         checkVoiceFilterIntent();
-    }
-
-    private void setupFromDatePickers(Button xVonButton) {
-        DateTimePickerHandler.createForButton(
-                xVonButton,
-                calendar -> {
-                    stopSlidingWindow();
-                    dateFromCalendar = calendar;
-                    windowStart = 0;
-                    updateChartsWithDateFilter();
-                },
-                AccelActivity.this);
-        xVonButton.setText(makeDateTimeString(dateFromCalendar));
-    }
-
-    private void setupToDatePickers(Button xBisButton) {
-        DateTimePickerHandler.createForButton(
-                xBisButton,
-                calendar -> {
-                    stopSlidingWindow();
-                    dateToCalendar = calendar;
-                    updateChartsWithDateFilter();
-                },
-                AccelActivity.this);
-        xBisButton.setText(makeDateTimeString(dateToCalendar));
     }
 
     private void startSlidingWindow() {
@@ -297,7 +256,6 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
 
                         dateToCalendar.setTimeInMillis(now);
 
-                        syncDateButtonTexts();
                         updateChartsWithDateFilter();
 
                         slidingWindowHandler.postDelayed(this, 5000);
@@ -312,14 +270,6 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
         if (slidingWindowHandler != null && slidingWindowRunnable != null) {
             slidingWindowHandler.removeCallbacks(slidingWindowRunnable);
         }
-    }
-
-    /** Updates all six date filter buttons to match the current from/to calendars. */
-    private void syncDateButtonTexts() {
-        xVonButton.setText(makeDateTimeString(dateFromCalendar));
-
-        // "Bis"-Buttons
-        xBisButton.setText(makeDateTimeString(dateToCalendar));
     }
 
     /**
@@ -371,10 +321,6 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
                 });
     }
 
-    private String makeDateTimeString(Calendar calendar) {
-        return DateTimePickerHandler.format(calendar);
-    }
-
     // ------------------------------------------------------------------------
     // Data → Chart mapping
     // ------------------------------------------------------------------------
@@ -389,53 +335,34 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
         if (list.isEmpty()) return;
         final long wStart = (windowStart == 0) ? list.get(0).timestamp : windowStart;
         if (windowStart == 0) windowStart = wStart;
-        final long durationMs = (long) selectedMinutes * 60_000L;
         final int gen = renderGeneration.incrementAndGet();
 
         android.util.Log.i("AccelActivity", "GRAPH_LOAD: start accel gen=" + gen + " rows=" + list.size());
 
         chartExecutor.execute(() -> {
-            // Step 1: optionally run DP (respects the dp_enabled toggle in Settings)
-            SharedPreferences prefs = AccelActivity.this.getSharedPreferences("GraphSettings", android.content.Context.MODE_PRIVATE);
-            boolean dpEnabled = prefs.getBoolean("dp_enabled", false);
-            final List<AccelData> simplified;
-            if (dpEnabled) {
-                float epsilon = EpsilonCalculator.calculateScaledEpsilon(AccelActivity.this, list, durationMs);
-                simplified = DouglasPeukerAlg.simplify(list, epsilon);
-                android.util.Log.d("AccelActivity", "GRAPH_RENDER: gen=" + gen + " raw=" + list.size() + " simplified=" + simplified.size() + " epsilon=" + epsilon);
-            } else {
-                simplified = list;
-                android.util.Log.d("AccelActivity", "GRAPH_RENDER: gen=" + gen + " raw=" + list.size() + " dp=off");
-            }
-
-            // Discard if superseded by a newer render request
             if (renderGeneration.get() != gen) {
                 android.util.Log.d("AccelActivity", "GRAPH_LOAD: accel gen=" + gen + " stale, discarding");
                 return;
             }
 
-            // Step 2: X, Y, Z each build their Entry list on separate threads in parallel.
-            // CountDownLatch coordinates pinViewport after all 3 finish.
-            // 3-second timeout is the deadlock watchdog — entry building should take <10ms.
             CountDownLatch latch = new CountDownLatch(3);
 
             axisExecutor.submit(() -> {
-                ArrayList<Entry> entries = new ArrayList<>(simplified.size());
-                for (AccelData d : simplified) entries.add(new Entry(d.timestamp - wStart, d.accelX));
+                ArrayList<Entry> entries = new ArrayList<>(list.size());
+                for (AccelData d : list) entries.add(new Entry(d.timestamp - wStart, d.accelX));
                 runOnUiThread(() -> { setData(lineChartAccelX, entries, "X", Color.CYAN); latch.countDown(); });
             });
             axisExecutor.submit(() -> {
-                ArrayList<Entry> entries = new ArrayList<>(simplified.size());
-                for (AccelData d : simplified) entries.add(new Entry(d.timestamp - wStart, d.accelY));
+                ArrayList<Entry> entries = new ArrayList<>(list.size());
+                for (AccelData d : list) entries.add(new Entry(d.timestamp - wStart, d.accelY));
                 runOnUiThread(() -> { setData(lineChartAccelY, entries, "Y", Color.GREEN); latch.countDown(); });
             });
             axisExecutor.submit(() -> {
-                ArrayList<Entry> entries = new ArrayList<>(simplified.size());
-                for (AccelData d : simplified) entries.add(new Entry(d.timestamp - wStart, d.accelZ));
+                ArrayList<Entry> entries = new ArrayList<>(list.size());
+                for (AccelData d : list) entries.add(new Entry(d.timestamp - wStart, d.accelZ));
                 runOnUiThread(() -> { setData(lineChartAccelZ, entries, "Z", Color.YELLOW); latch.countDown(); });
             });
 
-            // Step 3: Wait for all 3 axes, then pin viewport. Timeout = deadlock guard.
             try {
                 if (!latch.await(3, TimeUnit.SECONDS)) {
                     android.util.Log.e("AccelActivity", "GRAPH_LOAD: accel gen=" + gen + " axis timeout — possible deadlock, abandoning render");
@@ -449,7 +376,7 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
             if (renderGeneration.get() == gen) {
                 runOnUiThread(() -> {
                     pinViewport(lineChartAccelX, lineChartAccelY, lineChartAccelZ);
-                    android.util.Log.i("AccelActivity", "GRAPH_LOAD: end accel gen=" + gen + " rendered=" + simplified.size() + " points");
+                    android.util.Log.i("AccelActivity", "GRAPH_LOAD: end accel gen=" + gen + " rendered=" + list.size() + " points");
                 });
             }
         });
@@ -492,7 +419,6 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
         dateFromCalendar.setTimeInMillis(now - ((long) minutes * 60 * 1000));
         dateToCalendar.setTimeInMillis(now);
         isTenMinuteFilterActive = true;
-        syncDateButtonTexts();
         updateChartsWithDateFilter();
         startSlidingWindow();
     }
@@ -503,7 +429,6 @@ public class AccelActivity extends BaseChartActivity implements IFilterableChart
         dateFromCalendar = Calendar.getInstance();
         dateToCalendar = Calendar.getInstance();
         windowStart = 0;
-        syncDateButtonTexts();
         updateChartsWithDateFilter();
     }
 

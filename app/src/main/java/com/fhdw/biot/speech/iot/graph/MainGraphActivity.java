@@ -530,10 +530,7 @@ public class MainGraphActivity extends BaseChartActivity {
     // =====================================================================
 
     private void initializeAccelDataSets(List<AccelData> list, long fromTime, long toTime) {
-        long durationMs = toTime - fromTime;
-        float epsilon = EpsilonCalculator.calculateScaledEpsilon(this, list, durationMs);
-        List<AccelData> dataToUse = DouglasPeukerAlg.simplify(list, epsilon);
-        android.util.Log.d("MainGraphActivity", "GRAPH_RENDER: accel raw=" + list.size() + " simplified=" + dataToUse.size() + " epsilon=" + epsilon);
+        List<AccelData> dataToUse = list;
 
         ArrayList<Entry> xs = new ArrayList<>();
         ArrayList<Entry> ys = new ArrayList<>();
@@ -567,9 +564,7 @@ public class MainGraphActivity extends BaseChartActivity {
     }
 
     private void initializeGyroDataSets(List<GyroData> list, long fromTime, long toTime) {
-        long durationMs = toTime - fromTime;
-        float epsilon = EpsilonCalculator.calculateScaledEpsilon(this, list, durationMs);
-        List<GyroData> dataToUse = DouglasPeukerAlg.simplify(list, epsilon);
+        List<GyroData> dataToUse = list;
 
         ArrayList<Entry> xs = new ArrayList<>();
         ArrayList<Entry> ys = new ArrayList<>();
@@ -603,9 +598,7 @@ public class MainGraphActivity extends BaseChartActivity {
     }
 
     private void initializeMagDataSets(List<MagnetData> list, long fromTime, long toTime) {
-        long durationMs = toTime - fromTime;
-        float epsilon = EpsilonCalculator.calculateScaledEpsilon(this, list, durationMs);
-        List<MagnetData> dataToUse = DouglasPeukerAlg.simplify(list, epsilon);
+        List<MagnetData> dataToUse = list;
 
         ArrayList<Entry> xs = new ArrayList<>();
         ArrayList<Entry> ys = new ArrayList<>();

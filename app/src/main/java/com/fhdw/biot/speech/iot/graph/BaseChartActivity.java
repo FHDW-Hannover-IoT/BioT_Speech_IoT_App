@@ -9,6 +9,7 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * BaseChartActivity ----------------- WHY THIS CLASS EXISTS: Every sensor Activity (AccelActivity,
@@ -120,6 +121,9 @@ public abstract class BaseChartActivity extends BiotBaseActivity {
             chart.clear();
             return;
         }
+
+        // MPAndroidChart requires entries sorted ascending by X — unsorted entries produce loops.
+        Collections.sort(entries, (a, b) -> Float.compare(a.getX(), b.getX()));
 
         // Convert points into a drawable dataset
         LineDataSet lineDataSet = new LineDataSet(entries, label);

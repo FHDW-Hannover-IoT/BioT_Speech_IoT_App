@@ -28,6 +28,20 @@ android {
         buildConfigField "int",    "LLM_INITIAL_FETCH_HOURS",  "1"
         buildConfigField "long",    "SIMULATOR_FALLBACK_DELAY_MS", "5000L"
         buildConfigField "long",    "SIMULATOR_INTERVAL_MS",    "500L"
+
+        // Douglas-Peucker epsilon per sensor per resolution tier.
+        // Accel in g (gravity-dominated, magnitude ~9.81 g, motion amplitude ~0.02 g).
+        // Gyro in deg/s (noise σ ≈ 0.5 deg/s).
+        // Magnet in arbitrary units (σ ≈ 1.0 per axis, magnitude ~45).
+        buildConfigField "float", "DP_EPSILON_ACCEL_RAW",    "0.01f"
+        buildConfigField "float", "DP_EPSILON_ACCEL_1MIN",   "0.02f"
+        buildConfigField "float", "DP_EPSILON_ACCEL_1HOUR",  "0.05f"
+        buildConfigField "float", "DP_EPSILON_GYRO_RAW",     "0.5f"
+        buildConfigField "float", "DP_EPSILON_GYRO_1MIN",    "1.0f"
+        buildConfigField "float", "DP_EPSILON_GYRO_1HOUR",   "2.0f"
+        buildConfigField "float", "DP_EPSILON_MAGNET_RAW",   "0.5f"
+        buildConfigField "float", "DP_EPSILON_MAGNET_1MIN",  "1.0f"
+        buildConfigField "float", "DP_EPSILON_MAGNET_1HOUR", "2.0f"
     }
 
     buildFeatures {

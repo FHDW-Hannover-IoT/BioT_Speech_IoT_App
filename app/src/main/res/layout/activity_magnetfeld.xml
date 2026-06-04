@@ -65,45 +65,6 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/label_from"
-                android:textColor="@color/text"/>
-
-            <Button
-                android:layout_width="wrap_content"
-                android:layout_height="30dp"
-                android:text=""
-                android:textSize="10dp"
-                android:textColor="@color/background"
-                android:backgroundTint="@color/button"
-                android:id="@+id/button_x_von"
-                android:paddingStart="0dp"
-                android:paddingEnd="0dp"
-                android:paddingBottom="0dp"
-                android:paddingTop="0dp"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/label_to"
-                android:textColor="@color/text"
-                android:layout_marginStart="10dp"/>
-
-            <Button
-                android:layout_width="wrap_content"
-                android:layout_height="30dp"
-                android:text=""
-                android:textSize="10dp"
-                android:textColor="@color/background"
-                android:backgroundTint="@color/button"
-                android:id="@+id/button_x_bis"
-                android:paddingStart="0dp"
-                android:paddingEnd="0dp"
-                android:paddingBottom="0dp"
-                android:paddingTop="0dp"/>
-
             <ImageButton
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
