@@ -42,8 +42,8 @@ pub_log = logging.getLogger("mockup.publisher")
 # ─────────────────────────────────────────────────────────────────────────────
 BROKER_HOST      = "172.20.10.2"
 BROKER_PORT      = 1883
-PUBLISH_INTERVAL = 0.01   # seconds between publish cycles
-MAX_MESSAGES = 0
+PUBLISH_INTERVAL = 0.025   # seconds between publish cycles
+MAX_MESSAGES     = 0   # how many messages to send before stopping; 0 = infinite
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SENSOR CONFIGURATION
@@ -72,12 +72,12 @@ MAX_MESSAGES = 0
 #
 #   For all modes:
 #     "min" / "max" : optional hard clamp applied after generation
-#     "round"       : decimal places to round to (default 4) 
+#     "round"       : decimal places to round to (default 4)
 # ─────────────────────────────────────────────────────────────────────────────
 SENSORS = [
     {
         "topic": "Sensor/Bewegung",
-        "qos": 0,
+        "qos": 1,
         "event": {"duration": 1.5, "multiplier": 10.0},
         "axes": [
             {"name": "ax", "mode": "sine+gauss", "center": 0.0,  "amplitude": 0.02, "freq": 0.2, "std": 0.005},
@@ -87,7 +87,7 @@ SENSORS = [
     },
     {
         "topic": "Sensor/Gyro",
-        "qos": 0,
+        "qos": 1,
         "event": {"duration": 1.0, "multiplier": 8.0},
         "axes": [
             {"name": "gx", "mode": "gauss", "center": 0.0, "std": 0.5},
@@ -97,7 +97,7 @@ SENSORS = [
     },
     {
         "topic": "Sensor/Magnet",
-        "qos": 0,
+        "qos": 1,
         "event": {"duration": 2.0, "multiplier": 6.0},
         "axes": [
             {"name": "mx", "mode": "gauss", "center":  20.0, "std": 1.0},
@@ -105,7 +105,7 @@ SENSORS = [
             {"name": "mz", "mode": "gauss", "center":  40.0, "std": 1.0},
         ],
     },
-        # ── Example: add more sensors below ──────────────────────────────────────
+    # ── Example: add more sensors below ──────────────────────────────────────
     # {
     #     "topic": "Sensor/Temperature",
     #     "qos": 0,
@@ -114,7 +114,7 @@ SENSORS = [
     #          "amplitude": 2.0, "freq": 0.05, "std": 0.2,
     #          "min": 15.0, "max": 35.0},
     #     ],
-    # }, 
+    # },
 ]
 
 
@@ -140,7 +140,7 @@ def generate_value(axis: dict, t: float, multiplier: float = 1.0) -> float:
     else:
         raise ValueError(f"Unknown mode '{mode}' for axis '{axis.get('name')}'")
 
-    # Optional hard clamp 
+    # Optional hard clamp
     if "min" in axis:
         value = max(value, axis["min"])
     if "max" in axis:
@@ -151,7 +151,7 @@ def generate_value(axis: dict, t: float, multiplier: float = 1.0) -> float:
 
 # ─────────────────────────────────────────────────────────────────────────────
 # EVENT SYSTEM
-# active_events: sensor_index → unix timestamp when the burst ends 
+# active_events: sensor_index → unix timestamp when the burst ends
 # ─────────────────────────────────────────────────────────────────────────────
 active_events: dict[int, float] = {}
 
@@ -185,16 +185,20 @@ client = mqtt.Client(client_id="biot-sensor-mockup", protocol=mqtt.MQTTv5)
 client.connect(BROKER_HOST, BROKER_PORT, keepalive=60)
 client.loop_start()
 
+limit_str = f"{MAX_MESSAGES} messages" if MAX_MESSAGES > 0 else "∞ messages (Ctrl+C to stop)"
 print(f"Sensor mockup running → {BROKER_HOST}:{BROKER_PORT}")
-print(f"Publishing {len(SENSORS)} sensor(s) every {PUBLISH_INTERVAL}s — Ctrl+C to stop\n")
+print(f"Publishing {len(SENSORS)} sensor(s) every {PUBLISH_INTERVAL}s — {limit_str}\n")
 print(f"Writing log to: {LOG_FILE}\n")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MAIN LOOP
 # ─────────────────────────────────────────────────────────────────────────────
-t = 0.0
+t             = 0.0
+message_count = 0
+
 try:
     while MAX_MESSAGES == 0 or message_count < MAX_MESSAGES:
+        loop_start = time.time()
         t += PUBLISH_INTERVAL
         log_parts = []
 
@@ -221,10 +225,19 @@ try:
 
         print("\n".join(log_parts))
         print()
-        time.sleep(PUBLISH_INTERVAL)
-        message_count = message_count +1
+
+        message_count += 1
+
+        # Sleep only for the remaining time in this interval to compensate for overhead
+        elapsed    = time.time() - loop_start
+        sleep_time = max(0.0, PUBLISH_INTERVAL - elapsed)
+        time.sleep(sleep_time)
+
+    print(f"\nDone — {message_count} message(s) sent.")
 
 except KeyboardInterrupt:
-    print("\nStopping mockup.")
+    print(f"\nStopped by user — {message_count} message(s) sent.")
+
+finally:
     client.loop_stop()
     client.disconnect()

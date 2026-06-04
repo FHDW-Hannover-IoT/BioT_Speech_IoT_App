@@ -107,10 +107,27 @@ MOCKUP_RE = re.compile(
     TS_RE + r"\s*\|\s*\S+\s*\|\s*mockup\.publisher\s*\|\s*"
     r"MQTT publish:\s+([^\s=]+)\s*=\s*'([^']+)'"
 )
-BIOT_RE = re.compile(
+
+# Altes Format (mqtt_subscriber):
+#   biot.mcp_server.mqtt_subscriber | MQTT message: Sensor/Bewegung = '0.015,0.009,9.806'
+BIOT_RE_LEGACY = re.compile(
     TS_RE + r"\s*\|\s*\S+\s*\|\s*biot\.mcp_server\.mqtt_subscriber\s*\|\s*"
     r"MQTT message:\s+([^\s=]+)\s*=\s*'([^']+)'"
 )
+
+# Neues Format (sensor_repository insert_*):
+#   biot.database.sensor_repository | insert_accel ts=... x=0.015 y=0.009 z=9.806
+BIOT_RE_INSERT = re.compile(
+    TS_RE + r"\s*\|\s*\S+\s*\|\s*biot\.database\.sensor_repository\s*\|\s*"
+    r"insert_(accel|gyro|magnet)\s+ts=\d+\s+x=([^\s]+)\s+y=([^\s]+)\s+z=([^\s]+)"
+)
+
+# Mapping insert-Typ -> MQTT-Topic
+INSERT_TOPIC_MAP = {
+    "accel":  "Sensor/Bewegung",
+    "gyro":   "Sensor/Gyro",
+    "magnet": "Sensor/Magnet",
+}
 
 
 def _parse_values(payload: str) -> list:
@@ -146,6 +163,67 @@ def parse_log(path: Path, pattern: re.Pattern, source: str) -> list:
     return messages
 
 
+def parse_biot_log(path: Path) -> list:
+    """
+    Parst ein BioT-Logfile. Unterstuetzt beide Formate automatisch:
+
+    Legacy  (biot.mcp_server.mqtt_subscriber):
+      MQTT message: Sensor/Bewegung = '0.015,0.009,9.806'
+
+    Neu (biot.database.sensor_repository):
+      insert_accel ts=... x=0.015 y=0.009 z=9.806
+    """
+    messages = []
+    bad = 0
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        for line in fh:
+            # Neues Format zuerst probieren
+            m = BIOT_RE_INSERT.search(line)
+            if m:
+                ts_str   = m.group(1)
+                typ      = m.group(2)          # accel | gyro | magnet
+                x, y, z  = m.group(3), m.group(4), m.group(5)
+                topic    = INSERT_TOPIC_MAP.get(typ)
+                if topic is None:
+                    continue
+                payload  = f"{x},{y},{z}"
+                try:
+                    ts = datetime.strptime(ts_str, TS_FMT)
+                except ValueError:
+                    bad += 1
+                    continue
+                messages.append(SensorMessage(
+                    timestamp=ts,
+                    topic=topic,
+                    payload=payload,
+                    values=_parse_values(payload),
+                    source="biot",
+                ))
+                continue
+
+            # Legacy-Format als Fallback
+            m = BIOT_RE_LEGACY.search(line)
+            if m:
+                ts_str, topic, payload = m.group(1), m.group(2), m.group(3)
+                try:
+                    ts = datetime.strptime(ts_str, TS_FMT)
+                except ValueError:
+                    bad += 1
+                    continue
+                messages.append(SensorMessage(
+                    timestamp=ts,
+                    topic=topic.strip(),
+                    payload=payload.strip(),
+                    values=_parse_values(payload.strip()),
+                    source="biot",
+                ))
+
+    if bad:
+        print(f"  !  {bad} Zeile(n) in '{path.name}' uebersprungen.")
+    return messages
+
+
+
 def parse_log_files(paths: list, pattern: re.Pattern, source: str) -> list:
     """Parst mehrere Log-Dateien und gibt alle Nachrichten chronologisch sortiert zurueck."""
     all_messages = []
@@ -158,8 +236,18 @@ def parse_log_files(paths: list, pattern: re.Pattern, source: str) -> list:
     return all_messages
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# LOG-ROTATION: alle biot.log* Dateien einsammeln
+def parse_biot_log_files(paths: list) -> list:
+    """Parst mehrere BioT-Log-Dateien (neues + legacy Format) chronologisch sortiert."""
+    all_messages = []
+    for p in paths:
+        msgs = parse_biot_log(p)
+        all_messages.extend(msgs)
+        print(f"    {p.name:<20}  ->  {len(msgs)} Nachrichten")
+    all_messages.sort(key=lambda m: m.timestamp)
+    return all_messages
+
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 def collect_rotated_logs(base_path: Path) -> list:
     """
@@ -398,8 +486,13 @@ def save_results(stats_list: list, tol: float, run_time: datetime):
 # ─────────────────────────────────────────────────────────────────────────────
 def main():
     script_dir  = Path(__file__).parent
-    mockup_path = Path(sys.argv[1]) if len(sys.argv) > 1 else script_dir / "mockup.log"
-    biot_path   = Path(sys.argv[2]) if len(sys.argv) > 2 else script_dir / "biot.log"
+
+    def _resolve(arg: str) -> Path:
+        p = Path(arg)
+        return p if p.is_absolute() else script_dir / p
+
+    mockup_path = _resolve(sys.argv[1]) if len(sys.argv) > 1 else script_dir / "mockup.log"
+    biot_path   = _resolve(sys.argv[2]) if len(sys.argv) > 2 else script_dir / "biot.log"
     tol         = float(sys.argv[3]) if len(sys.argv) > 3 else 1e-3
 
     # sensor_mockup.py im gleichen Ordner wie die Logs suchen
@@ -441,7 +534,7 @@ def main():
         print(f"  BioT-Log  ({len(biot_files)} Dateien, inkl. Log-Rotation):")
     else:
         print(f"  BioT-Log:")
-    recv_msgs = parse_log_files(biot_files, BIOT_RE, "biot")
+    recv_msgs = parse_biot_log_files(biot_files)
 
     print(f"\n  Gesamt Mockup  -> {len(sent_msgs)} Nachrichten")
     print(f"  Gesamt BioT    -> {len(recv_msgs)} Nachrichten\n")
