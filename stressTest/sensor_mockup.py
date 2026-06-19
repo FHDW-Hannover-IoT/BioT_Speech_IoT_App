@@ -40,7 +40,7 @@ pub_log = logging.getLogger("mockup.publisher")
 # ─────────────────────────────────────────────────────────────────────────────
 # BROKER
 # ─────────────────────────────────────────────────────────────────────────────
-BROKER_HOST      = "172.20.10.2"
+BROKER_HOST      = "X.X.X.X"
 BROKER_PORT      = 1883
 PUBLISH_INTERVAL = 0.04   # seconds between publish cycles
 MAX_MESSAGES     = 0   # how many messages to send before stopping; 0 = infinite

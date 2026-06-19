@@ -1,0 +1,5 @@
+Put both logs (servers log is named biot.log in this case, simulators log is named mockup.log) into the stressTest folder, then run the logFileCompare.py.
+
+The scripts are documented in how they can be configured.
+
+Put old logs you want to keep in the logs folder, so the stressTest folder doesn't get too full.
